@@ -1,0 +1,276 @@
+{
+    "data": {
+        "identificador": "NDgy",
+        "sucursal": "S0001",
+        "vendedor": "JUAN PEREZ",
+        "cliente": "PUBLICO EN GENERAL",
+        "cliente_rfc": "XAXX010101000",
+        "cliente_cp": "82000",
+        "cliente_uso_cfdi": "G03",
+        "cliente_regimen_fiscal": "616",
+        "cliente_calle": "",
+        "cliente_numero_exterior": "",
+        "cliente_numero_interior": "",
+        "cliente_estado": "Sinaloa",
+        "cliente_colonia": "",
+        "cliente_localidad": "MAZATLAN",
+        "cliente_delegacion": "MAZATLAN",
+        "cliente_pais": "MEXICO",
+        "sucursal_rfc": "EKU9003173C9",
+        "sucursal_nombre": "ESCUELA KEMPER URGATE",
+        "sucursal_cp": "82050",
+        "sucursal_regimen_clave": "601",
+        "sucursal_regimen": "REGIMEN ACTIVIDAD EMPRESARIAL Y PROFESIONAL PERSONA FISICA",
+        "sucursal_calle": "Ejemplo 31",
+        "sucursal_numero": "123",
+        "sucursal_numero_int": "111",
+        "sucursal_colonia": "Ejemplo 2",
+        "sucursal_estado": "Sinaloa",
+        "sucursal_localidad": "MAZATLAN",
+        "sucursal_municipio": "",
+        "sucursal_pais": "MEXICO",
+        "comentario": null,
+        "comentario_interno": null,
+        "costo": "500",
+        "costo_bruto": "116.12895733616",
+        "descuento_motivo": "",
+        "descuento": "0",
+        "metodo_pago": "PUE",
+        "total": "119.99",
+        "saldo": "0",
+        "abonado": null,
+        "pagado": "200",
+        "cambio": "80.01",
+        "descuento_nota_credito": null,
+        "tipo_operacion": "NOTA_VENTA",
+        "anulada": "0",
+        "fecha_sistema": "08\/07\/2025 16:40:39",
+        "folio": "261",
+        "serie": "ABC1",
+        "enviada": "0",
+        "cliente_emails": "jrodriguez@red2000.mx",
+        "tipo_conversion_factura": "0",
+        "conceptos": [
+            {
+                "clave": "COC000014",
+                "descripcion": "Coca cola 1",
+                "precio_venta": "19.354826222693",
+                "cantidad": "1",
+                "total": "20",
+                "unidad": "Pieza",
+                "clave_producto_servicio": "50202306",
+                "clave_unidad_sat": "H87",
+                "venta_granel": "0",
+                "impuestos": [
+                    {
+                        "factor": "Tasa",
+                        "base": "19.350000",
+                        "importe": "3.100000",
+                        "impuestos": "002",
+                        "tasa": "0.160000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "19.350000",
+                        "importe": "1.550000",
+                        "impuestos": "003",
+                        "tasa": "0.080000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "19.350000",
+                        "importe": "1.940000",
+                        "impuestos": "001",
+                        "tasa": "0.100000",
+                        "entidad": "Federal",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "19.350000",
+                        "importe": "2.060000",
+                        "impuestos": "002",
+                        "tasa": "0.106666",
+                        "entidad": "Federal",
+                        "tipo": "R"
+                    }
+                ]
+            },
+            {
+                "clave": "S0001-15976",
+                "descripcion": "ESTUCO ACRILICO UV RD",
+                "precio_venta": "96.774131113464",
+                "cantidad": "1",
+                "total": "99.99",
+                "unidad": "PIEZA",
+                "clave_producto_servicio": "31211707",
+                "clave_unidad_sat": "H87",
+                "venta_granel": "0",
+                "impuestos": [
+                    {
+                        "factor": "Tasa",
+                        "base": "96.770000",
+                        "importe": "15.480000",
+                        "impuestos": "002",
+                        "tasa": "0.160000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "96.770000",
+                        "importe": "7.740000",
+                        "impuestos": "003",
+                        "tasa": "0.080000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "96.770000",
+                        "importe": "10.320000",
+                        "impuestos": "002",
+                        "tasa": "0.106666",
+                        "entidad": "Federal",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "96.770000",
+                        "importe": "9.680000",
+                        "impuestos": "001",
+                        "tasa": "0.100000",
+                        "entidad": "Federal",
+                        "tipo": "R"
+                    }
+                ]
+            },
+            {
+                "clave": "S0001-0355",
+                "descripcion": "MARTILLADO SR VERDE CLARO",
+                "precio_venta": "0",
+                "cantidad": "1",
+                "total": "0",
+                "unidad": "LITROS",
+                "clave_producto_servicio": "31211500",
+                "clave_unidad_sat": "LTR",
+                "venta_granel": "0",
+                "impuestos": [
+                    {
+                        "factor": "Tasa",
+                        "base": "0.000000",
+                        "importe": "0.000000",
+                        "impuestos": "002",
+                        "tasa": "0.160000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "0.000000",
+                        "importe": "0.000000",
+                        "impuestos": "002",
+                        "tasa": "0.160000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    }
+                ]
+            },
+            {
+                "clave": "S0001-0017",
+                "descripcion": "MANERAL PROF MANGO MADERA 9 IN 5 VARILLAS",
+                "precio_venta": "0",
+                "cantidad": "1",
+                "total": "0",
+                "unidad": "PIEZA",
+                "clave_producto_servicio": "31211500",
+                "clave_unidad_sat": "H87",
+                "venta_granel": "0",
+                "impuestos": [
+                    {
+                        "factor": "Tasa",
+                        "base": "0.000000",
+                        "importe": "0.000000",
+                        "impuestos": "002",
+                        "tasa": "0.160000",
+                        "entidad": "Federal",
+                        "tipo": "T"
+                    }
+                ]
+            }
+        ],
+        "impuestos": {
+            "traslados": [
+                {
+                    "impuesto": "002",
+                    "nombre": "IVA",
+                    "base": "116.120000",
+                    "tipo_factor": "Tasa",
+                    "tasa_o_cuota": "0.160000",
+                    "local_o_federal": "Federal",
+                    "importe": "18.580000"
+                },
+                {
+                    "impuesto": "003",
+                    "nombre": "IEPS",
+                    "base": "116.120000",
+                    "tipo_factor": "Tasa",
+                    "tasa_o_cuota": "0.080000",
+                    "local_o_federal": "Federal",
+                    "importe": "9.290000"
+                }
+            ],
+            "retenidos": [
+                {
+                    "impuesto": "001",
+                    "nombre": "ISR",
+                    "base": "116.120000",
+                    "tipo_factor": "Tasa",
+                    "tasa_o_cuota": "0.100000",
+                    "local_o_federal": "Federal",
+                    "importe": "11.620000"
+                },
+                {
+                    "impuesto": "002",
+                    "nombre": "IVA",
+                    "base": "116.120000",
+                    "tipo_factor": "Tasa",
+                    "tasa_o_cuota": "0.106666",
+                    "local_o_federal": "Federal",
+                    "importe": "12.380000"
+                }
+            ]
+        },
+        "documentos_pago": [
+            {
+                "total": "200.000000",
+                "tipo_cambio": "1.000000",
+                "saldo": "0.000000",
+                "nota": "",
+                "sistema": "2025-07-08 16:40:39",
+                "anulado": "0",
+                "cambio": "80.010000",
+                "fecha_pago": "2025-07-08 16:40:39",
+                "formas_pago": [
+                    {
+                        "forma_pago": "Efectivo",
+                        "cantidad": "200",
+                        "forma_pago_identificador": "MQ=="
+                    }
+                ]
+            }
+        ],
+        "pago": [
+            {
+                "forma_pago": "Efectivo",
+                "cantidad": "200",
+                "forma_pago_identificador": "eyJpdiI6ImNEZEZLQjZGeHdnOEZRTG5pTGdmaWc9PSIsInZhbHVlIjoibnYxOEgvb1ArVnFTN1Y0M1dwUUc3dz09IiwibWFjIjoiMGMxNTc5M2JkNWY5MWFhMjZiZWNhMzk4MDdjODgwMTIyYmVkMDMwMjA4MGEyZTQyMGVhMWMyMGFiMTM5ZWJjMyIsInRhZyI6IiJ9"
+            }
+        ],
+        
+    }
+}
