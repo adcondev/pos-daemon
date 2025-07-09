@@ -95,6 +95,15 @@ func main() {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
+	// Tipo de fuente
+	if err = printer.SetFont(0); err != nil {
+		log.Printf("Error al establecer fuente: %v", err)
+	}
+
+	if err = printer.SetTextSize(1, 1); err != nil {
+		log.Printf("Error al establcer fuente: %v", err)
+	}
+
 	// TODO: Implementar imagen en ticket
 	heart := "***     ***\n******* *******\n***************\n*************\n*********\n*****\n***\n*\n"
 	if err = printer.Text(heart); err != nil {
