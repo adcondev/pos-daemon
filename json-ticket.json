@@ -1,7 +1,6 @@
 {
     "data": {
-        "identificador": "NDgy",
-        "sucursal": "S0001",
+        "identificador": "NDc5",
         "vendedor": "JUAN PEREZ",
         "cliente": "PUBLICO EN GENERAL",
         "cliente_rfc": "XAXX010101000",
@@ -20,7 +19,6 @@
         "sucursal_nombre": "ESCUELA KEMPER URGATE",
         "sucursal_cp": "82050",
         "sucursal_regimen_clave": "601",
-        "sucursal_regimen": "REGIMEN ACTIVIDAD EMPRESARIAL Y PROFESIONAL PERSONA FISICA",
         "sucursal_calle": "Ejemplo 31",
         "sucursal_numero": "123",
         "sucursal_numero_int": "111",
@@ -29,43 +27,34 @@
         "sucursal_localidad": "MAZATLAN",
         "sucursal_municipio": "",
         "sucursal_pais": "MEXICO",
-        "comentario": null,
-        "comentario_interno": null,
-        "costo": "500",
-        "costo_bruto": "116.12895733616",
-        "descuento_motivo": "",
         "descuento": "0",
-        "metodo_pago": "PUE",
-        "total": "119.99",
+        "total": "37951.8",
         "saldo": "0",
-        "abonado": null,
-        "pagado": "200",
-        "cambio": "80.01",
+        "pagado": "38000",
+        "cambio": "48.199999999997",
         "descuento_nota_credito": null,
         "tipo_operacion": "NOTA_VENTA",
         "anulada": "0",
-        "fecha_sistema": "08\/07\/2025 16:40:39",
-        "folio": "261",
+        "fecha_sistema": "07\/07\/2025 19:45:52",
+        "folio": "258",
         "serie": "ABC1",
-        "enviada": "0",
         "cliente_emails": "jrodriguez@red2000.mx",
-        "tipo_conversion_factura": "0",
         "conceptos": [
             {
-                "clave": "COC000014",
-                "descripcion": "Coca cola 1",
-                "precio_venta": "19.354826222693",
+                "clave": "PRO000037",
+                "descripcion": "producto con muchos impuestos",
+                "precio_venta": "1130.2481863553",
                 "cantidad": "1",
-                "total": "20",
-                "unidad": "Pieza",
-                "clave_producto_servicio": "50202306",
+                "total": "700.01",
+                "unidad": "PIEZA",
+                "clave_producto_servicio": "11162101",
                 "clave_unidad_sat": "H87",
                 "venta_granel": "0",
                 "impuestos": [
                     {
                         "factor": "Tasa",
-                        "base": "19.350000",
-                        "importe": "3.100000",
+                        "base": "1130.250000",
+                        "importe": "180.840000",
                         "impuestos": "002",
                         "tasa": "0.160000",
                         "entidad": "Federal",
@@ -73,8 +62,17 @@
                     },
                     {
                         "factor": "Tasa",
-                        "base": "19.350000",
-                        "importe": "1.550000",
+                        "base": "1130.250000",
+                        "importe": "120.560000",
+                        "impuestos": "002",
+                        "tasa": "0.106667",
+                        "entidad": "Federal",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "90.420000",
                         "impuestos": "003",
                         "tasa": "0.080000",
                         "entidad": "Federal",
@@ -82,23 +80,161 @@
                     },
                     {
                         "factor": "Tasa",
-                        "base": "19.350000",
-                        "importe": "1.940000",
+                        "base": "1130.250000",
+                        "importe": "113.020000",
                         "impuestos": "001",
                         "tasa": "0.100000",
                         "entidad": "Federal",
                         "tipo": "R"
                     },
                     {
-                        "factor": "Tasa",
-                        "base": "19.350000",
-                        "importe": "2.060000",
-                        "impuestos": "002",
-                        "tasa": "0.106666",
-                        "entidad": "Federal",
+                        "factor": "tasa",
+                        "base": "1130.250000",
+                        "importe": "33.910000",
+                        "impuestos": "Impuesto Cedular",
+                        "tasa": "0.030000",
+                        "entidad": "Local",
                         "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "33.910000",
+                        "impuestos": "Impuesto Cedular",
+                        "tasa": "0.030000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "33.910000",
+                        "impuestos": "Inspe. Obras",
+                        "tasa": "0.030000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "22.600000",
+                        "impuestos": "SICV-COP",
+                        "tasa": "0.020000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "2.260000",
+                        "impuestos": "2 al millar I.C.I.C",
+                        "tasa": "0.002000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "33.910000",
+                        "impuestos": "3% M.O.S.E.R.T.P",
+                        "tasa": "0.030000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "11.300000",
+                        "impuestos": "Impuesto Cedular",
+                        "tasa": "0.010000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "2.260000",
+                        "impuestos": "2 al millar",
+                        "tasa": "0.002000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "22.600000",
+                        "impuestos": "Cuota Sindical",
+                        "tasa": "0.020000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "5.650000",
+                        "impuestos": "5 al millar INS. OBRAS",
+                        "tasa": "0.005000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "5.650000",
+                        "impuestos": "5 al millar C.M.I.C",
+                        "tasa": "0.005000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "339.070000",
+                        "impuestos": "AMORTIZACION DEL ANTICIPO 30%",
+                        "tasa": "0.300000",
+                        "entidad": "Local",
+                        "tipo": "R"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "33.910000",
+                        "impuestos": "ISH",
+                        "tasa": "0.030000",
+                        "entidad": "Local",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "22.600000",
+                        "impuestos": "Impuesto Cedular",
+                        "tasa": "0.020000",
+                        "entidad": "Local",
+                        "tipo": "T"
+                    },
+                    {
+                        "factor": "Tasa",
+                        "base": "1130.250000",
+                        "importe": "22.600000",
+                        "impuestos": "ISH",
+                        "tasa": "0.020000",
+                        "entidad": "Local",
+                        "tipo": "T"
                     }
                 ]
+            },
+            {
+                "clave": "0001",
+                "descripcion": "MANTENIMIENTO OTROS CORRECTIVOS",
+                "precio_venta": "37041.8",
+                "cantidad": "1",
+                "total": "37041.8",
+                "unidad": "PIEZA",
+                "clave_producto_servicio": "52101502",
+                "clave_unidad_sat": "MTK",
+                "venta_granel": "0",
+                "impuestos": []
             },
             {
                 "clave": "S0001-15976",
@@ -150,29 +286,20 @@
                 ]
             },
             {
-                "clave": "S0001-0355",
-                "descripcion": "MARTILLADO SR VERDE CLARO",
-                "precio_venta": "0",
+                "clave": "S0001-15997",
+                "descripcion": "AGUA DESTILADA",
+                "precio_venta": "68.965517241379",
                 "cantidad": "1",
-                "total": "0",
-                "unidad": "LITROS",
-                "clave_producto_servicio": "31211500",
-                "clave_unidad_sat": "LTR",
+                "total": "80",
+                "unidad": "PIEZA",
+                "clave_producto_servicio": "31211900",
+                "clave_unidad_sat": "H87",
                 "venta_granel": "0",
                 "impuestos": [
                     {
                         "factor": "Tasa",
-                        "base": "0.000000",
-                        "importe": "0.000000",
-                        "impuestos": "002",
-                        "tasa": "0.160000",
-                        "entidad": "Federal",
-                        "tipo": "T"
-                    },
-                    {
-                        "factor": "Tasa",
-                        "base": "0.000000",
-                        "importe": "0.000000",
+                        "base": "68.970000",
+                        "importe": "11.030000",
                         "impuestos": "002",
                         "tasa": "0.160000",
                         "entidad": "Federal",
@@ -181,84 +308,32 @@
                 ]
             },
             {
-                "clave": "S0001-0017",
-                "descripcion": "MANERAL PROF MANGO MADERA 9 IN 5 VARILLAS",
-                "precio_venta": "0",
+                "clave": "CRA000016",
+                "descripcion": "Crayolas",
+                "precio_venta": "30",
                 "cantidad": "1",
-                "total": "0",
+                "total": "30",
                 "unidad": "PIEZA",
-                "clave_producto_servicio": "31211500",
+                "clave_producto_servicio": "60121509",
                 "clave_unidad_sat": "H87",
                 "venta_granel": "0",
-                "impuestos": [
-                    {
-                        "factor": "Tasa",
-                        "base": "0.000000",
-                        "importe": "0.000000",
-                        "impuestos": "002",
-                        "tasa": "0.160000",
-                        "entidad": "Federal",
-                        "tipo": "T"
-                    }
-                ]
+                "impuestos": []
             }
         ],
-        "impuestos": {
-            "traslados": [
-                {
-                    "impuesto": "002",
-                    "nombre": "IVA",
-                    "base": "116.120000",
-                    "tipo_factor": "Tasa",
-                    "tasa_o_cuota": "0.160000",
-                    "local_o_federal": "Federal",
-                    "importe": "18.580000"
-                },
-                {
-                    "impuesto": "003",
-                    "nombre": "IEPS",
-                    "base": "116.120000",
-                    "tipo_factor": "Tasa",
-                    "tasa_o_cuota": "0.080000",
-                    "local_o_federal": "Federal",
-                    "importe": "9.290000"
-                }
-            ],
-            "retenidos": [
-                {
-                    "impuesto": "001",
-                    "nombre": "ISR",
-                    "base": "116.120000",
-                    "tipo_factor": "Tasa",
-                    "tasa_o_cuota": "0.100000",
-                    "local_o_federal": "Federal",
-                    "importe": "11.620000"
-                },
-                {
-                    "impuesto": "002",
-                    "nombre": "IVA",
-                    "base": "116.120000",
-                    "tipo_factor": "Tasa",
-                    "tasa_o_cuota": "0.106666",
-                    "local_o_federal": "Federal",
-                    "importe": "12.380000"
-                }
-            ]
-        },
         "documentos_pago": [
             {
-                "total": "200.000000",
+                "total": "38000.000000",
                 "tipo_cambio": "1.000000",
                 "saldo": "0.000000",
                 "nota": "",
-                "sistema": "2025-07-08 16:40:39",
+                "sistema": "2025-07-07 19:45:52",
                 "anulado": "0",
-                "cambio": "80.010000",
-                "fecha_pago": "2025-07-08 16:40:39",
+                "cambio": "48.200000",
+                "fecha_pago": "2025-07-07 19:45:52",
                 "formas_pago": [
                     {
                         "forma_pago": "Efectivo",
-                        "cantidad": "200",
+                        "cantidad": "38000",
                         "forma_pago_identificador": "MQ=="
                     }
                 ]
@@ -267,10 +342,9 @@
         "pago": [
             {
                 "forma_pago": "Efectivo",
-                "cantidad": "200",
-                "forma_pago_identificador": "eyJpdiI6ImNEZEZLQjZGeHdnOEZRTG5pTGdmaWc9PSIsInZhbHVlIjoibnYxOEgvb1ArVnFTN1Y0M1dwUUc3dz09IiwibWFjIjoiMGMxNTc5M2JkNWY5MWFhMjZiZWNhMzk4MDdjODgwMTIyYmVkMDMwMjA4MGEyZTQyMGVhMWMyMGFiMTM5ZWJjMyIsInRhZyI6IiJ9"
+                "cantidad": "38000",
+                "forma_pago_identificador": "eyJpdiI6Im52VnlmbkQyYlhyTjRoZXVVRDdURVE9PSIsInZhbHVlIjoiRkFHNTV2a1FRbzZSUnh2NFNIN0NSQT09IiwibWFjIjoiZGQ2OGM2NzU4MDFhODZhOWI0ZjJjNjdmMzc5ZmZlMmNjNzVlNjU1ZjlmYzYxODk1NmE4NDMzNTU1MDJkYWNhOCIsInRhZyI6IiJ9"
             }
-        ],
-        
+        ]
     }
 }
