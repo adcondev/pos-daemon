@@ -8,8 +8,7 @@ import (
 	"unsafe"
 )
 
-// === DLL y funciones ===
-
+// Variables globales para acceder a las funciones del DLL winspool.drv
 var (
 	winspool            = syscall.NewLazyDLL("winspool.drv")
 	procOpenPrinter     = winspool.NewProc("OpenPrinterW")
@@ -20,25 +19,31 @@ var (
 	procWritePrinter    = winspool.NewProc("WritePrinter")
 )
 
-// === Estructura DOC_INFO_1 (corresponde a la API de Windows) ===
-
+// docInfo1 representa la estructura DOC_INFO_1 de la API de Windows.
+// Se utiliza para especificar información sobre un documento de impresión.
 type docInfo1 struct {
-	DocName    *uint16
-	OutputFile *uint16
-	DataType   *uint16
+	DocName    *uint16 // Nombre del documento
+	OutputFile *uint16 // Archivo de salida (nil para imprimir directamente)
+	DataType   *uint16 // Tipo de datos ("RAW" para datos sin procesar)
 }
 
-// === Estructura del conector ===
-
+// WindowsPrintConnector implementa la interfaz PrintConnector para
+// impresoras Windows utilizando la API del spooler.
 type WindowsPrintConnector struct {
-	printerName   string
-	printerHandle syscall.Handle
-	jobStarted    bool
-	docInfo       *docInfo1
+	printerName   string         // Nombre de la impresora Windows
+	printerHandle syscall.Handle // Handle de la impresora abierta
+	jobStarted    bool           // Indica si se ha iniciado un trabajo
+	docInfo       *docInfo1      // Información del documento
 }
 
-// === Constructor ===
-
+// NewWindowsPrintConnector crea una nueva instancia del conector Windows.
+// Abre una conexión con la impresora especificada y prepara la información
+// del documento para trabajos de impresión RAW.
+//
+// Parámetros:
+//   - printerName: nombre exacto de la impresora instalada en Windows
+//
+// Retorna un conector configurado o un error si no se puede abrir la impresora.
 func NewWindowsPrintConnector(printerName string) (*WindowsPrintConnector, error) {
 	if printerName == "" {
 		return nil, errors.New("el nombre de la impresora no puede estar vacío")
@@ -71,8 +76,13 @@ func NewWindowsPrintConnector(printerName string) (*WindowsPrintConnector, error
 	}, nil
 }
 
-// === Métodos de la API ===
-
+// Write envía datos a la impresora. Implementa la interfaz PrintConnector.
+// Inicia automáticamente un trabajo de impresión en la primera escritura.
+//
+// Parámetros:
+//   - data: bytes a enviar a la impresora
+//
+// Retorna el número de bytes escritos o un error si falla la operación.
 func (c *WindowsPrintConnector) Write(data []byte) (int, error) {
 	if c.printerHandle == 0 {
 		return 0, errors.New("handle de impresora no válido")
@@ -100,6 +110,11 @@ func (c *WindowsPrintConnector) Write(data []byte) (int, error) {
 	return int(bytesWritten), nil
 }
 
+// Close cierra la conexión con la impresora y libera recursos.
+// Implementa la interfaz PrintConnector.
+//
+// Finaliza cualquier trabajo de impresión en curso y cierra el handle.
+// Retorna un error si no se pueden liberar correctamente los recursos.
 func (c *WindowsPrintConnector) Close() error {
 	var finalErr error
 
@@ -130,7 +145,8 @@ func (c *WindowsPrintConnector) Close() error {
 	return finalErr
 }
 
-// FUNCIONES AUXILIARES
+// openPrinter abre una conexión con la impresora especificada.
+// Función auxiliar que encapsula la llamada a OpenPrinterW.
 func openPrinter(name *uint16) (handle syscall.Handle, err error) {
 	var h syscall.Handle
 	r1, _, err := procOpenPrinter.Call(
@@ -144,6 +160,8 @@ func openPrinter(name *uint16) (handle syscall.Handle, err error) {
 	return h, nil
 }
 
+// closePrinter cierra el handle de la impresora.
+// Función auxiliar que encapsula la llamada a ClosePrinter.
 func closePrinter(handle syscall.Handle) error {
 	r1, _, err := procClosePrinter.Call(uintptr(handle))
 	if r1 == 0 {
@@ -152,6 +170,8 @@ func closePrinter(handle syscall.Handle) error {
 	return nil
 }
 
+// startDocPrinter inicia un nuevo trabajo de impresión.
+// Función auxiliar que encapsula la llamada a StartDocPrinterW.
 func startDocPrinter(handle syscall.Handle, docInfo *docInfo1) (uint32, error) {
 	r1, _, err := procStartDocPrinter.Call(
 		uintptr(handle),
@@ -164,6 +184,8 @@ func startDocPrinter(handle syscall.Handle, docInfo *docInfo1) (uint32, error) {
 	return uint32(r1), nil
 }
 
+// endDocPrinter finaliza el trabajo de impresión actual.
+// Función auxiliar que encapsula la llamada a EndDocPrinter.
 func endDocPrinter(handle syscall.Handle) error {
 	r1, _, err := procEndDocPrinter.Call(uintptr(handle))
 	if r1 == 0 {
@@ -172,6 +194,8 @@ func endDocPrinter(handle syscall.Handle) error {
 	return nil
 }
 
+// abortDocPrinter cancela el trabajo de impresión actual.
+// Función auxiliar que encapsula la llamada a AbortDocPrinter.
 func abortDocPrinter(handle syscall.Handle) error {
 	r1, _, err := procAbortDocPrinter.Call(uintptr(handle))
 	if r1 == 0 {
@@ -180,6 +204,8 @@ func abortDocPrinter(handle syscall.Handle) error {
 	return nil
 }
 
+// writePrinter envía datos al spooler de impresión.
+// Función auxiliar que encapsula la llamada a WritePrinter.
 func writePrinter(handle syscall.Handle, data []byte) (uint32, error) {
 	var bytesWritten uint32
 	r1, _, err := procWritePrinter.Call(

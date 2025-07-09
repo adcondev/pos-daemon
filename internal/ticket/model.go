@@ -1,13 +1,17 @@
 package ticket
 
-// ---------- envoltorio raíz ----------
+// Wrapper envuelve un ticket en la estructura JSON esperada por el sistema.
+// Actúa como contenedor raíz para el objeto Ticket en las operaciones JSON.
 type Wrapper struct {
 	Data Ticket `json:"data"`
 }
 
-// ---------- ticket principal ----------
+// Ticket representa un ticket de venta completo del sistema POS.
+// Contiene toda la información necesaria para una transacción de venta
+// incluyendo metadatos, montos, información del cliente/sucursal,
+// conceptos vendidos y formas de pago.
 type Ticket struct {
-	// metadatos
+	// Metadatos del ticket
 	Identificador string `json:"identificador"`
 	Vendedor      string `json:"vendedor"`
 	Folio         string `json:"folio"`
@@ -16,7 +20,7 @@ type Ticket struct {
 	TipoOperacion string `json:"tipo_operacion"` // NOTA_VENTA, FACTURA, etc.
 	Anulada       bool   `json:"anulada,string"` // "0"/"1" → bool
 
-	// montos
+	// Montos y cálculos
 	Descuento         float64  `json:"descuento,string"`
 	DescuentoNotaCred *float64 `json:"descuento_nota_credito,string,omitempty"`
 	Total             float64  `json:"total,string"`
@@ -24,17 +28,18 @@ type Ticket struct {
 	Pagado            float64  `json:"pagado,string"`
 	Cambio            float64  `json:"cambio,string"`
 
-	// datos relacionales
+	// Información relacionada
 	Cliente  ClienteInfo  `json:"cliente_info,inline"`
 	Sucursal SucursalInfo `json:"sucursal_info,inline"`
 
-	// movimientos
+	// Detalles de la venta
 	Conceptos      []Concepto      `json:"conceptos"`
 	DocumentosPago []DocumentoPago `json:"documentos_pago"`
 	Pagos          []FormaPago     `json:"pago"` // ← nombre exacto en JSON
 }
 
-// ---------- datos de cliente ----------
+// ClienteInfo contiene la información completa del cliente.
+// Incluye datos fiscales y de domicilio requeridos para facturación.
 type ClienteInfo struct {
 	Nombre         string `json:"cliente"`
 	RFC            string `json:"cliente_rfc"`
@@ -52,7 +57,8 @@ type ClienteInfo struct {
 	Emails         string `json:"cliente_emails"`
 }
 
-// ---------- datos de sucursal ----------
+// SucursalInfo contiene la información de la sucursal emisora.
+// Incluye datos fiscales y de domicilio de la empresa.
 type SucursalInfo struct {
 	RFC          string `json:"sucursal_rfc"`
 	Nombre       string `json:"sucursal_nombre"`
@@ -68,7 +74,8 @@ type SucursalInfo struct {
 	Pais         string `json:"sucursal_pais"`
 }
 
-// ---------- detalle de conceptos ----------
+// Concepto representa un producto o servicio vendido dentro del ticket.
+// Incluye información del producto, cantidad, precios e impuestos aplicados.
 type Concepto struct {
 	Clave                 string     `json:"clave"`
 	Descripcion           string     `json:"descripcion"`
@@ -82,7 +89,8 @@ type Concepto struct {
 	Impuestos             []Impuesto `json:"impuestos"`
 }
 
-// ---------- impuestos (T = trasladado, R = retenido) ----------
+// Impuesto representa un impuesto aplicado a un concepto.
+// Puede ser trasladado (T) o retenido (R) según el tipo fiscal.
 type Impuesto struct {
 	Factor  string  `json:"factor"` // Tasa / Cuota
 	Base    float64 `json:"base,string"`
@@ -93,7 +101,8 @@ type Impuesto struct {
 	Tipo    string  `json:"tipo"`    // T / R
 }
 
-// ---------- pagos ----------
+// DocumentoPago representa un documento de pago asociado al ticket.
+// Contiene información del pago, cambio y las formas de pago utilizadas.
 type DocumentoPago struct {
 	Total      float64     `json:"total,string"`
 	TipoCambio float64     `json:"tipo_cambio,string"`
@@ -106,6 +115,8 @@ type DocumentoPago struct {
 	FormasPago []FormaPago `json:"formas_pago"`
 }
 
+// FormaPago representa una forma de pago específica utilizada en la venta.
+// Incluye el tipo de pago, cantidad y su identificador único.
 type FormaPago struct {
 	FormaPago     string  `json:"forma_pago"`
 	Cantidad      float64 `json:"cantidad,string"`
