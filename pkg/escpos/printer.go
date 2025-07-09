@@ -14,221 +14,262 @@ import (
 )
 
 // PrintConnector define la interfaz para la conexión física con la impresora.
-// Debes implementar esta interfaz para tu método de conexión (USB, TCP, Serial, etc.).
+// Cualquier implementación debe proporcionar métodos para escribir datos
+// y cerrar la conexión de manera segura.
 type PrintConnector interface {
-	// Write envía bytes a la impresora.
+	// Write envía bytes a la impresora y retorna el número de bytes escritos.
 	Write([]byte) (int, error)
-	// Close finaliza la conexión con la impresora.
+	// Close finaliza la conexión con la impresora liberando recursos.
 	Close() error
 }
 
-// EscposImage es un placeholder para la representación de una imagen.
-// La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
-// debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
+// EscposImage representa una imagen preparada para impresión ESC/POS.
+// Esta es una implementación placeholder que debe ser extendida para
+// manejar carga y conversión de imágenes reales a formatos ESC/POS.
 type EscposImage struct {
-	// Datos de la imagen (por ejemplo, un objeto image.Image)
-	pixels [][]byte // Ejemplo muy simplificado, cada byte representa 8 píxeles verticalmente
+	pixels [][]byte // Datos de píxeles simplificados
 	width  int      // Ancho en píxeles
 	height int      // Alto en píxeles
 }
 
-// NewEscposImageFromBytes es un constructor placeholder.
-// La implementación real debería cargar una imagen (PNG, JPEG, etc.) y convertirla a un formato interno adecuado.
+// NewEscposImageFromBytes crea una nueva imagen ESC/POS desde bytes.
+// Esta implementación es un placeholder que debe ser reemplazada
+// por código real que procese imágenes PNG, JPEG, etc.
+//
+// Retorna un error indicando que la funcionalidad no está implementada.
 func NewEscposImageFromBytes(data []byte) (*EscposImage, error) {
-	// Esta es solo una simulación. La carga y el procesamiento de imágenes son complejos.
-	// Un implementador real usaría paquetes como "image", "image/png", etc.
-	// y lógica de dithering para convertir a 1 bit por píxel.
-	return nil, errors.New("image loading and processing not implemented")
+	return nil, errors.New("carga y procesamiento de imágenes no implementado")
 }
 
+// GetWidth retorna el ancho de la imagen en píxeles.
 func (img *EscposImage) GetWidth() int {
-	// Placeholder
 	return img.width
 }
+
+// GetHeight retorna el alto de la imagen en píxeles.
 func (img *EscposImage) GetHeight() int {
-	// Placeholder
 	return img.height
 }
+
+// GetWidthBytes retorna el ancho de la imagen en bytes.
+// Para formato raster, calcula el ancho en píxeles dividido por 8
+// y redondeado hacia arriba.
 func (img *EscposImage) GetWidthBytes() int {
-	// Placeholder: Ancho en bytes para formato raster (ancho en píxeles / 8, redondeado hacia arriba)
 	return (img.width + 7) / 8
 }
 
 // ToRasterFormat convierte la imagen a formato raster ESC/POS (GS v 0).
-// Esta es una función placeholder.
+// Esta implementación es un placeholder que debe ser reemplazada
+// por código real que haga dithering y empaquetado de bits.
+//
+// Retorna un error indicando que la funcionalidad no está implementada.
 func (img *EscposImage) ToRasterFormat() ([]byte, error) {
-	// La implementación real requiere dithering y empaquetamiento de bits.
-	return nil, errors.New("image raster format conversion not implemented")
+	return nil, errors.New("conversión a formato raster no implementada")
 }
 
 // ToColumnFormat convierte la imagen a formato de columna ESC/POS (ESC *).
-// highDensity indica si se debe usar el modo de 24 puntos verticales.
-// Esta es una función placeholder.
+// El parámetro highDensity indica si usar modo de 24 puntos verticales.
+// Esta implementación es un placeholder que debe ser reemplazada
+// por código real que haga dithering y empaquetado por columnas.
+//
+// Retorna un error indicando que la funcionalidad no está implementada.
 func (img *EscposImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
-	// La implementación real requiere dithering y empaquetamiento de bits por columna.
-	return nil, errors.New("image column format conversion not implemented")
+	return nil, errors.New("conversión a formato columna no implementada")
 }
 
-// CapabilityProfile describe las capacidades de una impresora ESC/POS específica.
+// CapabilityProfile describe las capacidades específicas de una impresora.
+// Diferentes modelos de impresora soportan diferentes características,
+// y este perfil permite adaptar el comportamiento del driver.
 type CapabilityProfile struct {
-	SupportsBarcodeB     bool // Soporta el formato de comando GS k m L data (65-73)
-	SupportsPdf417Code   bool
-	SupportsQrCode       bool
-	CodePages            map[int]string // Mapa de índice de codepage a nombre/descripción
-	SupportsStarCommands bool           // Indica si soporta comandos específicos de Star (como ESC GS t)
-	// Agrega otras capacidades según sea necesario (ej: anchos de papel, fuentes, etc.)
+	SupportsBarcodeB     bool           // Soporta formato GS k m L data (65-73)
+	SupportsPdf417Code   bool           // Soporta códigos PDF417
+	SupportsQrCode       bool           // Soporta códigos QR
+	CodePages            map[int]string // Mapeo de índices a nombres de codepage
+	SupportsStarCommands bool           // Soporta comandos específicos de Star
 }
 
-// LoadProfile carga un CapabilityProfile predefinido o desde una fuente externa.
-// Esta es una función placeholder.
+// LoadProfile carga un perfil de capacidad predefinido o desde fuente externa.
+// Actualmente solo soporta el perfil "default" con capacidades estándar.
+//
+// Parámetros:
+//   - name: nombre del perfil a cargar ("default" es el único soportado)
+//
+// Retorna el perfil cargado o un error si el perfil no existe.
 func LoadProfile(name string) (*CapabilityProfile, error) {
-	// En una biblioteca real, esto cargaría perfiles desde archivos o datos incrustados.
-	// Para este port, devolvemos un perfil dummy "default".
 	if name == "default" {
 		return &CapabilityProfile{
-			SupportsBarcodeB:   true, // Asumimos que el perfil por defecto soporta el formato moderno de código de barras
-			SupportsPdf417Code: true, // Asumimos que el perfil por defecto soporta códigos 2D
+			SupportsBarcodeB:   true,
+			SupportsPdf417Code: true,
 			SupportsQrCode:     true,
-			CodePages: map[int]string{ // Ejemplo de algunas codepages comunes
-				0: "CP437",
-				1: "CP850",
-				2: "CP852",
-				3: "CP858",
-				4: "CP860",
-				5: "CP863",
-				6: "CP865",
-				// Agrega más codepages soportadas
-				16:  "WPC1252",   // Windows 1252
-				254: "Shift_JIS", // Ejemplo asiático
-				255: "GBK",       // Ejemplo chino (usado en textChinese)
+			CodePages: map[int]string{
+				0:   "CP437",
+				1:   "CP850",
+				2:   "CP852",
+				3:   "CP858",
+				4:   "CP860",
+				5:   "CP863",
+				6:   "CP865",
+				16:  "WPC1252",
+				254: "Shift_JIS",
+				255: "GBK",
 			},
-			SupportsStarCommands: false, // Asumimos que el perfil por defecto no soporta comandos Star
+			SupportsStarCommands: false,
 		}, nil
 	}
 	return nil, fmt.Errorf("perfil de capacidad desconocido: %s", name)
 }
 
-// Constantes ESC/POS y parámetros.
+// Constantes de caracteres de control ESC/POS
 const (
-	NUL byte = 0x00 // Null
-	LF  byte = 0x0a // Line Feed
-	ESC byte = 0x1b // Escape
-	FS  byte = 0x1c // Field Separator / Group Separator
-	FF  byte = 0x0c // Form Feed
-	GS  byte = 0x1d // Group Separator
+	NUL byte = 0x00 // Carácter nulo
+	LF  byte = 0x0a // Salto de línea (Line Feed)
+	ESC byte = 0x1b // Carácter de escape
+	FS  byte = 0x1c // Separador de campo
+	FF  byte = 0x0c // Salto de página (Form Feed)
+	GS  byte = 0x1d // Separador de grupo
+)
 
-	// Códigos de barras
-	BARCODE_UPCA    int = 65 // 'A'
-	BARCODE_UPCE    int = 66 // 'B'
-	BARCODE_JAN13   int = 67 // 'C' (EAN13)
-	BARCODE_JAN8    int = 68 // 'D' (EAN8)
-	BARCODE_CODE39  int = 69 // 'E'
-	BARCODE_ITF     int = 70 // 'F'
-	BARCODE_CODABAR int = 71 // 'G'
-	BARCODE_CODE93  int = 72 // 'H'
-	BARCODE_CODE128 int = 73 // 'I'
+// Constantes para tipos de códigos de barras soportados
+const (
+	BARCODE_UPCA    int = 65 // UPC-A (12 dígitos)
+	BARCODE_UPCE    int = 66 // UPC-E (8 dígitos)
+	BARCODE_JAN13   int = 67 // EAN13 (13 dígitos)
+	BARCODE_JAN8    int = 68 // EAN8 (8 dígitos)
+	BARCODE_CODE39  int = 69 // Code 39 (alfanumérico)
+	BARCODE_ITF     int = 70 // ITF (Interleaved 2 of 5)
+	BARCODE_CODABAR int = 71 // Codabar (farmacéutico)
+	BARCODE_CODE93  int = 72 // Code 93 (alfanumérico mejorado)
+	BARCODE_CODE128 int = 73 // Code 128 (ASCII completo)
+)
 
-	// Posición del texto del código de barras
-	BARCODE_TEXT_NONE  int = 0
-	BARCODE_TEXT_ABOVE int = 1
-	BARCODE_TEXT_BELOW int = 2
+// Constantes para posición del texto en códigos de barras
+const (
+	BARCODE_TEXT_NONE  int = 0 // Sin texto
+	BARCODE_TEXT_ABOVE int = 1 // Texto arriba del código
+	BARCODE_TEXT_BELOW int = 2 // Texto abajo del código
+)
 
-	// Color (para impresoras con múltiples colores)
-	COLOR_1 int = 0 // Color 1 (generalmente negro)
-	COLOR_2 int = 1 // Color 2 (generalmente rojo)
+// Constantes para colores de impresión (impresoras bicolor)
+const (
+	COLOR_1 int = 0 // Color primario (generalmente negro)
+	COLOR_2 int = 1 // Color secundario (generalmente rojo)
+)
 
-	// Modo de corte de papel
-	CUT_FULL    int = 65 // 'A'
-	CUT_PARTIAL int = 66 // 'B'
+// Constantes para modo de corte de papel
+const (
+	CUT_FULL    int = 65 // Corte completo del papel
+	CUT_PARTIAL int = 66 // Corte parcial del papel
+)
 
-	// Fuentes
-	FONT_A int = 0
-	FONT_B int = 1
-	FONT_C int = 2
+// Constantes para selección de fuente
+const (
+	FONT_A int = 0 // Fuente A (estándar)
+	FONT_B int = 1 // Fuente B (condensada)
+	FONT_C int = 2 // Fuente C (si está disponible)
+)
 
-	// Tamaño de imagen (para comandos Bit Image)
-	IMG_DEFAULT       int = 0
-	IMG_DOUBLE_WIDTH  int = 1
-	IMG_DOUBLE_HEIGHT int = 2
+// Constantes para tamaño de imagen en comandos Bit Image
+const (
+	IMG_DEFAULT       int = 0 // Tamaño normal
+	IMG_DOUBLE_WIDTH  int = 1 // Doble ancho
+	IMG_DOUBLE_HEIGHT int = 2 // Doble altura
+)
 
-	// Justificación del texto
-	JUSTIFY_LEFT   int = 0
-	JUSTIFY_CENTER int = 1
-	JUSTIFY_RIGHT  int = 2
+// Constantes para justificación del texto
+const (
+	JUSTIFY_LEFT   int = 0 // Alineación izquierda
+	JUSTIFY_CENTER int = 1 // Alineación centrada
+	JUSTIFY_RIGHT  int = 2 // Alineación derecha
+)
 
-	// Modo de impresión (combinación de bits para ESC !)
-	MODE_FONT_A        int = 0   // Bit 0 OFF for Font A
-	MODE_FONT_B        int = 1   // Bit 0 ON for Font B
-	MODE_EMPHASIZED    int = 8   // Bit 3 ON (Negrita)
-	MODE_DOUBLE_HEIGHT int = 16  // Bit 4 ON (Doble Altura)
-	MODE_DOUBLE_WIDTH  int = 32  // Bit 5 ON (Doble Ancho)
-	MODE_UNDERLINE     int = 128 // Bit 7 ON (Subrayado)
+// Constantes para modo de impresión (combinación de bits para ESC !)
+const (
+	MODE_FONT_A        int = 0   // Fuente A (bit 0 OFF)
+	MODE_FONT_B        int = 1   // Fuente B (bit 0 ON)
+	MODE_EMPHASIZED    int = 8   // Texto enfatizado/negrita (bit 3 ON)
+	MODE_DOUBLE_HEIGHT int = 16  // Doble altura (bit 4 ON)
+	MODE_DOUBLE_WIDTH  int = 32  // Doble ancho (bit 5 ON)
+	MODE_UNDERLINE     int = 128 // Subrayado (bit 7 ON)
+)
 
-	// Opciones de PDF417
-	PDF417_STANDARD  int = 0
-	PDF417_TRUNCATED int = 1
+// Constantes para opciones de códigos PDF417
+const (
+	PDF417_STANDARD  int = 0 // PDF417 estándar
+	PDF417_TRUNCATED int = 1 // PDF417 truncado (más compacto)
+)
 
-	// Niveles de corrección de error QR (aproximados)
-	QR_ECLEVEL_L int = 0 // 7%
-	QR_ECLEVEL_M int = 1 // 15%
-	QR_ECLEVEL_Q int = 2 // 25%
-	QR_ECLEVEL_H int = 3 // 30%
+// Constantes para niveles de corrección de error en códigos QR
+const (
+	QR_ECLEVEL_L int = 0 // Nivel L (~7% de corrección)
+	QR_ECLEVEL_M int = 1 // Nivel M (~15% de corrección)
+	QR_ECLEVEL_Q int = 2 // Nivel Q (~25% de corrección)
+	QR_ECLEVEL_H int = 3 // Nivel H (~30% de corrección)
+)
 
-	// Modelos de QR
-	QR_MODEL_1 int = 1
-	QR_MODEL_2 int = 2
-	QR_MICRO   int = 3
+// Constantes para modelos de códigos QR
+const (
+	QR_MODEL_1 int = 1 // Modelo 1 (original)
+	QR_MODEL_2 int = 2 // Modelo 2 (mejorado)
+	QR_MICRO   int = 3 // Micro QR (compacto)
+)
 
-	// Tipos de estado (para comandos de estado, no implementados como métodos públicos en PHP)
-	// Se incluyen por completitud de las constantes PHP
-	STATUS_PRINTER       int = 1 // GS I 1 (Estado de la impresora)
-	STATUS_OFFLINE_CAUSE int = 2 // GS I 2 (Causa de estar offline)
-	STATUS_ERROR_CAUSE   int = 3 // GS I 3 (Causa del error)
-	STATUS_PAPER_ROLL    int = 4 // GS I 4 (Estado del rollo de papel)
-	STATUS_INK_A         int = 7 // GS I 7 (Estado de la tinta/cinta A)
-	STATUS_INK_B         int = 6 // GS I 6 (Estado de la tinta/cinta B)
-	STATUS_PEELER        int = 8 // GS I 8 (Estado del peeler - para etiquetas)
+// Constantes para tipos de estado de impresora (comandos GS I)
+const (
+	STATUS_PRINTER       int = 1 // Estado general de la impresora
+	STATUS_OFFLINE_CAUSE int = 2 // Causa de estar sin conexión
+	STATUS_ERROR_CAUSE   int = 3 // Causa del error
+	STATUS_PAPER_ROLL    int = 4 // Estado del rollo de papel
+	STATUS_INK_A         int = 7 // Estado de la tinta/cinta A
+	STATUS_INK_B         int = 6 // Estado de la tinta/cinta B
+	STATUS_PEELER        int = 8 // Estado del dispensador de etiquetas
+)
 
-	// Tipo de subrayado
-	UNDERLINE_NONE   int = 0
-	UNDERLINE_SINGLE int = 1
-	UNDERLINE_DOUBLE int = 2
+// Constantes para tipo de subrayado
+const (
+	UNDERLINE_NONE   int = 0 // Sin subrayado
+	UNDERLINE_SINGLE int = 1 // Subrayado simple
+	UNDERLINE_DOUBLE int = 2 // Subrayado doble
 )
 
 // Printer representa una impresora térmica ESC/POS.
+// Encapsula la conexión física, el perfil de capacidades y el estado
+// actual de la impresora (tabla de caracteres, etc.).
 type Printer struct {
-	connector      PrintConnector
-	profile        *CapabilityProfile
-	characterTable int // La tabla de caracteres (codepage) actualmente seleccionada.
+	connector      PrintConnector     // Conexión física con la impresora
+	profile        *CapabilityProfile // Perfil de capacidades específicas
+	characterTable int                // Tabla de caracteres actualmente seleccionada
 }
 
-// *** FUNCIÓN PARA CODIFICAR A CP858 ***
+// toCP858 convierte una cadena UTF-8 a bytes codificados en CP858.
+// Esta función auxiliar maneja la conversión de caracteres latinos
+// incluyendo acentos y caracteres especiales para impresoras ESC/POS.
+//
+// En caso de error de codificación, devuelve la cadena original como fallback
+// y registra una advertencia en la consola.
 func toCP858(s string) []byte {
-	// Obtener el codificador para CP858
 	encoder := charmap.CodePage858.NewEncoder()
-	// Convertir la string (UTF-8) a bytes codificados en CP858
 	encoded, err := encoder.Bytes([]byte(s))
 	if err != nil {
-		// En caso de error (ej. carácter no representable en CP858),
-		// podrías loguear el error, o intentar un fallback.
-		// Aquí, por simplicidad, devolvemos la string original (UTF-8),
-		// aunque esto no solucionaría el problema del acento si falla la codificación.
-		// Una mejor práctica sería reemplazar el carácter desconocido.
 		fmt.Printf("Advertencia: No se pudo codificar string a CP858: %v (original: %q)\n", err, s)
-		return []byte(s) // Fallback (probablemente no imprimirá bien el carácter problemático)
+		return []byte(s) // Fallback
 	}
 	return encoded
 }
 
-// NewPrinter crea una nueva instancia de Printer.
-// Requiere un PrintConnector y opcionalmente un CapabilityProfile.
-// Si el perfil es nil, carga el perfil por defecto.
+// NewPrinter crea una nueva instancia de Printer con el conector y perfil especificados.
+// Si el perfil es nil, carga automáticamente el perfil por defecto.
+// Inicializa la impresora enviando el comando ESC @ durante la creación.
+//
+// Parámetros:
+//   - connector: implementación de PrintConnector para la conexión física
+//   - profile: perfil de capacidades específico o nil para usar el predeterminado
+//
+// Retorna la impresora configurada o un error si no se puede inicializar.
 func NewPrinter(connector PrintConnector, profile *CapabilityProfile) (*Printer, error) {
 	if connector == nil {
 		return nil, errors.New("PrintConnector no puede ser nil")
 	}
 	if profile == nil {
-		// Cargar perfil por defecto si no se proporciona ninguno
 		defaultProfile, err := LoadProfile("default")
 		if err != nil {
 			return nil, fmt.Errorf("falló al cargar el perfil de capacidad por defecto: %w", err)
@@ -239,108 +280,125 @@ func NewPrinter(connector PrintConnector, profile *CapabilityProfile) (*Printer,
 	p := &Printer{
 		connector:      connector,
 		profile:        profile,
-		characterTable: 0, // Tabla de caracteres por defecto
+		characterTable: 0,
 	}
 
-	// Inicializar la impresora
 	if err := p.Initialize(); err != nil {
-		// Si la inicialización falla, consideramos que la creación de la impresora falla.
 		return nil, fmt.Errorf("falló al inicializar la impresora: %w", err)
 	}
 
 	return p, nil
 }
 
-// --- Métodos Públicos (Espejo de la clase PHP) ---
-
-// Initialize restablece la impresora a su configuración por defecto (ESC @).
+// Initialize restablece la impresora a su configuración por defecto.
+// Envía el comando ESC @ que reinicia todos los ajustes de formato,
+// fuentes, justificación y otros parámetros a sus valores iniciales.
+//
+// Retorna un error si no se puede comunicar con la impresora.
 func (p *Printer) Initialize() error {
 	_, err := p.connector.Write([]byte{ESC, '@'})
 	if err == nil {
-		p.characterTable = 0 // Resetear el seguimiento de la tabla de caracteres
+		p.characterTable = 0 // Resetear seguimiento de tabla de caracteres
 	}
 	return err
 }
 
-// Text envía una cadena de texto a la impresora.
-// Maneja los saltos de línea '\n' convirtiéndolos a LF.
+// Text envía una cadena de texto a la impresora con codificación CP858.
+// Convierte automáticamente los saltos de línea '\n' a caracteres LF ESC/POS.
+// Maneja caracteres latinos incluyendo acentos y símbolos especiales.
+//
+// Parámetros:
+//   - str: cadena de texto a imprimir
+//
+// Retorna un error si no se puede enviar el texto a la impresora.
 func (p *Printer) Text(str string) error {
-	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
 	bytesToSend := strings.ReplaceAll(str, "\n", string(LF))
 	_, err := p.connector.Write(toCP858(bytesToSend))
 	return err
 }
 
-// TextRaw envía una cadena de texto (o bytes) a la impresora sin procesar.
+// TextRaw envía una cadena de texto a la impresora sin procesar.
+// No aplica codificación ni conversión de caracteres, enviando
+// los bytes directamente como se proporcionan.
+//
+// Parámetros:
+//   - str: cadena de texto cruda a enviar
+//
+// Retorna un error si no se puede enviar los datos a la impresora.
 func (p *Printer) TextRaw(str string) error {
 	_, err := p.connector.Write([]byte(str))
 	return err
 }
 
-// TextChinese envía texto en chino.
-// Esta es una implementación placeholder ya que la conversión de codificación
-// (UTF-8 a GBK) es compleja y requiere librerías externas en Go.
-// Los comandos de activación/desactivación de modo chino (FS & / FS .) se incluyen.
+// TextChinese envía texto en chino a la impresora.
+// Activa el modo de caracteres chinos (FS &) antes del texto
+// y lo desactiva (FS .) después.
+//
+// NOTA: Esta implementación es un placeholder. La conversión real
+// de UTF-8 a GBK requiere librerías adicionales de codificación.
+//
+// Parámetros:
+//   - str: cadena de texto en chino a imprimir
+//
+// Retorna un error si no se puede enviar el texto a la impresora.
 func (p *Printer) TextChinese(str string) error {
-	// Activar modo de caracteres chinos (FS &)
 	cmd := []byte{FS, '&'}
-
-	// --- Placeholder: Conversión de UTF-8 a GBK ---
-	// En una implementación real, usarías un paquete como golang.org/x/text/encoding/chinese
-	// gbkEncoder := chinese.GBK.NewEncoder()
-	// gbkBytes, err := gbkEncoder.Bytes([]byte(str))
-	// if err != nil {
-	//     return fmt.Errorf("falló al codificar texto chino a GBK: %w", err)
-	// }
-	// cmd = append(cmd, gbkBytes...)
-	// --- Fin Placeholder ---
-
-	// Para demostración, enviar los bytes UTF-8 directamente (probablemente imprimirá basura si la impresora no está configurada para UTF-8)
 	cmd = append(cmd, []byte(str)...)
-
-	// Desactivar modo de caracteres chinos (FS .)
 	cmd = append(cmd, FS, '.')
-
 	_, err := p.connector.Write(cmd)
 	return err
 }
 
-// Cut corta el papel.
-// mode puede ser CUT_FULL o CUT_PARTIAL. lines es el número de líneas para alimentar antes de cortar (0-255).
+// Cut corta el papel usando el modo especificado.
+// Permite corte completo o parcial del papel con opción de avance previo.
+//
+// Parámetros:
+//   - mode: tipo de corte (CUT_FULL o CUT_PARTIAL)
+//   - lines: número de líneas a avanzar antes del corte (0-255)
+//
+// Retorna un error si los parámetros son inválidos o no se puede ejecutar el comando.
 func (p *Printer) Cut(mode int, lines int) error {
-	// PHP usa chr(mode) donde mode es 65 ('A') o 66 ('B').
-	// El comando estándar es GS V m [n], donde m es 0,1,48,49 (full/partial)
-	// o m es 65,66 ('A'/'B') con un parámetro n adicional para líneas de avance.
-	// Replicamos el comportamiento de PHP usando 'A' o 'B' y el parámetro lines.
 	if err := validateInteger(mode, CUT_FULL, CUT_PARTIAL, "Cut", "modo"); err != nil {
 		return fmt.Errorf("Cut: %w", err)
-	} // 65 ('A') o 66 ('B')
+	}
 	if err := validateInteger(lines, 0, 255, "Cut", "líneas"); err != nil {
 		return fmt.Errorf("Cut: %w", err)
 	}
 
-	cmd := []byte{GS, 'V', byte(mode), byte(lines)} // GS V 'A'/'B' n
+	cmd := []byte{GS, 'V', byte(mode), byte(lines)}
 	_, err := p.connector.Write(cmd)
 	return err
 }
 
 // Feed avanza el papel el número especificado de líneas.
+// Utiliza el comando más eficiente según el número de líneas solicitado.
+//
+// Parámetros:
+//   - lines: número de líneas a avanzar (1-255)
+//
+// Retorna un error si el parámetro es inválido o no se puede ejecutar el comando.
 func (p *Printer) Feed(lines int) error {
 	if err := validateInteger(lines, 1, 255, "Feed", "líneas"); err != nil {
 		return fmt.Errorf("Feed: %w", err)
 	}
 	if lines <= 1 {
-		// Usar solo LF para una línea es un poco más rápido a veces
+		// Usar LF simple para una línea es más eficiente
 		_, err := p.connector.Write([]byte{LF})
 		return err
 	}
-	// ESC d n - Imprime los datos del búfer y alimenta n líneas
+	// ESC d n - Imprime datos del búfer y alimenta n líneas
 	cmd := []byte{ESC, 'd', byte(lines)}
 	_, err := p.connector.Write(cmd)
 	return err
 }
 
 // FeedReverse retrocede el papel el número especificado de líneas.
+// No todas las impresoras soportan esta funcionalidad.
+//
+// Parámetros:
+//   - lines: número de líneas a retroceder (1-255)
+//
+// Retorna un error si el parámetro es inválido o no se puede ejecutar el comando.
 func (p *Printer) FeedReverse(lines int) error {
 	if err := validateInteger(lines, 1, 255, "FeedReverse", "líneas"); err != nil {
 		return fmt.Errorf("FeedReverse: %w", err)
@@ -351,18 +409,23 @@ func (p *Printer) FeedReverse(lines int) error {
 	return err
 }
 
-// FeedForm alimenta el papel hasta el principio del siguiente formulario (poco común en impresoras de recibos).
+// FeedForm alimenta el papel hasta el principio del siguiente formulario.
+// Esta función es poco común en impresoras de recibos térmicos.
+//
+// Retorna un error si no se puede ejecutar el comando.
 func (p *Printer) FeedForm() error {
 	// FF - Form Feed
 	_, err := p.connector.Write([]byte{FF})
 	return err
 }
 
-// Release envía un comando (ESC q) que PHP describe como "liberar la impresora del estado de espera".
-// Este comando NO es ESC/POS estándar y es probable que sea específico del fabricante (como Star).
+// Release libera el papel permitiendo que sea removido manualmente.
+// ADVERTENCIA: Este comando (ESC q) no es ESC/POS estándar y puede ser
+// específico del fabricante. No todas las impresoras lo soportan.
+//
+// Retorna un error si no se puede ejecutar el comando.
 func (p *Printer) Release() error {
-	// Advertencia: ESC q es probablemente específico del fabricante y no estándar ESC/POS.
-	_, err := p.connector.Write([]byte{ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
+	_, err := p.connector.Write([]byte{ESC, 'q'})
 	return err
 }
 
