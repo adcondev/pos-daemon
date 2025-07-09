@@ -35,7 +35,7 @@ func BytesToJSONFile(data []byte, filename string) error {
 	return nil
 }
 
-func BytesToObj(b []byte) (*Ticket, error) {
+func BytesToTicket(b []byte) (*Ticket, error) {
 	var w Wrapper
 
 	if err := json.Unmarshal(b, &w); err != nil {
