@@ -6,12 +6,13 @@ import (
 	"log"
 	"os"
 	// "time" // Descomentar si necesitas pausas
-
+	"pos-print.adcon.dev/internal/config"
 	"pos-print.adcon.dev/pkg/connectors/windows" // !!! REEMPLAZA con la ruta real de tu módulo
 	"pos-print.adcon.dev/pkg/escpos"             // !!! REEMPLAZA con la ruta real de tu módulo
 )
 
 func main() {
+	cfg := config.ParseFlags()
 	// Configurar el logger para incluir información útil
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -27,15 +28,13 @@ func main() {
 	// Si estás probando sin una impresora real o con problemas de driver/configuración,
 	// puedes seguir usando la implementación anterior del conector que escribe a un archivo.
 
-	printerName := "EC-PM-80250" // <--- ¡¡¡ CAMBIA ESTO !!!
-
-	log.Printf("Intentando conectar a la impresora de Windows: %s", printerName)
+	log.Printf("Intentando conectar a la impresora de Windows: %s", cfg.Printer)
 
 	// --- 1. Crear una instancia del PrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connectors.NewWindowsPrintConnector(printerName)
+	connector, err := connectors.NewWindowsPrintConnector(cfg.Printer)
 	if err != nil {
-		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", printerName, err)
+		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", cfg.Printer, err)
 	}
 
 	// IMPORTANTE: Asegurarse de cerrar el conector al finalizar.
