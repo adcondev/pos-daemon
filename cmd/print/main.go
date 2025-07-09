@@ -5,10 +5,11 @@ import (
 	// "fmt"
 	"log"
 	"os"
+	"pos-daemon.adcon.dev/internal/platform/windows"
+
 	// "time" // Descomentar si necesitas pausas
-	"pos-print.adcon.dev/internal/config"
-	"pos-print.adcon.dev/pkg/connectors/windows" // !!! REEMPLAZA con la ruta real de tu módulo
-	"pos-print.adcon.dev/pkg/escpos"             // !!! REEMPLAZA con la ruta real de tu módulo
+	"pos-daemon.adcon.dev/internal/config"
+	"pos-daemon.adcon.dev/pkg/escpos" // !!! REEMPLAZA con la ruta real de tu módulo
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 
 	// --- 1. Crear una instancia del PrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connectors.NewWindowsPrintConnector(cfg.Printer)
+	connector, err := windows.NewWindowsPrintConnector(cfg.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", cfg.Printer, err)
 	}
@@ -62,7 +63,7 @@ func main() {
 	// IMPORTANTE: También es buena práctica usar defer en Printer.Close()
 	// Aunque Connector.Close() también cerrará el handle, Printer.Close()
 	// se asegura de que el búfer de impresión esté vacío (si se hubiera usado)
-	// y de que el método finalize() del conector se llame (en nuestra simple
+	// y de que el method finalize() del conector se llame (en nuestra simple
 	// implementación de connector.Close(), esto es lo mismo).
 	// Dejaremos solo el defer connector.Close() por simplicidad ya que Printer.Close()
 	// simplemente llama a connector.Close() en este port.

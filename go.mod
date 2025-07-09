@@ -1,4 +1,4 @@
-module pos-print.adcon.dev
+module pos-daemon.adcon.dev
 
 go 1.24.4
 
