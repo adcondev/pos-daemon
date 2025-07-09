@@ -30,7 +30,7 @@ type docInfo1 struct {
 
 // === Estructura del conector ===
 
-type WindowsPrintConnector struct {
+type PrintConnector struct {
 	printerName   string
 	printerHandle syscall.Handle
 	jobStarted    bool
@@ -39,7 +39,7 @@ type WindowsPrintConnector struct {
 
 // === Constructor ===
 
-func NewWindowsPrintConnector(printerName string) (*WindowsPrintConnector, error) {
+func NewWindowsPrintConnector(printerName string) (*PrintConnector, error) {
 	if printerName == "" {
 		return nil, errors.New("el nombre de la impresora no puede estar vacío")
 	}
@@ -63,7 +63,7 @@ func NewWindowsPrintConnector(printerName string) (*WindowsPrintConnector, error
 		DataType:   dataType,
 	}
 
-	return &WindowsPrintConnector{
+	return &PrintConnector{
 		printerName:   printerName,
 		printerHandle: handle,
 		jobStarted:    false,
@@ -73,7 +73,7 @@ func NewWindowsPrintConnector(printerName string) (*WindowsPrintConnector, error
 
 // === Métodos de la API ===
 
-func (c *WindowsPrintConnector) Write(data []byte) (int, error) {
+func (c *PrintConnector) Write(data []byte) (int, error) {
 	if c.printerHandle == 0 {
 		return 0, errors.New("handle de impresora no válido")
 	}
@@ -100,7 +100,7 @@ func (c *WindowsPrintConnector) Write(data []byte) (int, error) {
 	return int(bytesWritten), nil
 }
 
-func (c *WindowsPrintConnector) Close() error {
+func (c *PrintConnector) Close() error {
 	var finalErr error
 
 	if c.jobStarted {

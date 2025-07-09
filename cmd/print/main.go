@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"pos-daemon.adcon.dev/internal/platform/windows"
+	"pos-daemon.adcon.dev/internal/ticket"
 
 	// "time" // Descomentar si necesitas pausas
 	"pos-daemon.adcon.dev/internal/config"
@@ -14,6 +15,7 @@ import (
 
 func main() {
 	cfg := config.ParseFlags()
+
 	// Configurar el logger para incluir información útil
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -71,6 +73,20 @@ func main() {
 	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
 
+	jsonBytes, err := ticket.JSONFileToBytes("./internal/api/schema/json-ticket.json")
+	if err != nil {
+		log.Printf("Error al leer archivo JSON de tickets: %v", err)
+		return
+	}
+
+	dataTicket := &ticket.Ticket{}
+
+	dataTicket, err = ticket.BytesToTicket(jsonBytes)
+	if err != nil {
+		log.Printf("Error al deserializar JSON a objeto: %v", err)
+		return
+	}
+
 	// Configurar justificación y estilo
 	if err = printer.SetJustification(escpos.JUSTIFY_CENTER); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
@@ -79,14 +95,20 @@ func main() {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
+	// TODO: Implementar imagen en ticket
+	heart := "***     ***\n******* *******\n***************\n*************\n*********\n*****\n***\n*\n"
+	if err = printer.Text(heart); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+
 	// Imprimir texto
-	if err = printer.Text("Mini Súper El Centro\n"); err != nil {
+	if err = printer.Text("Matriz\n" + dataTicket.SucursalNombre + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Vendedor: Juan Pérez\n"); err != nil {
+	if err = printer.Text("Vendedor: " + dataTicket.Vendedor + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Cliente: Público en general\n"); err != nil {
+	if err = printer.Text("Cliente: " + dataTicket.ClienteNombre + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 
