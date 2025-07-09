@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -12,7 +13,12 @@ func JSONFileToBytes(filepath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("Error al cerrar JSON: %v", err)
+		}
+	}(file)
 
 	content, err := io.ReadAll(file)
 	if err != nil {
