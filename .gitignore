@@ -45,6 +45,9 @@ go.work.sum
 !README.md
 !LICENSE
 
+!*.php
+!*.json
+
 # !Makefile
 
 # ...even if they are in subdirectories
