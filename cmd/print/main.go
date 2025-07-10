@@ -111,10 +111,16 @@ func main() {
 	}
 
 	// Imprimir texto
-	if err = printer.Text("Matriz\n" + dataTicket.SucursalNombre + "\n"); err != nil {
+	if err = printer.Text("Matriz\n" + dataTicket.SucursalNombre + "\n\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Vendedor: " + dataTicket.Vendedor + "\n"); err != nil {
+	if err = printer.Text("Nombre Comercial: PENDIENTE" + dataTicket.Vendedor + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("RFC: " + dataTicket.SucursalRFC + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimenClave + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("Cliente: " + dataTicket.ClienteNombre + "\n"); err != nil {

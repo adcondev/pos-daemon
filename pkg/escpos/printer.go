@@ -22,7 +22,7 @@ type PrintConnector interface {
 	Close() error
 }
 
-// EscposImage es un placeholder para la representación de una imagen.
+// EscposImage TODO es un placeholder para la representación de una imagen.
 // La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
 // debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
 type EscposImage struct {
@@ -32,7 +32,7 @@ type EscposImage struct {
 	height int      // Alto en píxeles
 }
 
-// NewEscposImageFromBytes es un constructor placeholder.
+// NewEscposImageFromBytes TODO es un constructor placeholder.
 // La implementación real debería cargar una imagen (PNG, JPEG, etc.) y convertirla a un formato interno adecuado.
 func NewEscposImageFromBytes(data []byte) (*EscposImage, error) {
 	// Esta es solo una simulación. La carga y el procesamiento de imágenes son complejos.
@@ -54,14 +54,14 @@ func (img *EscposImage) GetWidthBytes() int {
 	return (img.width + 7) / 8
 }
 
-// ToRasterFormat convierte la imagen a formato raster ESC/POS (GS v 0).
+// ToRasterFormat TODO convierte la imagen a formato raster ESC/POS (GS v 0).
 // Esta es una función placeholder.
 func (img *EscposImage) ToRasterFormat() ([]byte, error) {
 	// La implementación real requiere dithering y empaquetamiento de bits.
 	return nil, errors.New("image raster format conversion not implemented")
 }
 
-// ToColumnFormat convierte la imagen a formato de columna ESC/POS (ESC *).
+// ToColumnFormat TODO convierte la imagen a formato de columna ESC/POS (ESC *).
 // highDensity indica si se debe usar el modo de 24 puntos verticales.
 // Esta es una función placeholder.
 func (img *EscposImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
@@ -79,7 +79,7 @@ type CapabilityProfile struct {
 	// Agrega otras capacidades según sea necesario (ej: anchos de papel, fuentes, etc.)
 }
 
-// LoadProfile carga un CapabilityProfile predefinido o desde una fuente externa.
+// LoadProfile TODO carga un CapabilityProfile predefinido o desde una fuente externa.
 // Esta es una función placeholder.
 func LoadProfile(name string) (*CapabilityProfile, error) {
 	// En una biblioteca real, esto cargaría perfiles desde archivos o datos incrustados.
@@ -277,7 +277,7 @@ func (p *Printer) TextRaw(str string) error {
 	return err
 }
 
-// TextChinese envía texto en chino.
+// TextChinese TODO envía texto en chino.
 // Esta es una implementación placeholder ya que la conversión de codificación
 // (UTF-8 a GBK) es compleja y requiere librerías externas en Go.
 // Los comandos de activación/desactivación de modo chino (FS & / FS .) se incluyen.
