@@ -48,6 +48,7 @@ go.work.sum
 !*.php
 !*.json
 
+!/.github/*
 # !Makefile
 
 # ...even if they are in subdirectories
