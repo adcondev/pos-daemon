@@ -14,11 +14,29 @@ import (
 )
 
 func main() {
-	cfg := config.ParseFlags()
+	jsonBytes, err := config.JSONFileToBytes("./internal/api/schema/json-config.json")
+	if err != nil {
+		log.Printf("Error al leer archivo JSON de config: %v", err)
+		return
+	}
 
-	// Configurar el logger para incluir información útil
-	log.SetOutput(os.Stdout)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	dataConfig := &config.Config{}
+
+	dataConfig, err = config.BytesToConfig(jsonBytes)
+	if err != nil {
+		log.Printf("Error al deserializar JSON a objeto: %v", err)
+		return
+	}
+
+	// Configurar el logger según el valor de DebugLog
+	if dataConfig.DebugLog {
+		log.SetOutput(os.Stdout)
+		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+		log.Println("Modo de depuración activado.")
+	} else {
+		log.SetOutput(os.Stdout)
+		log.SetFlags(0) // Sin detalles adicionales
+	}
 
 	// --- CONFIGURACIÓN ---
 	// Define el nombre EXACTO de la impresora instalada en Windows.
@@ -31,13 +49,13 @@ func main() {
 	// Si estás probando sin una impresora real o con problemas de driver/configuración,
 	// puedes seguir usando la implementación anterior del conector que escribe a un archivo.
 
-	log.Printf("Intentando conectar a la impresora de Windows: %s", cfg.Printer)
+	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
 
 	// --- 1. Crear una instancia del PrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := windows.NewWindowsPrintConnector(cfg.Printer)
+	connector, err := windows.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
-		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", cfg.Printer, err)
+		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
 
 	// IMPORTANTE: Asegurarse de cerrar el conector al finalizar.
@@ -73,7 +91,7 @@ func main() {
 	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
 
-	jsonBytes, err := ticket.JSONFileToBytes("./internal/api/schema/json-ticket.json")
+	jsonBytes, err = ticket.JSONFileToBytes("./internal/api/schema/json-ticket.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de tickets: %v", err)
 		return
@@ -114,13 +132,13 @@ func main() {
 	if err = printer.Text("Matriz\n" + dataTicket.SucursalNombre + "\n\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Nombre Comercial: PENDIENTE" + dataTicket.Vendedor + "\n"); err != nil {
+	if err = printer.Text("Nombre Comercial: PREGUNTAR\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("RFC: " + dataTicket.SucursalRFC + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimenClave + "\n"); err != nil {
+	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimenClave + " PREGUNTAR\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("Cliente: " + dataTicket.ClienteNombre + "\n"); err != nil {
