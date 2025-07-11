@@ -2,6 +2,8 @@
 package main
 
 import (
+	"strconv"
+
 	// "fmt"
 	"log"
 	"os"
@@ -132,16 +134,28 @@ func main() {
 	if err = printer.Text("Matriz\n" + dataTicket.SucursalNombre + "\n\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Nombre Comercial: PREGUNTAR\n"); err != nil {
+	if err = printer.Text("Nombre Comercial: " + dataTicket.SucursalNombreComercial + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("RFC: " + dataTicket.SucursalRFC + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimenClave + " PREGUNTAR\n"); err != nil {
+	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimen + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("Email: " + dataTicket.ClienteEmails + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("Cliente: " + dataTicket.ClienteNombre + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("Folio: " + dataTicket.Folio + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("Fecha: " + dataTicket.FechaSistema + "\n"); err != nil {
+		log.Printf("Error al imprimir texto: %v", err)
+	}
+	if err = printer.Text("Tienda: " + dataTicket.SucursalTienda + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 
@@ -149,7 +163,7 @@ func main() {
 	if err = printer.SetEmphasis(false); err != nil {
 		log.Printf("Error al restablecer énfasis: %v", err)
 	}
-	if err = printer.Text("--------------------------------\n"); err != nil {
+	if err = printer.Text("------------------------------------------------\n"); err != nil {
 		log.Printf("Error al imprimir separador: %v", err)
 	}
 
@@ -158,18 +172,63 @@ func main() {
 		log.Printf("Error al establecer justificación izquierda: %v", err)
 	}
 
-	if err = printer.Text("Coca-Cola 600ml   2 x $18.50 = $37.00\n"); err != nil {
+	const LEN_CANT int = 4
+	const LEN_DESC int = 22
+	const LEN_PRECIO int = 10
+	const LEN_TOTAL int = 11
+	const LEN_DECIMALES int = 2
+
+	cant := ticket.PadCenter("CANT", LEN_CANT, ' ')
+	producto := ticket.PadCenter("PRODUCTO", LEN_DESC, ' ')
+	precio := ticket.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
+	subtotal := ticket.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
+
+	if err = printer.Text(cant + producto + precio + subtotal + "\n"); err != nil {
 		log.Printf("Error al imprimir artículo 1: %v", err)
 	}
-	if err = printer.Text("Galletas Oreo     1 x $15.00 = $15.00\n"); err != nil {
-		log.Printf("Error al imprimir artículo 2: %v", err)
-	}
-	if err = printer.Text("Pan Bimbo         1 x $30.00 = $30.00\n"); err != nil {
-		log.Printf("Error al imprimir artículo 3: %v", err)
+
+	const IVA_TRAS int = 0
+	const IEPS_TRAS int = 1
+	const IVA_RET int = 2
+	const ISR_RET = 3
+
+	var subtotal_sum float64
+	var ivaTrasladado_sum float64
+	var iepsTrasladado_sum float64
+	var ivaRetenido_sum float64
+	var isrRetenido_sum float64
+	var totalFinal float64
+
+	for _, v := range dataTicket.Conceptos {
+		cant = ticket.PadCenter(strconv.FormatFloat(v.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
+		producto = ticket.PadCenter(ticket.Substr(v.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
+		precio = ticket.PadCenter("$"+ticket.FormatFloat(v.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
+		subtotal = ticket.PadCenter("$"+ticket.FormatFloat(v.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
+
+		subtotal_sum = subtotal_sum + v.Total
+
+		if len(v.Impuestos) > 0 {
+			ivaTrasladado_sum = ivaTrasladado_sum + v.Impuestos[IVA_TRAS].Importe
+		}
+		if len(v.Impuestos) > 1 {
+			iepsTrasladado_sum = iepsTrasladado_sum + v.Impuestos[IEPS_TRAS].Importe
+			ivaRetenido_sum = ivaRetenido_sum + v.Impuestos[IVA_RET].Importe
+			isrRetenido_sum = isrRetenido_sum + v.Impuestos[ISR_RET].Importe
+		}
+
+		if err = printer.Text(cant + producto + precio + subtotal + "\n"); err != nil {
+			log.Printf("Error al imprimir artículo 2: %v", err)
+		}
 	}
 
+	totalFinal = subtotal_sum + ivaTrasladado_sum + iepsTrasladado_sum + ivaRetenido_sum + isrRetenido_sum
+
+	// Imprimir detalles de artículos (alineado a la izquierda)
+	if err = printer.SetJustification(escpos.JUSTIFY_CENTER); err != nil {
+		log.Printf("Error al establecer justificación izquierda: %v", err)
+	}
 	// Imprimir total (en negrita y alineado a la derecha)
-	if err = printer.Text("--------------------------------\n"); err != nil {
+	if err = printer.Text("------------------------------------------------\n"); err != nil {
 		log.Printf("Error al imprimir separador: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
@@ -178,9 +237,35 @@ func main() {
 	if err = printer.SetJustification(escpos.JUSTIFY_RIGHT); err != nil {
 		log.Printf("Error al establecer justificación derecha: %v", err)
 	}
-	if err = printer.Text("TOTAL: 51.50\n"); err != nil {
-		log.Printf("Error al imprimir total: %v", err)
+
+	if err = printer.Text("Subtotal: $" + ticket.FormatFloat(subtotal_sum, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
 	}
+	if err = printer.Text("IVA Trasladado: $" + ticket.FormatFloat(ivaTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("IEPS Trasladado: $" + ticket.FormatFloat(iepsTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("IVA Retenido: $" + ticket.FormatFloat(ivaRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("ISR Retenido: $" + ticket.FormatFloat(isrRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("Total Calc: $" + ticket.FormatFloat(totalFinal, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("Total Field: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].Total, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("Efectivo: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].FormasPago[0].Cantidad, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err = printer.Text("Cambio: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].Cambio, LEN_DECIMALES) + "\n"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+
 	if err = printer.SetEmphasis(false); err != nil {
 		log.Printf("Error al restablecer énfasis: %v", err)
 	}
@@ -188,7 +273,7 @@ func main() {
 		log.Printf("Error al establecer justificación centro: %v", err)
 	}
 
-	if err = printer.Text("¡Gracias por tu compra!"); err != nil {
+	if err = printer.Text("PAGADO\n¡Gracias por tu compra!"); err != nil {
 		log.Printf("Error al imprimir artículo 3: %v", err)
 	}
 
