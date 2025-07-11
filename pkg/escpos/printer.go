@@ -22,53 +22,6 @@ type PrintConnector interface {
 	Close() error
 }
 
-// EscposImage TODO es un placeholder para la representación de una imagen.
-// La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
-// debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
-type EscposImage struct {
-	// Datos de la imagen (por ejemplo, un objeto image.Image)
-	pixels [][]byte // Ejemplo muy simplificado, cada byte representa 8 píxeles verticalmente
-	width  int      // Ancho en píxeles
-	height int      // Alto en píxeles
-}
-
-// NewEscposImageFromBytes TODO es un constructor placeholder.
-// La implementación real debería cargar una imagen (PNG, JPEG, etc.) y convertirla a un formato interno adecuado.
-func NewEscposImageFromBytes(data []byte) (*EscposImage, error) {
-	// Esta es solo una simulación. La carga y el procesamiento de imágenes son complejos.
-	// Un implementador real usaría paquetes como "image", "image/png", etc.
-	// y lógica de dithering para convertir a 1 bit por píxel.
-	return nil, errors.New("image loading and processing not implemented")
-}
-
-func (img *EscposImage) GetWidth() int {
-	// Placeholder
-	return img.width
-}
-func (img *EscposImage) GetHeight() int {
-	// Placeholder
-	return img.height
-}
-func (img *EscposImage) GetWidthBytes() int {
-	// Placeholder: Ancho en bytes para formato raster (ancho en píxeles / 8, redondeado hacia arriba)
-	return (img.width + 7) / 8
-}
-
-// ToRasterFormat TODO convierte la imagen a formato raster ESC/POS (GS v 0).
-// Esta es una función placeholder.
-func (img *EscposImage) ToRasterFormat() ([]byte, error) {
-	// La implementación real requiere dithering y empaquetamiento de bits.
-	return nil, errors.New("image raster format conversion not implemented")
-}
-
-// ToColumnFormat TODO convierte la imagen a formato de columna ESC/POS (ESC *).
-// highDensity indica si se debe usar el modo de 24 puntos verticales.
-// Esta es una función placeholder.
-func (img *EscposImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
-	// La implementación real requiere dithering y empaquetamiento de bits por columna.
-	return nil, errors.New("image column format conversion not implemented")
-}
-
 // CapabilityProfile describe las capacidades de una impresora ESC/POS específica.
 type CapabilityProfile struct {
 	SupportsBarcodeB     bool // Soporta el formato de comando GS k m L data (65-73)
