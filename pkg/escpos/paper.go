@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+const (
+	// Modo de corte de papel
+	CUT_FULL    int = 65 // 'A'
+	CUT_PARTIAL int = 66 // 'B'
+)
+
 // Cut corta el papel.
 // mode puede ser CUT_FULL o CUT_PARTIAL. lines es el número de líneas para alimentar antes de cortar (0-255).
 func (p *Printer) Cut(mode int, lines int) error {
@@ -19,7 +25,7 @@ func (p *Printer) Cut(mode int, lines int) error {
 	}
 
 	cmd := []byte{GS, 'V', byte(mode), byte(lines)} // GS V 'A'/'B' n
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -30,12 +36,12 @@ func (p *Printer) Feed(lines int) error {
 	}
 	if lines <= 1 {
 		// Usar solo LF para una línea es un poco más rápido a veces
-		_, err := p.connector.Write([]byte{LF})
+		_, err := p.Connector.Write([]byte{LF})
 		return err
 	}
 	// ESC d n - Imprime los datos del búfer y alimenta n líneas
 	cmd := []byte{ESC, 'd', byte(lines)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -46,14 +52,14 @@ func (p *Printer) FeedReverse(lines int) error {
 	}
 	// ESC e n - Alimenta el papel hacia atrás n líneas
 	cmd := []byte{ESC, 'e', byte(lines)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // FeedForm alimenta el papel hasta el principio del siguiente formulario (poco común en impresoras de recibos).
 func (p *Printer) FeedForm() error {
 	// FF - Form Feed
-	_, err := p.connector.Write([]byte{FF})
+	_, err := p.Connector.Write([]byte{FF})
 	return err
 }
 
@@ -61,6 +67,6 @@ func (p *Printer) FeedForm() error {
 // Este comando NO es ESC/POS estándar y es probable que sea específico del fabricante (como Star).
 func (p *Printer) Release() error {
 	// Advertencia: ESC q es probablemente específico del fabricante y no estándar ESC/POS.
-	_, err := p.connector.Write([]byte{ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
+	_, err := p.Connector.Write([]byte{ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
 	return err
 }

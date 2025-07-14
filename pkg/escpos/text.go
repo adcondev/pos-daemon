@@ -9,13 +9,13 @@ import (
 func (p *Printer) Text(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
 	bytesToSend := strings.ReplaceAll(str, "\n", string(LF))
-	_, err := p.connector.Write(toCP858(bytesToSend))
+	_, err := p.Connector.Write(toCP858(bytesToSend))
 	return err
 }
 
 // TextRaw envía una cadena de texto (o bytes) a la impresora sin procesar.
 func (p *Printer) TextRaw(str string) error {
-	_, err := p.connector.Write([]byte(str))
+	_, err := p.Connector.Write([]byte(str))
 	return err
 }
 
@@ -43,6 +43,6 @@ func (p *Printer) TextChinese(str string) error {
 	// Desactivar modo de caracteres chinos (FS .)
 	cmd = append(cmd, FS, '.')
 
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }

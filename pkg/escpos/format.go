@@ -36,7 +36,7 @@ func (p *Printer) SetJustification(justification int) error {
 	}
 	// ESC a n - n=0: izquierda, 1: centro, 2: derecha
 	cmd := []byte{ESC, 'a', byte(justification)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -47,7 +47,7 @@ func (p *Printer) SetFont(font int) error {
 	}
 	// ESC M n - n=0: Fuente A, 1: Fuente B, 2: Fuente C
 	cmd := []byte{ESC, 'M', byte(font)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -59,7 +59,7 @@ func (p *Printer) SetEmphasis(on bool) error {
 		val = 1
 	}
 	cmd := []byte{ESC, 'E', val}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -71,7 +71,7 @@ func (p *Printer) SetDoubleStrike(on bool) error {
 		val = 1
 	}
 	cmd := []byte{ESC, 'G', val}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -85,7 +85,7 @@ func (p *Printer) SetUnderline(underline int) error {
 	}
 	// ESC - n - n=0: ninguno, 1: simple, 2: doble
 	cmd := []byte{ESC, '-', byte(underline)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -100,7 +100,7 @@ func (p *Printer) SetTextSize(widthMultiplier, heightMultiplier int) error {
 	// GS ! n - n es una combinación de bits de los multiplicadores (ancho-1) * 16 + (alto-1)
 	c := byte(((widthMultiplier - 1) << 4) | (heightMultiplier - 1))
 	cmd := []byte{GS, '!', c}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -110,7 +110,7 @@ func (p *Printer) SetTextSize(widthMultiplier, heightMultiplier int) error {
 func (p *Printer) SetLineSpacing(height *int) error {
 	if height == nil {
 		// ESC 2 - Restablecer espaciado de línea por defecto
-		_, err := p.connector.Write([]byte{ESC, '2'})
+		_, err := p.Connector.Write([]byte{ESC, '2'})
 		return err
 	}
 	if err := validateInteger(*height, 1, 255, "SetLineSpacing", "altura"); err != nil {
@@ -118,7 +118,7 @@ func (p *Printer) SetLineSpacing(height *int) error {
 	}
 	// ESC 3 n - Establecer espaciado de línea a n
 	cmd := []byte{ESC, '3', byte(*height)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -134,7 +134,7 @@ func (p *Printer) SetPrintLeftMargin(margin int) error {
 	}
 	cmd := []byte{GS, 'L'}
 	cmd = append(cmd, marginBytes...)
-	_, err = p.connector.Write(cmd)
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
@@ -150,7 +150,7 @@ func (p *Printer) SetPrintWidth(width int) error {
 	}
 	cmd := []byte{GS, 'W'}
 	cmd = append(cmd, widthBytes...)
-	_, err = p.connector.Write(cmd)
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 

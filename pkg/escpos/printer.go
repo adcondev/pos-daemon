@@ -17,15 +17,11 @@ const (
 	STATUS_INK_B         int = 6 // GS I 6 (Estado de la tinta/cinta B)
 	STATUS_PEELER        int = 8 // GS I 8 (Estado del peeler - para etiquetas)
 
-	// Modo de corte de papel
-	CUT_FULL    int = 65 // 'A'
-	CUT_PARTIAL int = 66 // 'B'
-
 )
 
-// PrintConnector define la interfaz para la conexión física con la impresora.
+// Connector define la interfaz para la conexión física con la impresora.
 // Debes implementar esta interfaz para tu método de conexión (USB, TCP, Serial, etc.).
-type PrintConnector interface {
+type Connector interface {
 	// Write envía bytes a la impresora.
 	Write([]byte) (int, error)
 	// Close finaliza la conexión con la impresora.
@@ -73,17 +69,17 @@ func LoadProfile(name string) (*CapabilityProfile, error) {
 
 // Printer representa una impresora térmica ESC/POS.
 type Printer struct {
-	connector      PrintConnector
+	Connector      Connector
 	profile        *CapabilityProfile
 	characterTable int // La tabla de caracteres (codepage) actualmente seleccionada.
 }
 
 // NewPrinter crea una nueva instancia de Printer.
-// Requiere un PrintConnector y opcionalmente un CapabilityProfile.
+// Requiere un Connector y opcionalmente un CapabilityProfile.
 // Si el perfil es nil, carga el perfil por defecto.
-func NewPrinter(connector PrintConnector, profile *CapabilityProfile) (*Printer, error) {
+func NewPrinter(connector Connector, profile *CapabilityProfile) (*Printer, error) {
 	if connector == nil {
-		return nil, errors.New("PrintConnector no puede ser nil")
+		return nil, errors.New("Connector no puede ser nil")
 	}
 	if profile == nil {
 		// Cargar perfil por defecto si no se proporciona ninguno
@@ -95,7 +91,7 @@ func NewPrinter(connector PrintConnector, profile *CapabilityProfile) (*Printer,
 	}
 
 	p := &Printer{
-		connector:      connector,
+		Connector:      connector,
 		profile:        profile,
 		characterTable: 0, // Tabla de caracteres por defecto
 	}
@@ -113,7 +109,7 @@ func NewPrinter(connector PrintConnector, profile *CapabilityProfile) (*Printer,
 
 // Initialize restablece la impresora a su configuración por defecto (ESC @).
 func (p *Printer) Initialize() error {
-	_, err := p.connector.Write([]byte{ESC, '@'})
+	_, err := p.Connector.Write([]byte{ESC, '@'})
 	if err == nil {
 		p.characterTable = 0 // Resetear el seguimiento de la tabla de caracteres
 	}
@@ -137,18 +133,18 @@ func (p *Printer) Pulse(pin int, onMS, offMS int) error {
 	// t1: Tiempo ON (t1 * 2 ms). PHP envía on_ms / 2. Replicamos.
 	// t2: Tiempo OFF (t2 * 2 ms). PHP envía off_ms / 2. Replicamos.
 	cmd := []byte{ESC, 'p', byte(pin + 48), byte(onMS / 2), byte(offMS / 2)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // Close finaliza la conexión con la impresora.
 func (p *Printer) Close() error {
-	return p.connector.Close()
+	return p.Connector.Close()
 }
 
 // GetPrintConnector devuelve el conector que está utilizando la impresora.
-func (p *Printer) GetPrintConnector() PrintConnector {
-	return p.connector
+func (p *Printer) GetPrintConnector() Connector {
+	return p.Connector
 }
 
 // GetPrinterCapabilityProfile devuelve el perfil de capacidad de la impresora.

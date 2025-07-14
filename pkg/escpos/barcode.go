@@ -30,7 +30,7 @@ func (p *Printer) SetBarcodeHeight(height int) error {
 	}
 	// GS h n - Establece la altura del código de barras a n puntos
 	cmd := []byte{GS, 'h', byte(height)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -41,7 +41,7 @@ func (p *Printer) SetBarcodeWidth(width int) error {
 	}
 	// GS w n - Establece el ancho horizontal de los módulos a n (normalmente 2 o 3)
 	cmd := []byte{GS, 'w', byte(width)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -51,7 +51,7 @@ func (p *Printer) SetBarcodeTextPosition(position int) error {
 		return fmt.Errorf("SetBarcodeTextPosition: %w", err)
 	} // 0: ninguno, 1: arriba, 2: abajo, 3: ambos (no siempre soportado) - PHP valida 0-3
 	cmd := []byte{GS, 'H', byte(position)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -155,6 +155,6 @@ func (p *Printer) Barcode(content string, barType int) error {
 		cmd = append(cmd, []byte(content)...) // Datos
 	}
 
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }

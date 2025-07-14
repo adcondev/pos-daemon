@@ -49,12 +49,12 @@ func (p *Printer) BitImage(img *Image, size int) error {
 	cmdHeader := []byte{GS, 'v', '0', byte(size)}
 	cmdHeader = append(cmdHeader, headerBytes...)
 
-	_, err = p.connector.Write(cmdHeader)
+	_, err = p.Connector.Write(cmdHeader)
 	if err != nil {
 		return fmt.Errorf("BitImage: falló al enviar la cabecera del comando: %w", err)
 	}
 
-	_, err = p.connector.Write(rasterData) // Enviar los datos de la imagen
+	_, err = p.Connector.Write(rasterData) // Enviar los datos de la imagen
 	if err != nil {
 		return fmt.Errorf("BitImage: falló al enviar los datos raster: %w", err)
 	}
@@ -124,7 +124,7 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 		cmd = append(cmd, headerBytes...)
 		cmd = append(cmd, lineData...) // Datos de la línea de la imagen
 
-		_, err := p.connector.Write(cmd)
+		_, err := p.Connector.Write(cmd)
 		if err != nil {
 			return fmt.Errorf("BitImageColumnFormat: falló al enviar la línea de imagen: %w", err)
 		}
@@ -205,7 +205,7 @@ func (p *Printer) SetColor(color int) error {
 	}
 	// ESC r n - n=0: Color 1, 1: Color 2
 	cmd := []byte{ESC, 'r', byte(color)}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -217,7 +217,7 @@ func (p *Printer) SetReverseColors(on bool) error {
 		val = 1
 	}
 	cmd := []byte{GS, 'B', val}
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	return err
 }
 
@@ -506,7 +506,7 @@ func (p *Printer) wrapperSend2dCodeData(fn, cn byte, data []byte, m byte) error 
 	}
 	cmd.Write(data) // d1...dk
 
-	_, err = p.connector.Write(cmd.Bytes())
+	_, err = p.Connector.Write(cmd.Bytes())
 	return err
 }
 
@@ -537,6 +537,6 @@ func (p *Printer) wrapperSendGraphicsData(m, fn byte, data []byte) error {
 	cmd.WriteByte(fn)               // fn
 	cmd.Write(data)                 // [data]
 
-	_, err = p.connector.Write(cmd.Bytes())
+	_, err = p.Connector.Write(cmd.Bytes())
 	return err
 }

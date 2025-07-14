@@ -2,13 +2,13 @@
 package main
 
 import (
-	"strconv"
-
 	// "fmt"
 	"log"
 	"os"
-	"pos-daemon.adcon.dev/internal/platform/windows"
+	"strconv"
+
 	"pos-daemon.adcon.dev/internal/ticket"
+	"pos-daemon.adcon.dev/pkg/escpos/connectors"
 
 	// "time" // Descomentar si necesitas pausas
 	"pos-daemon.adcon.dev/internal/config"
@@ -53,9 +53,9 @@ func main() {
 
 	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
 
-	// --- 1. Crear una instancia del PrintConnector ---
+	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := windows.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := connectors.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}

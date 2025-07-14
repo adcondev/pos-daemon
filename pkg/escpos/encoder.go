@@ -28,7 +28,7 @@ func (p *Printer) SelectCharacterTable(table int) error {
 		cmd = []byte{ESC, 't', byte(table)}
 	}
 
-	_, err := p.connector.Write(cmd)
+	_, err := p.Connector.Write(cmd)
 	if err == nil {
 		p.characterTable = table // Actualizar el estado interno si la escritura fue exitosa
 	}
