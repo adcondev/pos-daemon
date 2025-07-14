@@ -91,6 +91,8 @@ type Ticket struct {
 	SucursalCP              string `json:"sucursal_cp"`
 	SucursalPais            string `json:"sucursal_pais"`
 	SucursalEmail           string `json:"sucursal_email"`
+	AutofacturaLink         string `json:"autofactura_link"`
+	AutofacturaLinkQr       string `json:"autofactura_link_qr"`
 
 	// movimientos
 	Conceptos      []Concepto      `json:"conceptos"`

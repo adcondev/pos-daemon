@@ -8,6 +8,8 @@ import (
 	"image"
 	"io"
 	"math"
+
+	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 const (
@@ -417,24 +419,24 @@ func (ei *Image) isBlack(x, y int) bool {
 // long=true: formatar como 2 bytes (nL nH)
 // long=false: formatar como 1 byte
 func dataHeader(inputs []int, long bool) ([]byte, error) {
-	var outp bytes.Buffer
+	var buf bytes.Buffer
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			data, err := intLowHigh(input, 2)
+			data, err := intLowHigh(input, cons.DimensionBytes)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
-			outp.Write(data)
+			buf.Write(data)
 		} else {
 			// Formato de 1 byte - rango 0 a 255
 			if input < 0 || input > 255 {
 				return nil, fmt.Errorf("dataHeader: el entero %d está fuera del rango para un byte único (0-255)", input)
 			}
-			outp.WriteByte(byte(input))
+			buf.WriteByte(byte(input))
 		}
 	}
-	return outp.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // intLowHigh convierte un entero en un slice de bytes en orden bajo-alto (Little Endian).
@@ -461,13 +463,13 @@ func intLowHigh(input, length int) ([]byte, error) {
 		return nil, fmt.Errorf("intLowHigh: la entrada %d está fuera del rango para %d bytes (0-%d)", input, length, maxInput)
 	}
 
-	outp := make([]byte, length)
+	buf := make([]byte, cons.Uint32Size)
 	// Usar encoding/binary para asegurar el orden Little Endian
 	// Convertimos el int a uint32 para usar PutUint32
-	binary.LittleEndian.PutUint32(outp, uint32(input))
+	binary.LittleEndian.PutUint32(buf, uint32(input))
 
 	// Si la longitud es menor a 4, solo tomamos los primeros `length` bytes
-	return outp[:length], nil
+	return buf[:length], nil
 }
 
 // TODO: Revisar ya que comando no existe en impresora

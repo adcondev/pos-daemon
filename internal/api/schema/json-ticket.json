@@ -43,6 +43,8 @@
         "folio": "258",
         "serie": "ABC1",
         "cliente_emails": "jrodriguez@red2000.mx",
+        "autofactura_link": "https:\/\/www.youtube.com\/",
+        "autofactura_link_qr": "https:\/\/eclinepos.com\/Descargas\/ControladoresZip\/Impresoras\/EC-PM-80250\/EC-80XXX%20Programmer%20Manual%20V6_1.pdf",
         "conceptos": [
             {
                 "clave": "PRO000037",

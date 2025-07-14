@@ -48,6 +48,8 @@
         "folio": { "type": "string" },
         "serie": { "type": "string" },
         "cliente_emails": { "type": "string" },
+        "autofactura_link": { "type": "string" },
+        "autofactura_link_qr": { "type": "string" },
         "conceptos": {
           "type": "array",
           "items": {
