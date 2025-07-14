@@ -18,6 +18,9 @@ const (
 	// Tamaño recomendado para QR y otras imágenes en tickets
 	DefaultPrintSize = 256
 	MaxPrintSize     = 576
+
+	// Threshold
+	DefaultThreshold = 128
 )
 
 // ImageWithDithering procesa una imagen con dithering y la imprime
@@ -56,13 +59,13 @@ func ProcessImageWithDithering(img image.Image, ditherMethod int, size int) (ima
 	switch ditherMethod {
 	case DitherNone:
 		// No aplicar dithering, solo binarizar con un threshold
-		return ThresholdImage(grayImg, 128), nil
+		return ThresholdImage(grayImg, DefaultThreshold), nil
 
 	case DitherFloydStein:
-		return FloydSteinbergDither(grayImg, 128), nil
+		return FloydSteinbergDither(grayImg, DefaultThreshold), nil
 
 	case DitherOrdered:
-		return OrderedDither(grayImg, 128), nil
+		return OrderedDither(grayImg, DefaultThreshold), nil
 
 	default:
 		return nil, fmt.Errorf("método de dithering no soportado: %d", ditherMethod)
