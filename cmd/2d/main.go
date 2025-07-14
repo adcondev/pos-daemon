@@ -214,36 +214,32 @@ func main() {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
-	// Opción 2: Graphics - mejor calidad, pero requiere impresora compatible
-	// if err = printer.Graphics(escposQR, escpos.IMG_DEFAULT); err != nil {
-	//	log.Printf("Error al imprimir QR con Graphics: %v", err)
-	// }
+	logoPath := "./img/logo.jpeg"
+	if _, err := os.Stat(logoPath); os.IsNotExist(err) {
+		logoPath = "./img/logo.png"
+	}
+	logoFile, err := os.Open(logoPath)
+	if err != nil {
+		log.Fatalf("Error abriendo archivo de logo (%s): %v", logoPath, err)
+	}
+	defer func(logoFile *os.File) {
+		err := logoFile.Close()
+		if err != nil {
+			log.Printf("main: error al cerrar archivo de logo")
+		}
+	}(logoFile)
 
-	// --- Ejemplos de otras funcionalidades (descomentar para probar) ---
-	// NOTA: La compatibilidad con códigos de barras, QR, imágenes, etc.
-	// depende del driver de la impresora y de la configuración de RAW data.
-	// Si el driver intenta interpretar los comandos, podría no funcionar.
-	// Asegúrate de que el driver permita el paso de comandos ESC/POS crudos.
+	// Decodificar según el formato real
+	imgLogo, format, err := image.Decode(logoFile)
+	if err != nil {
+		log.Fatalf("Error decodificando imagen de logo (%s): %v", logoPath, err)
+	}
+	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
-	// Código QR
-	// log.Println("Imprimiendo código QR...")
-	// // Contenido, nivel EC (L, M, Q, H), tamaño (1-16), modelo (1, 2, Micro)
-	// if err = printer.QrCode("https://github.com/your-repo", escpos.QR_ECLEVEL_M, 6, escpos.QR_MODEL_2); err != nil { log.Printf("Error QrCode: %v", err) }
-	// if err = printer.Feed(2); err != nil { log.Printf("Error Feed: %v", err) } // Espacio después del código QR
-
-	// Impresión de imagen (requiere implementar EscposImage y sus métodos)
-	// log.Println("Intentando imprimir imagen...")
-	// // Supongamos que tienes una imagen cargada en un objeto img *escpos.EscposImage
-	// // img, err := escpos.NewEscposImageFromBytes(imageData) // Implementar esta función
-	// // if err == nil {
-	// // 	// Puedes usar BitImage, BitImageColumnFormat o Graphics
-	// // 	if printErr := printer.Graphics(img, escpos.IMG_DEFAULT); printErr != nil {
-	// // 		log.Printf("Error al imprimir imagen: %v", printErr)
-	// // 	}
-	// // 	if feedErr := printer.Feed(2); feedErr != nil { log.Printf("Error Feed: %v", feedErr) }
-	// // } else {
-	// // 	log.Printf("Error al cargar la imagen: %v", err)
-	// // }
+	// Imprimir la imagen con dithering de Floyd-Steinberg
+	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, escpos.DitherFloydStein); err != nil {
+		log.Printf("Error al imprimir logo con dithering: %v", err)
+	}
 
 	// Alimentar papel al final
 	if err = printer.Feed(4); err != nil {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"log"
 	"math"
 
 	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
@@ -25,11 +26,11 @@ const (
 
 // BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
 // Requiere que la imagen sea convertible a formato raster de 1 bit.
-func (p *Printer) BitImage(img *Image, size int) error {
+func (p *Printer) BitImage(img *Image, density int) error {
 	if img == nil {
 		return errors.New("BitImage: la imagen no puede ser nil")
 	}
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
+	if err := validateInteger(density, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
 		return fmt.Errorf("BitImage: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -48,7 +49,7 @@ func (p *Printer) BitImage(img *Image, size int) error {
 
 	// Comando: GS v 0 m xL xH yL yH d1...dk
 	// m es el modo de tamaño (0-3)
-	cmdHeader := []byte{GS, 'v', '0', byte(size)}
+	cmdHeader := []byte{GS, 'v', '0', byte(density)}
 	cmdHeader = append(cmdHeader, headerBytes...)
 
 	_, err = p.Connector.Write(cmdHeader)
@@ -82,7 +83,12 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 		return fmt.Errorf("BitImageColumnFormat: falló al establecer el espaciado de línea: %w", err)
 	}
 	// Asegurar que el espaciado se restablezca incluso si hay un error.
-	defer p.SetLineSpacing(nil) // nil restablece al espaciado por defecto
+	defer func(p *Printer, height *int) {
+		err := p.SetLineSpacing(height)
+		if err != nil {
+			log.Printf("image: error al restablecer espaciado")
+		}
+	}(p, nil) // nil restablece al espaciado por defecto
 
 	// Lógica de densidad basada en los bits del parámetro size.
 	// ESC * m - m define la densidad vertical y horizontal.
