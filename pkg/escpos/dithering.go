@@ -17,19 +17,20 @@ const (
 
 	// Tamaño recomendado para QR y otras imágenes en tickets
 	DefaultPrintSize = 256
+	MaxPrintSize     = 576
 )
 
 // ImageWithDithering procesa una imagen con dithering y la imprime
 // usando el comando de imagen de bits (GS v 0).
 // density: modo de densidad (0-3)
 // ditherMethod: método de dithering a utilizar
-func (p *Printer) ImageWithDithering(img image.Image, density int, ditherMethod int) error {
+func (p *Printer) ImageWithDithering(img image.Image, density int, ditherMethod int, size int) error {
 	if img == nil {
 		return fmt.Errorf("ImageWithDithering: la imagen no puede ser nil")
 	}
 
 	// Procesar la imagen con dithering
-	processedImg, err := ProcessImageWithDithering(img, ditherMethod)
+	processedImg, err := ProcessImageWithDithering(img, ditherMethod, size)
 	if err != nil {
 		return fmt.Errorf("ImageWithDithering: error al procesar la imagen: %w", err)
 	}
@@ -43,9 +44,9 @@ func (p *Printer) ImageWithDithering(img image.Image, density int, ditherMethod 
 
 // ProcessImageWithDithering procesa una imagen con el método de dithering especificado
 // Devuelve una imagen en escala de grises o binaria según el método de dithering
-func ProcessImageWithDithering(img image.Image, ditherMethod int) (image.Image, error) {
+func ProcessImageWithDithering(img image.Image, ditherMethod int, size int) (image.Image, error) {
 	// Redimensionar a 256x256 si es necesario
-	img = ResizeImage(img, DefaultPrintSize, DefaultPrintSize)
+	img = ResizeImage(img, size, size)
 
 	// Convertir a escala de grises primero
 	grayImg := image.NewGray(img.Bounds())

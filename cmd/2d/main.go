@@ -3,7 +3,9 @@ package main
 
 import (
 	"image"
+	_ "image/jpeg"
 	"image/png"
+	_ "image/png"
 	"log"
 	"os"
 
@@ -214,9 +216,9 @@ func main() {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
-	logoPath := "./img/logo.jpeg"
+	logoPath := "./img/perro.jpeg"
 	if _, err := os.Stat(logoPath); os.IsNotExist(err) {
-		logoPath = "./img/logo.png"
+		logoPath = "./img/perro.png"
 	}
 	logoFile, err := os.Open(logoPath)
 	if err != nil {
@@ -237,7 +239,7 @@ func main() {
 	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
 	// Imprimir la imagen con dithering de Floyd-Steinberg
-	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, escpos.DitherFloydStein); err != nil {
+	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, escpos.DitherFloydStein, escpos.MaxPrintSize); err != nil {
 		log.Printf("Error al imprimir logo con dithering: %v", err)
 	}
 

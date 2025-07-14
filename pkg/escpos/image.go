@@ -18,6 +18,7 @@ const (
 	IMG_DEFAULT       int = 0
 	IMG_DOUBLE_WIDTH  int = 1
 	IMG_DOUBLE_HEIGHT int = 2
+	IMG_QUADRUPLE         = 3
 
 	// Color (para impresoras con múltiples colores)
 	COLOR_1 int = 0 // Color 1 (generalmente negro)
