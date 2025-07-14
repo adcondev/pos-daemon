@@ -7,13 +7,32 @@ import (
 	"fmt"
 	"image"
 	"io"
-	// "io"
 	"math"
 	"os"
 	"regexp"
 	"strings"
 
 	"golang.org/x/text/encoding/charmap"
+)
+
+const (
+	// Tipos de estado (para comandos de estado, no implementados como métodos públicos en PHP)
+	// Se incluyen por completitud de las constantes PHP
+	STATUS_PRINTER       int = 1 // GS I 1 (Estado de la impresora)
+	STATUS_OFFLINE_CAUSE int = 2 // GS I 2 (Causa de estar offline)
+	STATUS_ERROR_CAUSE   int = 3 // GS I 3 (Causa del error)
+	STATUS_PAPER_ROLL    int = 4 // GS I 4 (Estado del rollo de papel)
+	STATUS_INK_A         int = 7 // GS I 7 (Estado de la tinta/cinta A)
+	STATUS_INK_B         int = 6 // GS I 6 (Estado de la tinta/cinta B)
+	STATUS_PEELER        int = 8 // GS I 8 (Estado del peeler - para etiquetas)
+
+	// Modo de corte de papel
+	CUT_FULL    int = 65 // 'A'
+	CUT_PARTIAL int = 66 // 'B'
+
+	// Opciones de PDF417
+	PDF417_STANDARD  int = 0
+	PDF417_TRUNCATED int = 1
 )
 
 // PrintConnector define la interfaz para la conexión física con la impresora.
@@ -63,93 +82,6 @@ func LoadProfile(name string) (*CapabilityProfile, error) {
 	}
 	return nil, fmt.Errorf("perfil de capacidad desconocido: %s", name)
 }
-
-// Constantes ESC/POS y parámetros.
-const (
-	NUL byte = 0x00 // Null
-	LF  byte = 0x0a // Line Feed
-	ESC byte = 0x1b // Escape
-	FS  byte = 0x1c // Field Separator / Group Separator
-	FF  byte = 0x0c // Form Feed
-	GS  byte = 0x1d // Group Separator
-
-	// Códigos de barras
-	BARCODE_UPCA    int = 65 // 'A'
-	BARCODE_UPCE    int = 66 // 'B'
-	BARCODE_JAN13   int = 67 // 'C' (EAN13)
-	BARCODE_JAN8    int = 68 // 'D' (EAN8)
-	BARCODE_CODE39  int = 69 // 'E'
-	BARCODE_ITF     int = 70 // 'F'
-	BARCODE_CODABAR int = 71 // 'G'
-	BARCODE_CODE93  int = 72 // 'H'
-	BARCODE_CODE128 int = 73 // 'I'
-
-	// Posición del texto del código de barras
-	BARCODE_TEXT_NONE  int = 0
-	BARCODE_TEXT_ABOVE int = 1
-	BARCODE_TEXT_BELOW int = 2
-
-	// Color (para impresoras con múltiples colores)
-	COLOR_1 int = 0 // Color 1 (generalmente negro)
-	COLOR_2 int = 1 // Color 2 (generalmente rojo)
-
-	// Modo de corte de papel
-	CUT_FULL    int = 65 // 'A'
-	CUT_PARTIAL int = 66 // 'B'
-
-	// Fuentes
-	FONT_A int = 0
-	FONT_B int = 1
-	FONT_C int = 2
-
-	// Tamaño de imagen (para comandos Bit Image)
-	IMG_DEFAULT       int = 0
-	IMG_DOUBLE_WIDTH  int = 1
-	IMG_DOUBLE_HEIGHT int = 2
-
-	// Justificación del texto
-	JUSTIFY_LEFT   int = 0
-	JUSTIFY_CENTER int = 1
-	JUSTIFY_RIGHT  int = 2
-
-	// Modo de impresión (combinación de bits para ESC !)
-	MODE_FONT_A        int = 0   // Bit 0 OFF for Font A
-	MODE_FONT_B        int = 1   // Bit 0 ON for Font B
-	MODE_EMPHASIZED    int = 8   // Bit 3 ON (Negrita)
-	MODE_DOUBLE_HEIGHT int = 16  // Bit 4 ON (Doble Altura)
-	MODE_DOUBLE_WIDTH  int = 32  // Bit 5 ON (Doble Ancho)
-	MODE_UNDERLINE     int = 128 // Bit 7 ON (Subrayado)
-
-	// Opciones de PDF417
-	PDF417_STANDARD  int = 0
-	PDF417_TRUNCATED int = 1
-
-	// Niveles de corrección de error QR (aproximados)
-	QR_ECLEVEL_L int = 0 // 7%
-	QR_ECLEVEL_M int = 1 // 15%
-	QR_ECLEVEL_Q int = 2 // 25%
-	QR_ECLEVEL_H int = 3 // 30%
-
-	// Modelos de QR
-	QR_MODEL_1 int = 1
-	QR_MODEL_2 int = 2
-	QR_MICRO   int = 3
-
-	// Tipos de estado (para comandos de estado, no implementados como métodos públicos en PHP)
-	// Se incluyen por completitud de las constantes PHP
-	STATUS_PRINTER       int = 1 // GS I 1 (Estado de la impresora)
-	STATUS_OFFLINE_CAUSE int = 2 // GS I 2 (Causa de estar offline)
-	STATUS_ERROR_CAUSE   int = 3 // GS I 3 (Causa del error)
-	STATUS_PAPER_ROLL    int = 4 // GS I 4 (Estado del rollo de papel)
-	STATUS_INK_A         int = 7 // GS I 7 (Estado de la tinta/cinta A)
-	STATUS_INK_B         int = 6 // GS I 6 (Estado de la tinta/cinta B)
-	STATUS_PEELER        int = 8 // GS I 8 (Estado del peeler - para etiquetas)
-
-	// Tipo de subrayado
-	UNDERLINE_NONE   int = 0
-	UNDERLINE_SINGLE int = 1
-	UNDERLINE_DOUBLE int = 2
-)
 
 // Printer representa una impresora térmica ESC/POS.
 type Printer struct {
@@ -218,170 +150,6 @@ func (p *Printer) Initialize() error {
 	return err
 }
 
-// Text envía una cadena de texto a la impresora.
-// Maneja los saltos de línea '\n' convirtiéndolos a LF.
-func (p *Printer) Text(str string) error {
-	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
-	bytesToSend := strings.ReplaceAll(str, "\n", string(LF))
-	_, err := p.connector.Write(toCP858(bytesToSend))
-	return err
-}
-
-// TextRaw envía una cadena de texto (o bytes) a la impresora sin procesar.
-func (p *Printer) TextRaw(str string) error {
-	_, err := p.connector.Write([]byte(str))
-	return err
-}
-
-// TextChinese TODO envía texto en chino.
-// Esta es una implementación placeholder ya que la conversión de codificación
-// (UTF-8 a GBK) es compleja y requiere librerías externas en Go.
-// Los comandos de activación/desactivación de modo chino (FS & / FS .) se incluyen.
-func (p *Printer) TextChinese(str string) error {
-	// Activar modo de caracteres chinos (FS &)
-	cmd := []byte{FS, '&'}
-
-	// --- Placeholder: Conversión de UTF-8 a GBK ---
-	// En una implementación real, usarías un paquete como golang.org/x/text/encoding/chinese
-	// gbkEncoder := chinese.GBK.NewEncoder()
-	// gbkBytes, err := gbkEncoder.Bytes([]byte(str))
-	// if err != nil {
-	//     return fmt.Errorf("falló al codificar texto chino a GBK: %w", err)
-	// }
-	// cmd = append(cmd, gbkBytes...)
-	// --- Fin Placeholder ---
-
-	// Para demostración, enviar los bytes UTF-8 directamente (probablemente imprimirá basura si la impresora no está configurada para UTF-8)
-	cmd = append(cmd, []byte(str)...)
-
-	// Desactivar modo de caracteres chinos (FS .)
-	cmd = append(cmd, FS, '.')
-
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// Cut corta el papel.
-// mode puede ser CUT_FULL o CUT_PARTIAL. lines es el número de líneas para alimentar antes de cortar (0-255).
-func (p *Printer) Cut(mode int, lines int) error {
-	// PHP usa chr(mode) donde mode es 65 ('A') o 66 ('B').
-	// El comando estándar es GS V m [n], donde m es 0,1,48,49 (full/partial)
-	// o m es 65,66 ('A'/'B') con un parámetro n adicional para líneas de avance.
-	// Replicamos el comportamiento de PHP usando 'A' o 'B' y el parámetro lines.
-	if err := validateInteger(mode, CUT_FULL, CUT_PARTIAL, "Cut", "modo"); err != nil {
-		return fmt.Errorf("Cut: %w", err)
-	} // 65 ('A') o 66 ('B')
-	if err := validateInteger(lines, 0, 255, "Cut", "líneas"); err != nil {
-		return fmt.Errorf("Cut: %w", err)
-	}
-
-	cmd := []byte{GS, 'V', byte(mode), byte(lines)} // GS V 'A'/'B' n
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// Feed avanza el papel el número especificado de líneas.
-func (p *Printer) Feed(lines int) error {
-	if err := validateInteger(lines, 1, 255, "Feed", "líneas"); err != nil {
-		return fmt.Errorf("Feed: %w", err)
-	}
-	if lines <= 1 {
-		// Usar solo LF para una línea es un poco más rápido a veces
-		_, err := p.connector.Write([]byte{LF})
-		return err
-	}
-	// ESC d n - Imprime los datos del búfer y alimenta n líneas
-	cmd := []byte{ESC, 'd', byte(lines)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// FeedReverse retrocede el papel el número especificado de líneas.
-func (p *Printer) FeedReverse(lines int) error {
-	if err := validateInteger(lines, 1, 255, "FeedReverse", "líneas"); err != nil {
-		return fmt.Errorf("FeedReverse: %w", err)
-	}
-	// ESC e n - Alimenta el papel hacia atrás n líneas
-	cmd := []byte{ESC, 'e', byte(lines)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// FeedForm alimenta el papel hasta el principio del siguiente formulario (poco común en impresoras de recibos).
-func (p *Printer) FeedForm() error {
-	// FF - Form Feed
-	_, err := p.connector.Write([]byte{FF})
-	return err
-}
-
-// Release envía un comando (ESC q) que PHP describe como "liberar la impresora del estado de espera".
-// Este comando NO es ESC/POS estándar y es probable que sea específico del fabricante (como Star).
-func (p *Printer) Release() error {
-	// Advertencia: ESC q es probablemente específico del fabricante y no estándar ESC/POS.
-	_, err := p.connector.Write([]byte{ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
-	return err
-}
-
-// SetJustification establece la alineación del texto (izquierda, centro, derecha).
-func (p *Printer) SetJustification(justification int) error {
-	if err := validateInteger(justification, JUSTIFY_LEFT, JUSTIFY_RIGHT, "SetJustification", "justificación"); err != nil {
-		return fmt.Errorf("SetJustification: %w", err)
-	}
-	// ESC a n - n=0: izquierda, 1: centro, 2: derecha
-	cmd := []byte{ESC, 'a', byte(justification)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetFont establece la fuente (A, B o C).
-func (p *Printer) SetFont(font int) error {
-	if err := validateInteger(font, FONT_A, FONT_C, "SetFont", "fuente"); err != nil {
-		return fmt.Errorf("SetFont: %w", err)
-	}
-	// ESC M n - n=0: Fuente A, 1: Fuente B, 2: Fuente C
-	cmd := []byte{ESC, 'M', byte(font)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetEmphasis habilita o deshabilita el modo enfatizado (negrita).
-func (p *Printer) SetEmphasis(on bool) error {
-	// ESC E n - n=1: habilitar, n=0: deshabilitar
-	val := byte(0)
-	if on {
-		val = 1
-	}
-	cmd := []byte{ESC, 'E', val}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetDoubleStrike habilita o deshabilita el modo doble golpeo.
-func (p *Printer) SetDoubleStrike(on bool) error {
-	// ESC G n - n=1: habilitar, n=0: deshabilitar
-	val := byte(0)
-	if on {
-		val = 1
-	}
-	cmd := []byte{ESC, 'G', val}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetUnderline establece el modo de subrayado (ninguno, simple, doble).
-// Puede aceptar 0 (none), 1 (single), 2 (double).
-func (p *Printer) SetUnderline(underline int) error {
-	// La clase PHP también acepta booleanos y los convierte.
-	// En Go, la validación de tipo estática nos da la garantía, así que solo validamos el rango entero.
-	if err := validateInteger(underline, UNDERLINE_NONE, UNDERLINE_DOUBLE, "SetUnderline", "subrayado"); err != nil {
-		return fmt.Errorf("SetUnderline: %w", err)
-	}
-	// ESC - n - n=0: ninguno, 1: simple, 2: doble
-	cmd := []byte{ESC, '-', byte(underline)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
 // SetColor establece el color de impresión (para impresoras con múltiples colores).
 // color puede ser COLOR_1 (negro) o COLOR_2 (rojo).
 func (p *Printer) SetColor(color int) error {
@@ -404,270 +172,6 @@ func (p *Printer) SetReverseColors(on bool) error {
 	cmd := []byte{GS, 'B', val}
 	_, err := p.connector.Write(cmd)
 	return err
-}
-
-// SetTextSize establece el tamaño del texto usando multiplicadores de ancho y alto (1-8).
-func (p *Printer) SetTextSize(widthMultiplier, heightMultiplier int) error {
-	if err := validateInteger(widthMultiplier, 1, 8, "SetTextSize", "multiplicador de ancho"); err != nil {
-		return fmt.Errorf("SetTextSize: %w", err)
-	}
-	if err := validateInteger(heightMultiplier, 1, 8, "SetTextSize", "multiplicador de alto"); err != nil {
-		return fmt.Errorf("SetTextSize: %w", err)
-	}
-	// GS ! n - n es una combinación de bits de los multiplicadores (ancho-1) * 16 + (alto-1)
-	c := byte(((widthMultiplier - 1) << 4) | (heightMultiplier - 1))
-	cmd := []byte{GS, '!', c}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetLineSpacing establece el espaciado entre líneas.
-// Si height es nil, restablece al espaciado por defecto (ESC 2).
-// Si height no es nil, establece el espaciado a height/180 o height/203 pulgadas (ESC 3 n).
-func (p *Printer) SetLineSpacing(height *int) error {
-	if height == nil {
-		// ESC 2 - Restablecer espaciado de línea por defecto
-		_, err := p.connector.Write([]byte{ESC, '2'})
-		return err
-	}
-	if err := validateInteger(*height, 1, 255, "SetLineSpacing", "altura"); err != nil {
-		return fmt.Errorf("SetLineSpacing: %w", err)
-	}
-	// ESC 3 n - Establecer espaciado de línea a n
-	cmd := []byte{ESC, '3', byte(*height)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetPrintLeftMargin establece el margen izquierdo de impresión en puntos.
-func (p *Printer) SetPrintLeftMargin(margin int) error {
-	if err := validateInteger(margin, 0, 65535, "SetPrintLeftMargin", "margen"); err != nil {
-		return fmt.Errorf("SetPrintLeftMargin: %w", err)
-	}
-	// GS L nL nH - Establece el margen izquierdo a nL + nH * 256 puntos
-	marginBytes, err := intLowHigh(margin, 2) // 2 bytes (nL nH)
-	if err != nil {
-		return fmt.Errorf("SetPrintLeftMargin: falló al formatear bytes del margen: %w", err)
-	}
-	cmd := []byte{GS, 'L'}
-	cmd = append(cmd, marginBytes...)
-	_, err = p.connector.Write(cmd)
-	return err
-}
-
-// SetPrintWidth establece el ancho del área de impresión en puntos.
-func (p *Printer) SetPrintWidth(width int) error {
-	if err := validateInteger(width, 1, 65535, "SetPrintWidth", "ancho"); err != nil {
-		return fmt.Errorf("SetPrintWidth: %w", err)
-	}
-	// GS W nL nH - Establece el ancho del área de impresión a nL + nH * 256 puntos
-	widthBytes, err := intLowHigh(width, 2) // 2 bytes (nL nH)
-	if err != nil {
-		return fmt.Errorf("SetPrintWidth: falló al formatear bytes del ancho: %w", err)
-	}
-	cmd := []byte{GS, 'W'}
-	cmd = append(cmd, widthBytes...)
-	_, err = p.connector.Write(cmd)
-	return err
-}
-
-// SetPrintBuffer no se porta directamente ya que el manejo del texto se simplificó.
-// La funcionalidad de `PrintBuffer` (manejo de \n y escritura raw)
-// está cubierta por `Text` y `TextRaw`.
-
-// SetBarcodeHeight establece la altura del código de barras en puntos.
-func (p *Printer) SetBarcodeHeight(height int) error {
-	if err := validateInteger(height, 1, 255, "SetBarcodeHeight", "altura"); err != nil {
-		return fmt.Errorf("SetBarcodeHeight: %w", err)
-	}
-	// GS h n - Establece la altura del código de barras a n puntos
-	cmd := []byte{GS, 'h', byte(height)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetBarcodeWidth establece el ancho de los módulos del código de barras.
-func (p *Printer) SetBarcodeWidth(width int) error {
-	if err := validateInteger(width, 1, 255, "SetBarcodeWidth", "ancho"); err != nil {
-		return fmt.Errorf("SetBarcodeWidth: %w", err)
-	}
-	// GS w n - Establece el ancho horizontal de los módulos a n (normalmente 2 o 3)
-	cmd := []byte{GS, 'w', byte(width)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// SetBarcodeTextPosition establece la posición del texto legible del código de barras.
-func (p *Printer) SetBarcodeTextPosition(position int) error {
-	if err := validateInteger(position, BARCODE_TEXT_NONE, BARCODE_TEXT_BELOW, "SetBarcodeTextPosition", "posición"); err != nil {
-		return fmt.Errorf("SetBarcodeTextPosition: %w", err)
-	} // 0: ninguno, 1: arriba, 2: abajo, 3: ambos (no siempre soportado) - PHP valida 0-3
-	cmd := []byte{GS, 'H', byte(position)}
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// Barcode imprime un código de barras.
-// content es la cadena de datos del código de barras.
-// barType es el tipo de código de barras (BARCODE_UPCA, BARCODE_CODE39, etc.).
-func (p *Printer) Barcode(content string, barType int) error {
-	if err := validateInteger(barType, BARCODE_UPCA, BARCODE_CODE128, "Barcode", "tipo de código de barras"); err != nil {
-		return fmt.Errorf("Barcode: %w", err)
-	}
-	contentLen := len(content)
-
-	// --- Validación de contenido basada en el tipo de código de barras (traducir regex y longitud) ---
-	var validationErr error
-	switch barType {
-	case BARCODE_UPCA:
-		validationErr = validateStringRegex(content, `^[0-9]{11,12}$`, "contenido UPCA")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 11, 12, "Barcode", "longitud contenido UPCA")
-		}
-	case BARCODE_UPCE:
-		validationErr = validateStringRegex(content, `^([0-9]{6,8}|[0-9]{11,12})$`, "contenido UPCE")
-		if validationErr == nil {
-			validationErr = validateIntegerMulti(contentLen, [][]int{{6, 8}, {11, 12}}, "Barcode", "longitud contenido UPCE")
-		}
-	case BARCODE_JAN13:
-		validationErr = validateStringRegex(content, `^[0-9]{12,13}$`, "contenido JAN13")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 12, 13, "Barcode", "longitud contenido JAN13")
-		}
-	case BARCODE_JAN8:
-		validationErr = validateStringRegex(content, `^[0-9]{7,8}$`, "contenido JAN8")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 7, 8, "Barcode", "longitud contenido JAN8")
-		}
-	case BARCODE_CODE39:
-		// PHP regex: `^([0-9A-Z $%+\-./]+|\*[0-9A-Z $%+\-./]+\*)$`
-		// Requiere un * al principio y al final, o no.
-		validationErr = validateStringRegex(content, `^([0-9A-Z $%+\-./]+|\*[0-9A-Z $%+\-./]+\*)$`, "contenido CODE39")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 1, 255, "Barcode", "longitud contenido CODE39")
-		}
-	case BARCODE_ITF:
-		// PHP regex: `^([0-9]{2})+$` - requiere solo dígitos y longitud par.
-		validationErr = validateStringRegex(content, `^([0-9]{2})+$`, "contenido ITF")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 2, 255, "Barcode", "longitud contenido ITF")
-		}
-		// Validar longitud par
-		if validationErr == nil && contentLen%2 != 0 {
-			validationErr = errors.New("la longitud del contenido ITF debe ser par")
-		}
-	case BARCODE_CODABAR:
-		// PHP regex: `^[A-Da-d][0-9$%+\-./:]+[A-Da-d]$` - inicia/termina con A-D, medio con dígitos/símbolos.
-		validationErr = validateStringRegex(content, `^[A-Da-d][0-9$%+\-./:]+[A-Da-d]$`, "contenido Codabar")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 1, 255, "Barcode", "longitud contenido Codabar")
-		}
-	case BARCODE_CODE93:
-		// PHP regex: `^[\x00-\x7F]+$` - solo caracteres ASCII.
-		validationErr = validateStringRegex(content, `^[\x00-\x7F]+$`, "contenido CODE93")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 1, 255, "Barcode", "longitud contenido CODE93")
-		}
-	case BARCODE_CODE128:
-		// PHP regex: `^\{[A-C][\\x00-\\x7F]+$` - espera que el contenido empiece con {A, {B o {C y luego ASCII.
-		// Esto es un poco inusual, ya que normalmente el usuario no proporciona los códigos de inicio/función de Code128.
-		// Replicamos la validación de PHP.
-		validationErr = validateStringRegex(content, `^\{[A-C][\x00-\x7F]+$`, "contenido CODE128")
-		if validationErr == nil {
-			validationErr = validateInteger(contentLen, 1, 255, "Barcode", "longitud contenido CODE128")
-		}
-		if validationErr == nil && contentLen < 2 { // Necesita al menos '{' y un carácter de tipo
-			validationErr = errors.New("el contenido Code128 debe tener al menos 2 caracteres ({A, {B, {C...)")
-		}
-	}
-	if validationErr != nil {
-		return fmt.Errorf("Barcode: contenido '%s' inválido para el tipo %d: %w", content, barType, validationErr)
-	}
-	// --- Fin Validación ---
-
-	// Lógica de envío:
-	// PHP usa el comando GS k m d1...dk (m=0-6) si getSupportsBarcodeB() es false.
-	// PHP usa el comando GS k m L d1...dL (m=65-73) si getSupportsBarcodeB() es true.
-	// 'SupportsBarcodeB' en PHP parece referirse al soporte del formato de comando más nuevo (con byte de longitud L).
-
-	cmd := []byte{GS, 'k'}
-	if !p.profile.SupportsBarcodeB {
-		// Usar el formato de comando antiguo: GS k m data NUL (m = 0-6)
-		// Validar que el tipo solicitado esté en el rango 65-71 (correspondiente a m 0-6)
-		if barType < BARCODE_UPCA || barType > BARCODE_CODABAR {
-			return fmt.Errorf("Barcode: el perfil de impresora no soporta el tipo de código de barras %d con el formato de comando antiguo", barType)
-		}
-		cmd = append(cmd, byte(barType-65)) // Tipo de 0 a 6
-		cmd = append(cmd, []byte(content)...)
-		cmd = append(cmd, NUL) // Terminador NUL
-	} else {
-		// Usar el formato de comando nuevo: GS k m L data (m = 65-73)
-		cmd = append(cmd, byte(barType))      // Tipo de 65 a 73
-		cmd = append(cmd, byte(contentLen))   // Byte de longitud L
-		cmd = append(cmd, []byte(content)...) // Datos
-	}
-
-	_, err := p.connector.Write(cmd)
-	return err
-}
-
-// QrCode imprime un código QR.
-func (p *Printer) QrCode(content string, ecLevel int, size int, model int) error {
-	if content == "" {
-		return nil
-	} // No hacer nada si el contenido está vacío, como PHP
-	if !p.profile.SupportsQrCode {
-		return errors.New("los códigos QR no están soportados en este perfil de impresora")
-	}
-
-	if err := validateString(content, "QrCode", "contenido"); err != nil {
-		return fmt.Errorf("QrCode: %w", err)
-	}
-	if err := validateInteger(ecLevel, QR_ECLEVEL_L, QR_ECLEVEL_H, "QrCode", "nivel EC"); err != nil {
-		return fmt.Errorf("QrCode: %w", err)
-	} // 0-3
-	if err := validateInteger(size, 1, 16, "QrCode", "tamaño"); err != nil {
-		return fmt.Errorf("QrCode: %w", err)
-	} // Tamaño del punto (1-16)
-	if err := validateInteger(model, QR_MODEL_1, QR_MICRO, "QrCode", "modelo"); err != nil {
-		return fmt.Errorf("QrCode: %w", err)
-	} // 1, 2, 3
-
-	cn := byte('1') // Código de función 1A (para QR Code) para GS ( k
-
-	// 1. Establecer modelo: GS ( k pL pH cn 41 n1 n2
-	//    cn=1, fn=65 ('A'), n1=49(modelo 1), 50(modelo 2), 51(micro), n2=0
-	//    PHP envía chr(48 + model) para n1. Replicamos.
-	if err := p.wrapperSend2dCodeData(byte(65), cn, []byte{byte(48 + model), 0}, 0); err != nil {
-		return fmt.Errorf("QrCode: falló al establecer el modelo: %w", err)
-	}
-
-	// 2. Establecer tamaño del módulo: GS ( k pL pH cn 67 n
-	//    cn=1, fn=67 ('C'), n=tamaño (1-16)
-	if err := p.wrapperSend2dCodeData(byte(67), cn, []byte{byte(size)}, 0); err != nil {
-		return fmt.Errorf("QrCode: falló al establecer el tamaño: %w", err)
-	}
-
-	// 3. Establecer nivel EC: GS ( k pL pH cn 69 n
-	//    cn=1, fn=69 ('E'), n=nivel EC (0-3)
-	//    PHP envía chr(48 + ecLevel). Replicamos.
-	if err := p.wrapperSend2dCodeData(byte(69), cn, []byte{byte(48 + ecLevel)}, 0); err != nil {
-		return fmt.Errorf("QrCode: falló al establecer el nivel EC: %w", err)
-	}
-
-	// 4. Almacenar datos: GS ( k pL pH cn 80 m d1...dk
-	//    cn=1, fn=80 ('P'), m='0' (modo de procesamiento), d1...dk=contenido
-	if err := p.wrapperSend2dCodeData(byte(80), cn, []byte(content), byte('0')); err != nil {
-		return fmt.Errorf("QrCode: falló al almacenar los datos: %w", err)
-	}
-
-	// 5. Imprimir símbolo: GS ( k pL pH cn 81 m
-	//    cn=1, fn=81 ('Q'), m='0' (modo de impresión)
-	if err := p.wrapperSend2dCodeData(byte(81), cn, []byte{}, byte('0')); err != nil { // Sin datos después de '0'
-		return fmt.Errorf("QrCode: falló al imprimir el símbolo: %w", err)
-	}
-
-	return nil
 }
 
 // Pdf417Code imprime un código PDF417.
@@ -797,181 +301,6 @@ func (p *Printer) SelectCharacterTable(table int) error {
 	return err
 }
 
-// BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
-// Requiere que la imagen sea convertible a formato raster de 1 bit.
-func (p *Printer) BitImage(img *EscposImage, size int) error {
-	if img == nil {
-		return errors.New("BitImage: la imagen no puede ser nil")
-	}
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
-		return fmt.Errorf("BitImage: %w", err)
-	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
-
-	rasterData, err := img.ToRasterFormat() // Requiere implementación real de EscposImage
-	if err != nil {
-		return fmt.Errorf("BitImage: falló al obtener los datos raster: %w", err)
-	}
-
-	// Cabecera de datos: xL xH yL yH
-	// xL xH: ancho en bytes (img.GetWidthBytes()) - 2 bytes
-	// yL yH: alto en puntos (img.GetHeight()) - 2 bytes
-	headerBytes, err := dataHeader([]int{img.GetWidthBytes(), img.GetHeight()}, true) // true para 2 bytes por valor
-	if err != nil {
-		return fmt.Errorf("BitImage: falló al crear la cabecera de datos: %w", err)
-	}
-
-	// Comando: GS v 0 m xL xH yL yH d1...dk
-	// m es el modo de tamaño (0-3)
-	cmdHeader := []byte{GS, 'v', '0', byte(size)}
-	cmdHeader = append(cmdHeader, headerBytes...)
-
-	_, err = p.connector.Write(cmdHeader)
-	if err != nil {
-		return fmt.Errorf("BitImage: falló al enviar la cabecera del comando: %w", err)
-	}
-
-	_, err = p.connector.Write(rasterData) // Enviar los datos de la imagen
-	if err != nil {
-		return fmt.Errorf("BitImage: falló al enviar los datos raster: %w", err)
-	}
-
-	return nil
-}
-
-// BitImageColumnFormat imprime una imagen utilizando el comando de modo gráfico (ESC *).
-// Este comando imprime por líneas de 8 o 24 puntos verticales.
-func (p *Printer) BitImageColumnFormat(img *EscposImage, size int) error {
-	if img == nil {
-		return errors.New("BitImageColumnFormat: la imagen no puede ser nil")
-	}
-	// PHP valida size 0-3. La lógica interna usa los bits 1 y 2.
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImageColumnFormat", "tamaño"); err != nil {
-		return fmt.Errorf("BitImageColumnFormat: %w", err)
-	}
-
-	// La clase PHP establece el espaciado de línea a 16 (ESC 3 16) antes de imprimir líneas de imagen
-	// y lo restablece después. Esto es necesario para que las líneas de imagen no tengan espacio entre ellas.
-	if err := p.SetLineSpacing(intPtr(16)); err != nil {
-		return fmt.Errorf("BitImageColumnFormat: falló al establecer el espaciado de línea: %w", err)
-	}
-	// Asegurar que el espaciado se restablezca incluso si hay un error.
-	defer p.SetLineSpacing(nil) // nil restablece al espaciado por defecto
-
-	// Lógica de densidad basada en los bits del parámetro size.
-	// ESC * m - m define la densidad vertical y horizontal.
-	// m=0: 8 puntos verticales, densidad horizontal normal.
-	// m=1: 8 puntos verticales, doble densidad horizontal.
-	// m=32: 24 puntos verticales, densidad horizontal normal.
-	// m=33: 24 puntos verticales, doble densidad horizontal.
-	// La lógica de PHP basada en IMG_DOUBLE_HEIGHT (2) e IMG_DOUBLE_WIDTH (1) parece un poco confusa
-	// en comparación con la documentación estándar (donde "doble" en IMG_DOUBLE_... suele significar "menos denso" en términos de puntos por pulgada física, resultando en caracteres más grandes).
-	// Vamos a interpretar el significado de los bits 1 y 2 de `size` de la manera más estándar:
-	// Si IMG_DOUBLE_HEIGHT (bit 1, valor 2) está activado, usa 8 puntos verticales (m sin bit 5/32).
-	// Si IMG_DOUBLE_WIDTH (bit 2, valor 1) está activado, usa densidad horizontal normal (m sin bit 0/1).
-	// El modo por defecto (IMG_DEFAULT=0) suele ser 24 puntos verticales, doble densidad horizontal (m=33).
-
-	densityCode := 33 // Valor por defecto: 24 puntos verticales, doble densidad horizontal
-	if (size & IMG_DOUBLE_HEIGHT) == IMG_DOUBLE_HEIGHT {
-		densityCode &^= 32 // Desactivar bit 5 (32) -> 8 puntos verticales
-	}
-	if (size & IMG_DOUBLE_WIDTH) == IMG_DOUBLE_WIDTH {
-		densityCode &^= 1 // Desactivar bit 0 (1) -> densidad horizontal normal
-	}
-
-	// Determinar si la conversión de la imagen debe usar alta densidad vertical (24 puntos)
-	// basándose en el `densityCode` calculado. Si el bit 5 (32) está activo, sí.
-	useHighDensityVerticalForConversion := (densityCode & 32) != 0
-
-	colFormatData, err := img.ToColumnFormat(useHighDensityVerticalForConversion) // Requiere implementación real
-	if err != nil {
-		return fmt.Errorf("BitImageColumnFormat: falló al obtener los datos en formato de columna: %w", err)
-	}
-
-	// Cabecera de datos: nL nH (número de puntos horizontales) - 2 bytes
-	headerBytes, err := dataHeader([]int{img.GetWidth()}, true) // true para 2 bytes (ancho en puntos)
-	if err != nil {
-		return fmt.Errorf("BitImageColumnFormat: falló al crear la cabecera de datos: %w", err)
-	}
-
-	for _, lineData := range colFormatData {
-		// Comando para cada línea: ESC * m nL nH d1...dk
-		cmd := []byte{ESC, '*', byte(densityCode)}
-		cmd = append(cmd, headerBytes...)
-		cmd = append(cmd, lineData...) // Datos de la línea de la imagen
-
-		_, err := p.connector.Write(cmd)
-		if err != nil {
-			return fmt.Errorf("BitImageColumnFormat: falló al enviar la línea de imagen: %w", err)
-		}
-
-		// Avanzar papel una línea después de imprimir cada segmento de imagen vertical.
-		// PHP hace esto con `feed()`.
-		if err := p.Feed(1); err != nil {
-			return fmt.Errorf("BitImageColumnFormat: falló al alimentar después de la línea: %w", err)
-		}
-	}
-
-	// El espaciado de línea se restablece automáticamente debido a `defer`.
-
-	return nil
-}
-
-// Graphics imprime una imagen utilizando los comandos de gráfico GS ( L.
-// Este método es a menudo más robusto para imágenes grandes o de alta calidad.
-func (p *Printer) Graphics(img *EscposImage, size int) error {
-	if img == nil {
-		return errors.New("Graphics: la imagen no puede ser nil")
-	}
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "Graphics", "tamaño"); err != nil {
-		return fmt.Errorf("Graphics: %w", err)
-	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
-
-	rasterData, err := img.ToRasterFormat() // Requiere implementación real
-	if err != nil {
-		return fmt.Errorf("Graphics: falló al obtener los datos raster: %w", err)
-	}
-
-	// Cabecera de imagen: xL xH yL yH (ancho en puntos, alto en puntos) - 2 bytes cada uno
-	imgHeaderBytes, err := dataHeader([]int{img.GetWidth(), img.GetHeight()}, true) // true para 2 bytes por valor
-	if err != nil {
-		return fmt.Errorf("Graphics: falló al crear la cabecera de imagen: %w", err)
-	}
-
-	// Construir los datos para el comando 'p' (imprimir datos gráficos definidos por el usuario)
-	// Formato: tono xm ym colors imgHeader rasterData
-	// tono: '0' (normal)
-	// xm: multiplicador horizontal ('1' o '2')
-	// ym: multiplicador vertical ('1' o '2')
-	// colors: '1' (1 bit por píxel)
-	// PHP usa chr(1) o chr(2) para xm/ym. Replicamos.
-	xm := byte(1)
-	if (size & IMG_DOUBLE_WIDTH) == IMG_DOUBLE_WIDTH {
-		xm = 2
-	}
-	ym := byte(1)
-	if (size & IMG_DOUBLE_HEIGHT) == IMG_DOUBLE_HEIGHT {
-		ym = 2
-	}
-
-	graphicsDataP := []byte{'0', xm, ym, '1'}                // tono, xm, ym, colors
-	graphicsDataP = append(graphicsDataP, imgHeaderBytes...) // Cabecera de imagen
-	graphicsDataP = append(graphicsDataP, rasterData...)     // Datos raster
-
-	// Enviar comando para definir/imprimir los datos gráficos (fn='p')
-	// El wrapper calcula pL pH.
-	if err := p.wrapperSendGraphicsData(byte('0'), byte('p'), graphicsDataP); err != nil {
-		return fmt.Errorf("Graphics: falló al enviar los datos gráficos (fn 'p'): %w", err)
-	}
-
-	// Enviar comando para imprimir el último dato gráfico definido (fn='2')
-	// Este comando no tiene datos adicionales después de m y fn.
-	if err := p.wrapperSendGraphicsData(byte('0'), byte('2'), []byte{}); err != nil {
-		return fmt.Errorf("Graphics: falló al enviar el comando de impresión (fn '2'): %w", err)
-	}
-
-	return nil
-}
-
 // Close finaliza la conexión con la impresora.
 func (p *Printer) Close() error {
 	return p.connector.Close()
@@ -1072,11 +401,11 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			bytes, err := intLowHigh(input, 2)
+			data, err := intLowHigh(input, 2)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
-			outp.Write(bytes)
+			outp.Write(data)
 		} else {
 			// Formato de 1 byte - rango 0 a 255
 			if input < 0 || input > 255 {
@@ -1213,9 +542,9 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
+// Image La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
 // debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
-type EscposImage struct {
+type Image struct {
 	img              image.Image
 	threshold        uint8
 	width            int
@@ -1225,9 +554,9 @@ type EscposImage struct {
 	columnFormatLow  [][]byte
 }
 
-func NewEscposImage(img image.Image, threshold uint8) *EscposImage {
+func NewEscposImage(img image.Image, threshold uint8) *Image {
 	bounds := img.Bounds()
-	return &EscposImage{
+	return &Image{
 		img:       img,
 		threshold: threshold,
 		width:     bounds.Dx(),
@@ -1235,7 +564,7 @@ func NewEscposImage(img image.Image, threshold uint8) *EscposImage {
 	}
 }
 
-func NewEscposImageFromFile(filename string, threshold uint8) (*EscposImage, error) {
+func NewEscposImageFromFile(filename string, threshold uint8) (*Image, error) {
 	file, err := openFile(filename)
 	if err != nil {
 		return nil, err
@@ -1249,7 +578,7 @@ func NewEscposImageFromFile(filename string, threshold uint8) (*EscposImage, err
 	return NewEscposImageFromReader(file, threshold)
 }
 
-func NewEscposImageFromReader(reader io.Reader, threshold uint8) (*EscposImage, error) {
+func NewEscposImageFromReader(reader io.Reader, threshold uint8) (*Image, error) {
 	img, _, err := image.Decode(reader)
 	if err != nil {
 		return nil, fmt.Errorf("error decodificando la image: %w", err)
@@ -1258,23 +587,23 @@ func NewEscposImageFromReader(reader io.Reader, threshold uint8) (*EscposImage, 
 	return NewEscposImage(img, threshold), nil
 }
 
-func NewEscposImageFromBytes(data []byte, threshold uint8) (*EscposImage, error) {
+func NewEscposImageFromBytes(data []byte, threshold uint8) (*Image, error) {
 	return NewEscposImageFromReader(bytes.NewReader(data), threshold)
 }
 
-func (ei *EscposImage) GetWidth() int {
+func (ei *Image) GetWidth() int {
 	return ei.width
 }
 
-func (ei *EscposImage) GetHeight() int {
+func (ei *Image) GetHeight() int {
 	return ei.height
 }
 
-func (ei *EscposImage) GetWidthBytes() int {
+func (ei *Image) GetWidthBytes() int {
 	return (ei.width + 7) / 8
 }
 
-func (ei *EscposImage) ToRasterFormat() ([]byte, error) {
+func (ei *Image) ToRasterFormat() ([]byte, error) {
 	if ei.rasterData == nil {
 		if err := ei.processRasterData(); err != nil {
 			return nil, err
@@ -1283,7 +612,7 @@ func (ei *EscposImage) ToRasterFormat() ([]byte, error) {
 	return ei.rasterData, nil
 }
 
-func (ei *EscposImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
+func (ei *Image) ToColumnFormat(highDensity bool) ([][]byte, error) {
 	if highDensity {
 		if ei.columnFormatHigh == nil {
 			if err := ei.processColumnData(true); err != nil {
@@ -1301,7 +630,7 @@ func (ei *EscposImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
 	return ei.columnFormatLow, nil
 }
 
-func (ei *EscposImage) processRasterData() error {
+func (ei *Image) processRasterData() error {
 	if ei.img == nil {
 		return errors.New("imagen no inicializada")
 	}
@@ -1325,7 +654,7 @@ func (ei *EscposImage) processRasterData() error {
 	return nil
 }
 
-func (ei *EscposImage) processColumnData(highDensity bool) error {
+func (ei *Image) processColumnData(highDensity bool) error {
 	if ei.img == nil {
 		return errors.New("imagen no inicializada")
 	}
@@ -1387,7 +716,7 @@ func (ei *EscposImage) processColumnData(highDensity bool) error {
 	return nil
 }
 
-func (ei *EscposImage) isBlack(x, y int) bool {
+func (ei *Image) isBlack(x, y int) bool {
 	if x < 0 || y < 0 || x >= ei.width || y >= ei.height {
 		return false
 	}

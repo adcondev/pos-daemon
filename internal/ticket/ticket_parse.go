@@ -2,7 +2,6 @@ package ticket
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -26,19 +25,6 @@ func JSONFileToBytes(filepath string) ([]byte, error) {
 	}
 
 	return content, nil
-}
-
-func BytesToJSONFile(data []byte, filename string) error {
-	var jsonCheck interface{}
-	if err := json.Unmarshal(data, &jsonCheck); err != nil {
-		return fmt.Errorf("Invalid JSON data: %w", err)
-	}
-
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return fmt.Errorf("Failed to write to file: %w", err)
-	}
-
-	return nil
 }
 
 func BytesToTicket(b []byte) (*Ticket, error) {
