@@ -2,15 +2,14 @@
 package main
 
 import (
+	"github.com/skip2/go-qrcode"
+	"golang.org/x/image/bmp"
 	"image"
 	_ "image/jpeg"
 	"image/png"
 	_ "image/png"
 	"log"
 	"os"
-
-	"github.com/skip2/go-qrcode"
-	"golang.org/x/image/bmp"
 
 	"pos-daemon.adcon.dev/internal/config"
 	"pos-daemon.adcon.dev/internal/ticket"

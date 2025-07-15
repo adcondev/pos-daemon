@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"math"
-
 	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
