@@ -14,8 +14,10 @@
           "description": "Indica si el registro de depuración está habilitado"
         }
       },
-      "required": ["Printer", "DebugLog"]
+      "required": ["Printer", "DebugLog"],
+      "additionalProperties": false
     }
   },
-  "required": ["data"]
+  "required": ["data"],
+  "additionalProperties": false
 }

@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"pos-daemon.adcon.dev/internal/config"
+	"pos-daemon.adcon.dev/internal/local_config"
 	"pos-daemon.adcon.dev/internal/ticket"
 	"pos-daemon.adcon.dev/pkg/escpos"
 	"pos-daemon.adcon.dev/pkg/escpos/connectors"
@@ -19,15 +19,15 @@ import (
 )
 
 func main() {
-	jsonBytes, err := config.JSONFileToBytes("./internal/api/schema/json-config.json")
+	jsonBytes, err := local_config.JSONFileToBytes("./internal/api/schema/local_config.json")
 	if err != nil {
-		log.Printf("Error al leer archivo JSON de config: %v", err)
+		log.Printf("Error al leer archivo JSON de local_config: %v", err)
 		return
 	}
 
-	dataConfig := &config.Config{}
+	dataConfig := &local_config.LocalConfig{}
 
-	dataConfig, err = config.BytesToConfig(jsonBytes)
+	dataConfig, err = local_config.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -96,7 +96,7 @@ func main() {
 	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
 
-	jsonBytes, err = ticket.JSONFileToBytes("./internal/api/schema/json-ticket.json")
+	jsonBytes, err = ticket.JSONFileToBytes("./internal/api/schema/ticket.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de tickets: %v", err)
 		return

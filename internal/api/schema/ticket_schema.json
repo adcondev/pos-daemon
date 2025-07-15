@@ -41,7 +41,7 @@
         "saldo": { "type": "string" },
         "pagado": { "type": "string" },
         "cambio": { "type": "string" },
-        "descuento_nota_credito": { "type": ["string", "null"] },
+        "descuento_nota_credito": { "type": ["string","null"] },
         "tipo_operacion": { "type": "string" },
         "anulada": { "type": "string" },
         "fecha_sistema": { "type": "string" },
@@ -77,11 +77,16 @@
                     "entidad": { "type": "string" },
                     "tipo": { "type": "string" }
                   },
-                  "required": ["factor", "base", "importe", "impuestos", "tasa", "entidad", "tipo"]
+                  "required": ["factor","base","importe","impuestos","tasa","entidad","tipo"],
+                  "additionalProperties": false
                 }
               }
             },
-            "required": ["clave", "descripcion", "precio_venta", "cantidad", "total", "unidad"]
+            "required": [
+              "clave","descripcion","precio_venta","cantidad","total","unidad",
+              "clave_producto_servicio","clave_unidad_sat","venta_granel","impuestos"
+            ],
+            "additionalProperties": false
           }
         },
         "documentos_pago": {
@@ -106,11 +111,16 @@
                     "cantidad": { "type": "string" },
                     "forma_pago_identificador": { "type": "string" }
                   },
-                  "required": ["forma_pago", "cantidad", "forma_pago_identificador"]
+                  "required": ["forma_pago","cantidad","forma_pago_identificador"],
+                  "additionalProperties": false
                 }
               }
             },
-            "required": ["total", "tipo_cambio", "saldo", "sistema", "anulado", "cambio", "fecha_pago", "formas_pago"]
+            "required": [
+              "total","tipo_cambio","saldo","nota","sistema",
+              "anulado","cambio","fecha_pago","formas_pago"
+            ],
+            "additionalProperties": false
           }
         },
         "pago": {
@@ -122,12 +132,27 @@
               "cantidad": { "type": "string" },
               "forma_pago_identificador": { "type": "string" }
             },
-            "required": ["forma_pago", "cantidad", "forma_pago_identificador"]
+            "required": ["forma_pago","cantidad","forma_pago_identificador"],
+            "additionalProperties": false
           }
         }
       },
-      "required": ["identificador", "vendedor", "cliente", "cliente_rfc", "cliente_cp", "cliente_uso_cfdi", "cliente_regimen_fiscal", "sucursal_rfc", "sucursal_nombre", "total", "pagado", "tipo_operacion", "fecha_sistema", "folio", "serie", "conceptos"]
+      "required": [
+        "identificador","vendedor","cliente","cliente_rfc","cliente_cp",
+        "cliente_uso_cfdi","cliente_regimen_fiscal","cliente_calle",
+        "cliente_numero_exterior","cliente_numero_interior","cliente_estado",
+        "cliente_colonia","cliente_localidad","cliente_delegacion","cliente_pais",
+        "sucursal_rfc","sucursal_nombre","sucursal_nombre_comercial","sucursal_tienda",
+        "sucursal_cp","sucursal_regimen_clave","sucursal_regimen","sucursal_calle",
+        "sucursal_numero","sucursal_numero_int","sucursal_colonia","sucursal_estado",
+        "sucursal_localidad","sucursal_municipio","sucursal_pais","sucursal_emails",
+        "descuento","total","saldo","pagado","cambio","descuento_nota_credito",
+        "tipo_operacion","anulada","fecha_sistema","folio","serie","cliente_emails",
+        "autofactura_link","autofactura_link_qr","conceptos","documentos_pago","pago"
+      ],
+      "additionalProperties": false
     }
   },
-  "required": ["data"]
+  "required": ["data"],
+  "additionalProperties": false
 }

@@ -1,8 +1,7 @@
-package config
+package local_config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -28,20 +27,7 @@ func JSONFileToBytes(filepath string) ([]byte, error) {
 	return content, nil
 }
 
-func BytesToJSONFile(data []byte, filename string) error {
-	var jsonCheck interface{}
-	if err := json.Unmarshal(data, &jsonCheck); err != nil {
-		return fmt.Errorf("Invalid JSON data: %w", err)
-	}
-
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return fmt.Errorf("Failed to write to file: %w", err)
-	}
-
-	return nil
-}
-
-func BytesToConfig(b []byte) (*Config, error) {
+func BytesToConfig(b []byte) (*LocalConfig, error) {
 	var w Wrapper
 
 	if err := json.Unmarshal(b, &w); err != nil {
@@ -50,6 +36,6 @@ func BytesToConfig(b []byte) (*Config, error) {
 	return &w.Data, nil
 }
 
-func (t *Config) ToBytes() ([]byte, error) {
+func (t *LocalConfig) ToBytes() ([]byte, error) {
 	return json.Marshal(Wrapper{Data: *t})
 }
