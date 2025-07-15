@@ -27,8 +27,8 @@ func JSONFileToBytes(filepath string) ([]byte, error) {
 	return content, nil
 }
 
-func BytesToConfig(b []byte) (*LocalConfig, error) {
-	var w Wrapper
+func BytesToConfig(b []byte) (*LocalConfigData, error) {
+	var w LocalConfig
 
 	if err := json.Unmarshal(b, &w); err != nil {
 		return nil, err
@@ -36,6 +36,6 @@ func BytesToConfig(b []byte) (*LocalConfig, error) {
 	return &w.Data, nil
 }
 
-func (t *LocalConfig) ToBytes() ([]byte, error) {
-	return json.Marshal(Wrapper{Data: *t})
+func (t *LocalConfigData) ToBytes() ([]byte, error) {
+	return json.Marshal(LocalConfig{Data: *t})
 }

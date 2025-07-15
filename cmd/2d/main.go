@@ -25,7 +25,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &local_config.LocalConfig{}
+	dataConfig := &local_config.LocalConfigData{}
 
 	dataConfig, err = local_config.BytesToConfig(jsonBytes)
 	if err != nil {
