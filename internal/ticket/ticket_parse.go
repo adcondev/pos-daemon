@@ -27,8 +27,8 @@ func JSONFileToBytes(filepath string) ([]byte, error) {
 	return content, nil
 }
 
-func BytesToTicket(b []byte) (*Ticket, error) {
-	var w Wrapper
+func BytesToTicket(b []byte) (*TicketData, error) {
+	var w Ticket
 
 	if err := json.Unmarshal(b, &w); err != nil {
 		return nil, err
@@ -36,6 +36,6 @@ func BytesToTicket(b []byte) (*Ticket, error) {
 	return &w.Data, nil
 }
 
-func (t *Ticket) ToBytes() ([]byte, error) {
-	return json.Marshal(Wrapper{Data: *t})
+func (t *TicketData) ToBytes() ([]byte, error) {
+	return json.Marshal(Ticket{Data: *t})
 }

@@ -102,7 +102,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &ticket.Ticket{}
+	dataTicket := &ticket.TicketData{}
 
 	dataTicket, err = ticket.BytesToTicket(jsonBytes)
 	if err != nil {

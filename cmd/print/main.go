@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Configurar el logger según el valor de DebugLog
-	if dataConfig.DebugLog {
+	if dataConfig.Data.DebugLog {
 		log.SetOutput(os.Stdout)
 		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 		log.Println("Modo de depuración activado.")
@@ -51,13 +51,13 @@ func main() {
 	// Si estás probando sin una impresora real o con problemas de driver/configuración,
 	// puedes seguir usando la implementación anterior del conector que escribe a un archivo.
 
-	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
+	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Data.Printer)
 
 	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connectors.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := connectors.NewWindowsPrintConnector(dataConfig.Data.Printer)
 	if err != nil {
-		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
+		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Data.Printer, err)
 	}
 
 	// IMPORTANTE: Asegurarse de cerrar el conector al finalizar.
@@ -99,7 +99,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &ticket.Ticket{}
+	dataTicket := &ticket.TicketData{}
 
 	dataTicket, err = ticket.BytesToTicket(jsonBytes)
 	if err != nil {
