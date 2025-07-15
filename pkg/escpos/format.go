@@ -2,7 +2,6 @@ package escpos
 
 import (
 	"fmt"
-	"pos-daemon.adcon.dev/pkg/escpos/imaging"
 )
 
 const (
@@ -129,7 +128,7 @@ func (p *Printer) SetPrintLeftMargin(margin int) error {
 		return fmt.Errorf("SetPrintLeftMargin: %w", err)
 	}
 	// GS L nL nH - Establece el margen izquierdo a nL + nH * 256 puntos
-	marginBytes, err := imaging.intLowHigh(margin, 2) // 2 bytes (nL nH)
+	marginBytes, err := intLowHigh(margin, 2) // 2 bytes (nL nH)
 	if err != nil {
 		return fmt.Errorf("SetPrintLeftMargin: falló al formatear bytes del margen: %w", err)
 	}
@@ -145,7 +144,7 @@ func (p *Printer) SetPrintWidth(width int) error {
 		return fmt.Errorf("SetPrintWidth: %w", err)
 	}
 	// GS W nL nH - Establece el ancho del área de impresión a nL + nH * 256 puntos
-	widthBytes, err := imaging.intLowHigh(width, 2) // 2 bytes (nL nH)
+	widthBytes, err := intLowHigh(width, 2) // 2 bytes (nL nH)
 	if err != nil {
 		return fmt.Errorf("SetPrintWidth: falló al formatear bytes del ancho: %w", err)
 	}

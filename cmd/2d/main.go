@@ -15,6 +15,7 @@ import (
 	"pos-daemon.adcon.dev/internal/ticket"
 	"pos-daemon.adcon.dev/pkg/escpos"
 	"pos-daemon.adcon.dev/pkg/escpos/connectors"
+	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 func main() {
@@ -143,11 +144,11 @@ func main() {
 	if err = printer.SetBarcodeWidth(3); err != nil {
 		log.Printf("Error SetBarcodeWidth: %v", err)
 	}
-	if err = printer.SetBarcodeTextPosition(escpos.BARCODE_TEXT_BELOW); err != nil {
+	if err = printer.SetBarcodeTextPosition(cons.TextBelow); err != nil {
 		log.Printf("Error SetBarcodeTextPosition: %v", err)
 	}
 	// Ejemplo UPC-A: 11 o 12 dígitos. "012345678901"
-	if err = printer.Barcode("012345678901", escpos.BARCODE_UPCA); err != nil {
+	if err = printer.Barcode("012345678901", cons.UpcA); err != nil {
 		log.Printf("Error Barcode: %v", err)
 	}
 	if err = printer.Feed(1); err != nil {
@@ -238,7 +239,7 @@ func main() {
 	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
 	// Imprimir la imagen con dithering de Floyd-Steinberg
-	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, escpos.DitherFloydStein, escpos.MaxPrintSize); err != nil {
+	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, cons.FloydStein, cons.DefaultPrintSize); err != nil {
 		log.Printf("Error al imprimir logo con dithering: %v", err)
 	}
 

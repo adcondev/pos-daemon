@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"math"
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 const (
@@ -22,6 +21,9 @@ const (
 	// Color (para impresoras con múltiples colores)
 	COLOR_1 int = 0 // Color 1 (generalmente negro)
 	COLOR_2 int = 1 // Color 2 (generalmente rojo)
+
+	Uint32Size     = 4
+	DimensionBytes = 2
 )
 
 // BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
@@ -429,7 +431,7 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			data, err := intLowHigh(input, cons.DimensionBytes)
+			data, err := intLowHigh(input, DimensionBytes)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
@@ -469,7 +471,7 @@ func intLowHigh(input, length int) ([]byte, error) {
 		return nil, fmt.Errorf("intLowHigh: la entrada %d está fuera del rango para %d bytes (0-%d)", input, length, maxInput)
 	}
 
-	buf := make([]byte, cons.Uint32Size)
+	buf := make([]byte, Uint32Size)
 	// Usar encoding/binary para asegurar el orden Little Endian
 	// Convertimos el int a uint32 para usar PutUint32
 	binary.LittleEndian.PutUint32(buf, uint32(input))

@@ -2,6 +2,7 @@ package escpos
 
 import (
 	"fmt"
+	bc "pos-daemon.adcon.dev/pkg/escpos/constants"
 	"regexp"
 	"strings"
 )
@@ -10,11 +11,6 @@ import (
 // Estas funciones validan los argumentos y devuelven un error si son inválidos.
 
 // validateBoolean es en gran parte redundante en Go debido al tipado estático.
-func validateBoolean(test bool, source string) error {
-	// En Go, un bool siempre es true o false. No hay necesidad de verificar esto.
-	// La función se mantiene por completitud del port, pero siempre devuelve nil.
-	return nil
-}
 
 func validateFloat(test float64, min, max float64, source, argument string) error {
 	if test < min || test > max {
@@ -25,6 +21,28 @@ func validateFloat(test float64, min, max float64, source, argument string) erro
 
 func validateInteger(test, min, max int, source, argument string) error {
 	return validateIntegerMulti(test, [][]int{{min, max}}, source, argument)
+}
+
+func ValidateBarcodeTextPosition(pos bc.BarcodeTextPos) error {
+	const (
+		minPos = bc.TextNone
+		maxPos = bc.TextBoth
+	)
+	if pos < minPos || pos > maxPos {
+		return fmt.Errorf("posición de texto inválida: %d", pos)
+	}
+	return nil
+}
+
+func ValidateBarcodeType(barcode bc.BarcodeType) error {
+	switch barcode {
+	case bc.UpcA, bc.UpcE, bc.Jan13, bc.Jan8,
+		bc.Code39, bc.Itf, bc.Codabar,
+		bc.Code93, bc.Code128:
+		return nil
+	default:
+		return fmt.Errorf("tipo de código de barras inválido: %d", barcode)
+	}
 }
 
 func validateIntegerMulti(test int, ranges [][]int, source, argument string) error {
