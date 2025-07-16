@@ -1,10 +1,10 @@
 package local_config
 
-type Wrapper struct {
-	Data LocalConfig `json:"data"`
+type LocalConfig struct {
+	Data LocalConfigData `json:"data"`
 }
 
-type LocalConfig struct {
+type LocalConfigData struct {
 	Printer  string
 	DebugLog bool
 }

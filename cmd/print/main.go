@@ -22,7 +22,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &local_config.LocalConfig{}
+	dataConfig := &local_config.LocalConfigData{}
 
 	dataConfig, err = local_config.BytesToConfig(jsonBytes)
 	if err != nil {
@@ -99,7 +99,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &ticket.Ticket{}
+	dataTicket := &ticket.TicketData{}
 
 	dataTicket, err = ticket.BytesToTicket(jsonBytes)
 	if err != nil {

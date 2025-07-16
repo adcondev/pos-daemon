@@ -1,46 +1,16 @@
 package ticket
 
 import (
-	"encoding/json"
-	"fmt"
+	adt "pos-daemon.adcon.dev/internal"
 )
 
-// BoolFlexible Necesitado ya que Go no entiende 0 y 1 como true/false
-type BoolFlexible bool
-
-func (b *BoolFlexible) UnmarshalJSON(data []byte) error {
-	// Intenta como bool
-	var boolVal bool
-	if err := json.Unmarshal(data, &boolVal); err == nil {
-		*b = BoolFlexible(boolVal)
-		return nil
-	}
-	// Intenta como string
-	var strVal string
-	if err := json.Unmarshal(data, &strVal); err == nil {
-		if strVal == "1" {
-			*b = true
-		} else if strVal == "0" {
-			*b = false
-		} else if strVal == "true" {
-			*b = true
-		} else if strVal == "false" {
-			*b = false
-		} else {
-			return fmt.Errorf("valor no soportado para BoolFlexible: %s", strVal)
-		}
-		return nil
-	}
-	return fmt.Errorf("no se pudo deserializar BoolFlexible: %s", string(data))
-}
-
-// Wrapper ---------- envoltorio raíz ----------
-type Wrapper struct {
-	Data Ticket `json:"data"`
-}
-
-// Ticket ---------- ticket principal ----------
+// Ticket ---------- envoltorio raíz ----------
 type Ticket struct {
+	Data TicketData `json:"data"`
+}
+
+// TicketData ---------- ticket principal ----------
+type TicketData struct {
 	// metadatos
 	Identificador string       `json:"identificador"`
 	Vendedor      string       `json:"vendedor"`
@@ -48,7 +18,7 @@ type Ticket struct {
 	Serie         string       `json:"serie"`
 	FechaSistema  string       `json:"fecha_sistema"`  // "DD/MM/YYYY HH:MM:SS"
 	TipoOperacion string       `json:"tipo_operacion"` // NOTA_VENTA, FACTURA, etc.
-	Anulada       BoolFlexible `json:"anulada"`        // "0"/"1" o "true"/"false" → BoolFlexible
+	Anulada       adt.BoolFlex `json:"anulada"`        // "0"/"1" o "true"/"false" → BoolFlex
 
 	// montos
 	Descuento         float64  `json:"descuento,string"`
@@ -90,9 +60,10 @@ type Ticket struct {
 	SucursalEstado          string `json:"sucursal_estado"`
 	SucursalCP              string `json:"sucursal_cp"`
 	SucursalPais            string `json:"sucursal_pais"`
-	SucursalEmail           string `json:"sucursal_email"`
+	SucursalEmails          string `json:"sucursal_emails"`
 	AutofacturaLink         string `json:"autofactura_link"`
 	AutofacturaLinkQr       string `json:"autofactura_link_qr"`
+	SucursalTelefono        string `json:"sucursal_telefono"` // Teléfono de la sucursal
 
 	// movimientos
 	Conceptos      []Concepto      `json:"conceptos"`
@@ -110,7 +81,7 @@ type Concepto struct {
 	Total                 float64      `json:"total,string"`
 	ClaveProductoServicio string       `json:"clave_producto_servicio"`
 	ClaveUnidadSAT        string       `json:"clave_unidad_sat"`
-	VentaGranel           BoolFlexible `json:"venta_granel"`
+	VentaGranel           adt.BoolFlex `json:"venta_granel"`
 	Impuestos             []Impuesto   `json:"impuestos"`
 }
 
@@ -132,7 +103,7 @@ type DocumentoPago struct {
 	Saldo      float64      `json:"saldo,string"`
 	Nota       string       `json:"nota"`
 	Sistema    string       `json:"sistema"`
-	Anulado    BoolFlexible `json:"anulado"`
+	Anulado    adt.BoolFlex `json:"anulado"`
 	Cambio     float64      `json:"cambio,string"`
 	FechaPago  string       `json:"fecha_pago"`
 	FormasPago []FormaPago  `json:"formas_pago"`

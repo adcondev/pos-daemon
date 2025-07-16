@@ -50,6 +50,7 @@
         "cliente_emails": { "type": "string" },
         "autofactura_link": { "type": "string" },
         "autofactura_link_qr": { "type": "string" },
+        "sucursal_telefono": { "type": "string" },
         "conceptos": {
           "type": "array",
           "items": {
@@ -148,7 +149,7 @@
         "sucursal_localidad","sucursal_municipio","sucursal_pais","sucursal_emails",
         "descuento","total","saldo","pagado","cambio","descuento_nota_credito",
         "tipo_operacion","anulada","fecha_sistema","folio","serie","cliente_emails",
-        "autofactura_link","autofactura_link_qr","conceptos","documentos_pago","pago"
+        "autofactura_link","autofactura_link_qr","conceptos","documentos_pago","pago", "sucursal_telefono"
       ],
       "additionalProperties": false
     }

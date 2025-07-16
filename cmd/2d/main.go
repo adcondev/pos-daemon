@@ -25,7 +25,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &local_config.LocalConfig{}
+	dataConfig := &local_config.LocalConfigData{}
 
 	dataConfig, err = local_config.BytesToConfig(jsonBytes)
 	if err != nil {
@@ -102,7 +102,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &ticket.Ticket{}
+	dataTicket := &ticket.TicketData{}
 
 	dataTicket, err = ticket.BytesToTicket(jsonBytes)
 	if err != nil {
@@ -111,7 +111,7 @@ func main() {
 	}
 
 	// Configurar justificación y estilo
-	if err = printer.SetJustification(escpos.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
@@ -212,7 +212,7 @@ func main() {
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
-	if err = printer.BitImage(escposQR, escpos.IMG_DEFAULT); err != nil {
+	if err = printer.BitImage(escposQR, cons.IMG_DEFAULT); err != nil {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
@@ -239,7 +239,7 @@ func main() {
 	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
 	// Imprimir la imagen con dithering de Floyd-Steinberg
-	if err := printer.ImageWithDithering(imgLogo, escpos.IMG_DEFAULT, cons.FloydStein, cons.DefaultPrintSize); err != nil {
+	if err := printer.ImageWithDithering(imgLogo, cons.IMG_DEFAULT, cons.FloydStein, cons.DefaultPrintSize); err != nil {
 		log.Printf("Error al imprimir logo con dithering: %v", err)
 	}
 
