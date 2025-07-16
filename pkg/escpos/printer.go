@@ -3,7 +3,6 @@ package escpos
 import (
 	"errors"
 	"fmt"
-	"os"
 )
 
 const (
@@ -116,27 +115,6 @@ func (p *Printer) Initialize() error {
 	return err
 }
 
-// Pulse envía un pulso a un pin del conector del cajón portamonedas para abrirlo.
-func (p *Printer) Pulse(pin int, onMS, offMS int) error {
-	if err := validateInteger(pin, 0, 1, "Pulse", "pin"); err != nil {
-		return fmt.Errorf("Pulse: %w", err)
-	} // Pin 0 o 1
-	if err := validateInteger(onMS, 1, 511, "Pulse", "onMS"); err != nil {
-		return fmt.Errorf("Pulse: %w", err)
-	} // Tiempo ON en ms (1-511)
-	if err := validateInteger(offMS, 1, 511, "Pulse", "offMS"); err != nil {
-		return fmt.Errorf("Pulse: %w", err)
-	} // Tiempo OFF en ms (1-511) - a menudo ignorado por la impresora para el segundo pulso
-
-	// Comando: ESC p m t1 t2
-	// m: pin del cajón (0 o 1). PHP usa pin + 48 ('0' o '1'). Replicamos.
-	// t1: Tiempo ON (t1 * 2 ms). PHP envía on_ms / 2. Replicamos.
-	// t2: Tiempo OFF (t2 * 2 ms). PHP envía off_ms / 2. Replicamos.
-	cmd := []byte{ESC, 'p', byte(pin + 48), byte(onMS / 2), byte(offMS / 2)}
-	_, err := p.Connector.Write(cmd)
-	return err
-}
-
 // Close finaliza la conexión con la impresora.
 func (p *Printer) Close() error {
 	return p.Connector.Close()
@@ -150,19 +128,4 @@ func (p *Printer) GetPrintConnector() Connector {
 // GetPrinterCapabilityProfile devuelve el perfil de capacidad de la impresora.
 func (p *Printer) GetPrinterCapabilityProfile() *CapabilityProfile {
 	return p.profile
-}
-
-// intPtr es una función de ayuda para obtener un puntero a un int.
-// Útil para métodos con parámetros opcionales *int (como SetLineSpacing).
-func intPtr(i int) *int {
-	return &i
-}
-
-// Función de ayuda para abrir archivos
-func openFile(filename string) (*os.File, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("error abriendo archivo %s: %w", filename, err)
-	}
-	return file, nil
 }

@@ -3,11 +3,8 @@ package printer
 // Printer defines the interface for any ESC/POS compatible printer
 type Printer interface {
 	Initialize() error
-	Disconnect() error
-	Write(data []byte) (int, error)
-	Print(text string) error
-	Feed(lines int) error
-	Cut() error
+	Pulse(int, int, int) error
+	Close() error
 	Status() (Status, error)
 }
 

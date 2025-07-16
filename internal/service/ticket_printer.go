@@ -96,7 +96,7 @@ func (tc *TicketConstructor) PrintTicket() error {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 	// Tipo de fuente
-	if err := tc.printer.SetFont(cons.FONT_B); err != nil {
+	if err := tc.printer.SetFont(cons.FONT_A); err != nil {
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
@@ -142,6 +142,9 @@ func (tc *TicketConstructor) printHeader() {
 	if tmpl.CambiarCabecera != "" {
 		if err := tc.printer.TextLn("Cabecera: " + tmpl.CambiarCabecera); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.Feed(1); err != nil {
+			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
 		}
 	}
 

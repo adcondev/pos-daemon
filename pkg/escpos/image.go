@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"io"
 	"log"
 	"math"
 
@@ -238,33 +237,6 @@ func NewEscposImage(img image.Image, threshold uint8) *Image {
 		width:     bounds.Dx(),
 		height:    bounds.Dy(),
 	}
-}
-
-func NewEscposImageFromFile(filename string, threshold uint8) (*Image, error) {
-	file, err := openFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Printf("error cerrando el archivo: %v\n", err)
-		}
-	}()
-
-	return NewEscposImageFromReader(file, threshold)
-}
-
-func NewEscposImageFromReader(reader io.Reader, threshold uint8) (*Image, error) {
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		return nil, fmt.Errorf("error decodificando la image: %w", err)
-	}
-
-	return NewEscposImage(img, threshold), nil
-}
-
-func NewEscposImageFromBytes(data []byte, threshold uint8) (*Image, error) {
-	return NewEscposImageFromReader(bytes.NewReader(data), threshold)
 }
 
 func (ei *Image) GetWidth() int {
@@ -536,4 +508,10 @@ func (p *Printer) wrapperSendGraphicsData(m, fn byte, data []byte) error {
 
 	_, err = p.Connector.Write(cmd.Bytes())
 	return err
+}
+
+// intPtr es una función de ayuda para obtener un puntero a un int.
+// Útil para métodos con parámetros opcionales *int (como SetLineSpacing).
+func intPtr(i int) *int {
+	return &i
 }
