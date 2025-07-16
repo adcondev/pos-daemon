@@ -111,7 +111,7 @@ func main() {
 	}
 
 	// Configurar justificación y estilo
-	if err = printer.SetJustification(escpos.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
