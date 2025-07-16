@@ -13,6 +13,14 @@ func (p *Printer) Text(str string) error {
 	return err
 }
 
+// TextLn envía una cadena de texto a la impresora y añade un salto de línea al final.
+func (p *Printer) TextLn(str string) error {
+	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
+	bytesToSend := strings.ReplaceAll(strings.ToUpper(str)+"\n", "\n", string(LF))
+	_, err := p.Connector.Write(toCP858(bytesToSend))
+	return err
+}
+
 // TextRaw envía una cadena de texto (o bytes) a la impresora sin procesar.
 func (p *Printer) TextRaw(str string) error {
 	_, err := p.Connector.Write([]byte(str))

@@ -2,36 +2,14 @@ package escpos
 
 import (
 	"fmt"
-)
-
-const (
-	// Fuentes
-	FONT_A int = 0
-	FONT_B int = 1
-	FONT_C int = 2
-
-	// Justificación del texto
-	JUSTIFY_LEFT   int = 0
-	JUSTIFY_CENTER int = 1
-	JUSTIFY_RIGHT  int = 2
-
-	// Modo de impresión (combinación de bits para ESC !)
-	MODE_FONT_A        int = 0   // Bit 0 OFF for Font A
-	MODE_FONT_B        int = 1   // Bit 0 ON for Font B
-	MODE_EMPHASIZED    int = 8   // Bit 3 ON (Negrita)
-	MODE_DOUBLE_HEIGHT int = 16  // Bit 4 ON (Doble Altura)
-	MODE_DOUBLE_WIDTH  int = 32  // Bit 5 ON (Doble Ancho)
-	MODE_UNDERLINE     int = 128 // Bit 7 ON (Subrayado)
-
-	// Tipo de subrayado
-	UNDERLINE_NONE   int = 0
-	UNDERLINE_SINGLE int = 1
-	UNDERLINE_DOUBLE int = 2
+	"math"
+	bin "pos-daemon.adcon.dev/pkg/escpos/constants"
+	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 // SetJustification establece la alineación del texto (izquierda, centro, derecha).
 func (p *Printer) SetJustification(justification int) error {
-	if err := validateInteger(justification, JUSTIFY_LEFT, JUSTIFY_RIGHT, "SetJustification", "justificación"); err != nil {
+	if err := validateInteger(justification, cons.JUSTIFY_LEFT, cons.JUSTIFY_RIGHT, "SetJustification", "justificación"); err != nil {
 		return fmt.Errorf("SetJustification: %w", err)
 	}
 	// ESC a n - n=0: izquierda, 1: centro, 2: derecha
@@ -42,7 +20,7 @@ func (p *Printer) SetJustification(justification int) error {
 
 // SetFont establece la fuente (A, B o C).
 func (p *Printer) SetFont(font int) error {
-	if err := validateInteger(font, FONT_A, FONT_C, "SetFont", "fuente"); err != nil {
+	if err := validateInteger(font, cons.FONT_A, cons.FONT_C, "SetFont", "fuente"); err != nil {
 		return fmt.Errorf("SetFont: %w", err)
 	}
 	// ESC M n - n=0: Fuente A, 1: Fuente B, 2: Fuente C
@@ -80,7 +58,7 @@ func (p *Printer) SetDoubleStrike(on bool) error {
 func (p *Printer) SetUnderline(underline int) error {
 	// La clase PHP también acepta booleanos y los convierte.
 	// En Go, la validación de tipo estática nos da la garantía, así que solo validamos el rango entero.
-	if err := validateInteger(underline, UNDERLINE_NONE, UNDERLINE_DOUBLE, "SetUnderline", "subrayado"); err != nil {
+	if err := validateInteger(underline, cons.UNDERLINE_NONE, cons.UNDERLINE_DOUBLE, "SetUnderline", "subrayado"); err != nil {
 		return fmt.Errorf("SetUnderline: %w", err)
 	}
 	// ESC - n - n=0: ninguno, 1: simple, 2: doble
@@ -143,8 +121,12 @@ func (p *Printer) SetPrintWidth(width int) error {
 	if err := validateInteger(width, 1, 65535, "SetPrintWidth", "ancho"); err != nil {
 		return fmt.Errorf("SetPrintWidth: %w", err)
 	}
+
+	const dotsPerMM float64 = 560.0 / 80
+	dots := int(math.Round(float64(width) * dotsPerMM))
+
 	// GS W nL nH - Establece el ancho del área de impresión a nL + nH * 256 puntos
-	widthBytes, err := intLowHigh(width, 2) // 2 bytes (nL nH)
+	widthBytes, err := intLowHigh(dots, bin.DimensionBytes) // 2 bytes (nL nH)
 	if err != nil {
 		return fmt.Errorf("SetPrintWidth: falló al formatear bytes del ancho: %w", err)
 	}

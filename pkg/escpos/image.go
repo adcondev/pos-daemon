@@ -9,21 +9,8 @@ import (
 	"io"
 	"log"
 	"math"
-)
 
-const (
-	// Tamaño de imagen (para comandos Bit Image)
-	IMG_DEFAULT       int = 0
-	IMG_DOUBLE_WIDTH  int = 1
-	IMG_DOUBLE_HEIGHT int = 2
-	IMG_QUADRUPLE         = 3
-
-	// Color (para impresoras con múltiples colores)
-	COLOR_1 int = 0 // Color 1 (generalmente negro)
-	COLOR_2 int = 1 // Color 2 (generalmente rojo)
-
-	Uint32Size     = 4
-	DimensionBytes = 2
+	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 // BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
@@ -32,7 +19,7 @@ func (p *Printer) BitImage(img *Image, density int) error {
 	if img == nil {
 		return errors.New("BitImage: la imagen no puede ser nil")
 	}
-	if err := validateInteger(density, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
+	if err := validateInteger(density, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
 		return fmt.Errorf("BitImage: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -75,7 +62,7 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 		return errors.New("BitImageColumnFormat: la imagen no puede ser nil")
 	}
 	// PHP valida size 0-3. La lógica interna usa los bits 1 y 2.
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "BitImageColumnFormat", "tamaño"); err != nil {
+	if err := validateInteger(size, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "BitImageColumnFormat", "tamaño"); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: %w", err)
 	}
 
@@ -106,10 +93,10 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 	// El modo por defecto (IMG_DEFAULT=0) suele ser 24 puntos verticales, doble densidad horizontal (m=33).
 
 	densityCode := 33 // Valor por defecto: 24 puntos verticales, doble densidad horizontal
-	if (size & IMG_DOUBLE_HEIGHT) == IMG_DOUBLE_HEIGHT {
+	if (size & cons.IMG_DOUBLE_HEIGHT) == cons.IMG_DOUBLE_HEIGHT {
 		densityCode &^= 32 // Desactivar bit 5 (32) -> 8 puntos verticales
 	}
-	if (size & IMG_DOUBLE_WIDTH) == IMG_DOUBLE_WIDTH {
+	if (size & cons.IMG_DOUBLE_WIDTH) == cons.IMG_DOUBLE_WIDTH {
 		densityCode &^= 1 // Desactivar bit 0 (1) -> densidad horizontal normal
 	}
 
@@ -157,7 +144,7 @@ func (p *Printer) Graphics(img *Image, size int) error {
 	if img == nil {
 		return errors.New("Graphics: la imagen no puede ser nil")
 	}
-	if err := validateInteger(size, IMG_DEFAULT, IMG_DOUBLE_HEIGHT|IMG_DOUBLE_WIDTH, "Graphics", "tamaño"); err != nil {
+	if err := validateInteger(size, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "Graphics", "tamaño"); err != nil {
 		return fmt.Errorf("Graphics: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -180,11 +167,11 @@ func (p *Printer) Graphics(img *Image, size int) error {
 	// colors: '1' (1 bit por píxel)
 	// PHP usa chr(1) o chr(2) para xm/ym. Replicamos.
 	xm := byte(1)
-	if (size & IMG_DOUBLE_WIDTH) == IMG_DOUBLE_WIDTH {
+	if (size & cons.IMG_DOUBLE_WIDTH) == cons.IMG_DOUBLE_WIDTH {
 		xm = 2
 	}
 	ym := byte(1)
-	if (size & IMG_DOUBLE_HEIGHT) == IMG_DOUBLE_HEIGHT {
+	if (size & cons.IMG_DOUBLE_HEIGHT) == cons.IMG_DOUBLE_HEIGHT {
 		ym = 2
 	}
 
@@ -210,7 +197,7 @@ func (p *Printer) Graphics(img *Image, size int) error {
 // SetColor establece el color de impresión (para impresoras con múltiples colores).
 // color puede ser COLOR_1 (negro) o COLOR_2 (rojo).
 func (p *Printer) SetColor(color int) error {
-	if err := validateInteger(color, COLOR_1, COLOR_2, "SetColor", "color"); err != nil {
+	if err := validateInteger(color, cons.COLOR_1, cons.COLOR_2, "SetColor", "color"); err != nil {
 		return fmt.Errorf("SetColor: %w", err)
 	}
 	// ESC r n - n=0: Color 1, 1: Color 2
@@ -431,7 +418,7 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			data, err := intLowHigh(input, DimensionBytes)
+			data, err := intLowHigh(input, cons.DimensionBytes)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
@@ -471,7 +458,7 @@ func intLowHigh(input, length int) ([]byte, error) {
 		return nil, fmt.Errorf("intLowHigh: la entrada %d está fuera del rango para %d bytes (0-%d)", input, length, maxInput)
 	}
 
-	buf := make([]byte, Uint32Size)
+	buf := make([]byte, cons.Uint32Size)
 	// Usar encoding/binary para asegurar el orden Little Endian
 	// Convertimos el int a uint32 para usar PutUint32
 	binary.LittleEndian.PutUint32(buf, uint32(input))
