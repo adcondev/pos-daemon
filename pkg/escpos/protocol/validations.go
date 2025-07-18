@@ -1,8 +1,7 @@
-package escpos
+package protocol
 
 import (
 	"fmt"
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 	"regexp"
 	"strings"
 )
@@ -12,63 +11,63 @@ import (
 
 // validateBoolean es en gran parte redundante en Go debido al tipado estático.
 
-func validateFloat(test float64, min, max float64, source, argument string) error {
+func ValidateFloat(test float64, min, max float64, source, argument string) error {
 	if test < min || test > max {
 		return fmt.Errorf("el argumento '%s' (%f) dado a %s debe estar en el rango %f a %f", argument, test, source, min, max)
 	}
 	return nil
 }
 
-func validateInteger(test, min, max int, source, argument string) error {
-	return validateIntegerMulti(test, [][]int{{min, max}}, source, argument)
+func ValidateInteger(test, min, max int, source, argument string) error {
+	return ValidateIntegerMulti(test, [][]int{{min, max}}, source, argument)
 }
 
-func ValidateBarcodeTextPosition(pos cons.BarcodeTextPos) error {
-	if pos < cons.TextNone || pos > cons.TextBoth {
+func ValidateBarcodeTextPosition(pos BarcodeTextPos) error {
+	if pos < TextNone || pos > TextBoth {
 		return fmt.Errorf("posición de texto inválida: %d", pos)
 	}
 	return nil
 }
 
-func ValidateBarcodeType(barcode cons.BarcodeType) error {
+func ValidateBarcodeType(barcode BarcodeType) error {
 	switch barcode {
-	case cons.UpcA, cons.UpcE, cons.Jan13, cons.Jan8,
-		cons.Code39, cons.Itf, cons.Codabar,
-		cons.Code93, cons.Code128:
+	case UpcA, UpcE, Jan13, Jan8,
+		Code39, Itf, Codabar,
+		Code93, Code128:
 		return nil
 	default:
 		return fmt.Errorf("tipo de código de barras inválido: %d", barcode)
 	}
 }
 
-func ValidateJustifyMode(mode cons.Justify) error {
+func ValidateJustifyMode(mode Justify) error {
 	switch mode {
-	case cons.Left, cons.Right, cons.Center:
+	case Left, Right, Center:
 		return nil
 	default:
 		return fmt.Errorf("tipo de justificación inválida: %d", mode)
 	}
 }
 
-func ValidateFont(font cons.Font) error {
+func ValidateFont(font Font) error {
 	switch font {
-	case cons.A, cons.B:
+	case A, B:
 		return nil
 	default:
 		return fmt.Errorf("tipo de fuente inválida: %d", font)
 	}
 }
 
-func ValidateUnderline(under cons.UnderlineMode) error {
+func ValidateUnderline(under UnderlineMode) error {
 	switch under {
-	case cons.NoUnderline, cons.Single, cons.Double:
+	case NoUnderline, Single, Double:
 		return nil
 	default:
 		return fmt.Errorf("tipo de fuente inválida: %d", under)
 	}
 }
 
-func validateIntegerMulti(test int, ranges [][]int, source, argument string) error {
+func ValidateIntegerMulti(test int, ranges [][]int, source, argument string) error {
 	match := false
 	for _, r := range ranges {
 		if len(r) != 2 {
@@ -103,7 +102,7 @@ func validateIntegerMulti(test int, ranges [][]int, source, argument string) err
 
 // validateString es en gran parte redundante en Go debido al tipado estático.
 // El chequeo de PHP sobre objetos con __toString no aplica directamente en Go.
-func validateString(test string, source, argument string) error {
+func ValidateString(test string, source, argument string) error {
 	// En Go, el tipado estático ya asegura que es una cadena si el argumento es string.
 	// La función se mantiene por completitud del port, pero siempre devuelve nil.
 	return nil
@@ -112,7 +111,7 @@ func validateString(test string, source, argument string) error {
 // Cache para expresiones regulares compiladas
 var regexCache = make(map[string]*regexp.Regexp)
 
-func validateStringRegex(test string, regexPattern string, argument string) error {
+func ValidateStringRegex(test string, regexPattern string, argument string) error {
 	// Compilar la regex si no está en caché
 	re, ok := regexCache[regexPattern]
 	if !ok {

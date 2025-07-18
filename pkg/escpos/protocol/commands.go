@@ -1,8 +1,7 @@
-package escpos
+package protocol
 
 // Constantes ESC/POS y parámetros.
 const (
-
 	// HT representa el comando Tabulación Horizontal.
 	//
 	// Nombre:

@@ -1,47 +1,47 @@
-package escpos
+package command
 
 import (
 	"fmt"
-
 	"golang.org/x/text/encoding/charmap"
+	"pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 // SelectCharacterTable selecciona la tabla de caracteres (codepage) a utilizar.
-func (p *Printer) SelectCharacterTable(table int) error {
-	if err := validateInteger(table, 0, 255, "SelectCharacterTable", "tabla"); err != nil {
+func (p *ESCPrinter) SelectCharacterTable(table int) error {
+	if err := protocol.ValidateInteger(table, 0, 255, "SelectCharacterTable", "tabla"); err != nil {
 		return fmt.Errorf("SelectCharacterTable: %w", err)
 	}
 
 	// Verificar si el perfil soporta esta tabla
-	if _, ok := p.profile.CodePages[table]; !ok {
+	if _, ok := p.Profile.CodePages[table]; !ok {
 		return fmt.Errorf("SelectCharacterTable: la tabla de caracteres %d no está permitida por el perfil de esta impresora", table)
 	}
 
 	// La clase PHP elige entre ESC t n (estándar) y ESC GS t n (posiblemente Star)
 	// basándose en SupportsStarCommands. Implementamos esta lógica.
 	var cmd []byte
-	if p.profile.SupportsStarCommands {
+	if p.Profile.SupportsStarCommands {
 		// Este comando es probable que sea específico de Star Micronics.
-		cmd = []byte{ESC, GS, 't', byte(table)}
+		cmd = []byte{protocol.ESC, protocol.GS, 't', byte(table)}
 	} else {
 		// Comando ESC/POS estándar para seleccionar tabla de caracteres.
-		cmd = []byte{ESC, 't', byte(table)}
+		cmd = []byte{protocol.ESC, 't', byte(table)}
 	}
 
 	_, err := p.Connector.Write(cmd)
 	if err == nil {
-		p.characterTable = table // Actualizar el estado interno si la escritura fue exitosa
+		p.CharacterTable = table // Actualizar el estado interno si la escritura fue exitosa
 	}
 	return err
 }
 
 // GetCharacterTable devuelve la tabla de caracteres (codepage) actualmente seleccionada.
-func (p *Printer) GetCharacterTable() int {
-	return p.characterTable
+func (p *ESCPrinter) GetCharacterTable() int {
+	return p.CharacterTable
 }
 
 // *** FUNCIÓN PARA CODIFICAR A CP858 ***
-func toCP858(s string) []byte {
+func ToCP858(s string) []byte {
 	// Obtener el codificador para CP858
 	encoder := charmap.CodePage858.NewEncoder()
 	// Convertir la string (UTF-8) a bytes codificados en CP858

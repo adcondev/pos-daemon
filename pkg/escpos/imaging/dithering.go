@@ -1,4 +1,4 @@
-package escpos
+package imaging
 
 import (
 	"fmt"
@@ -7,35 +7,25 @@ import (
 	"image/draw"
 	_ "image/jpeg"
 	_ "image/png"
-
-	dith "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
-// ImageWithDithering procesa una imagen con dithering y la imprime
-// usando el comando de imagen de bits (GS v 0).
-// density: modo de densidad (0-3)
-// ditherMethod: método de dithering a utilizar
-func (p *Printer) ImageWithDithering(img image.Image, density int, ditherMethod dith.DitherMode, size int) error {
-	if img == nil {
-		return fmt.Errorf("ImageWithDithering: la imagen no puede ser nil")
-	}
+type (
+	DitherMode int
+)
 
-	// Procesar la imagen con dithering
-	processedImg, err := ProcessImageWithDithering(img, ditherMethod, size)
-	if err != nil {
-		return fmt.Errorf("ImageWithDithering: error al procesar la imagen: %w", err)
-	}
+const (
+	NoDither   DitherMode = 0 // Sin dithering
+	FloydStein DitherMode = 1 // Dithering Floyd-Steinberg
+	Ordered    DitherMode = 2 // Dithering ordenado (matriz 4x4)
 
-	// Convertir a formato escpos.Image
-	escposImg := NewEscposImage(processedImg, 128)
+	// Threshold
 
-	// Imprimir usando BitImage
-	return p.BitImage(escposImg, density)
-}
+	DefaultThreshold = 128
+)
 
-// ProcessImageWithDithering procesa una imagen con el método de dithering especificado
-// Devuelve una imagen en escala de grises o binaria según el método de dithering
-func ProcessImageWithDithering(img image.Image, ditherMethod dith.DitherMode, size int) (image.Image, error) {
+// ProcessImageWithDithering procesa una imagen con el dithering especificado
+// Devuelve una imagen en escala de grises o binaria según el dithering
+func ProcessImageWithDithering(img image.Image, ditherMethod DitherMode, size int) (image.Image, error) {
 	// Redimensionar a 256x256 si es necesario
 	img = ResizeImage(img, size)
 
@@ -45,15 +35,15 @@ func ProcessImageWithDithering(img image.Image, ditherMethod dith.DitherMode, si
 
 	// Aplicar dithering según el método seleccionado
 	switch ditherMethod {
-	case dith.NoDither:
+	case NoDither:
 		// No aplicar dithering, solo binarizar con un threshold
-		return ThresholdImage(grayImg, dith.DefaultThreshold), nil
+		return ThresholdImage(grayImg, DefaultThreshold), nil
 
-	case dith.FloydStein:
-		return FloydSteinbergDither(grayImg, dith.DefaultThreshold), nil
+	case FloydStein:
+		return FloydSteinbergDither(grayImg, DefaultThreshold), nil
 
-	case dith.Ordered:
-		return OrderedDither(grayImg, dith.DefaultThreshold), nil
+	case Ordered:
+		return OrderedDither(grayImg, DefaultThreshold), nil
 
 	default:
 		return nil, fmt.Errorf("método de dithering no soportado: %d", ditherMethod)

@@ -1,4 +1,4 @@
-package constants
+package imaging
 
 const (
 	// Tamaño de imagen (para comandos Bit Image)

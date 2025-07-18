@@ -1,25 +1,47 @@
-package escpos
+package command
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"image"
 	"log"
-	"math"
+	"pos-daemon.adcon.dev/pkg/escpos/imaging"
+	"pos-daemon.adcon.dev/pkg/escpos/utils"
 
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
+	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
+
+// Image La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
+// debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
+type ESCImage struct {
+	img              image.Image
+	threshold        uint8
+	width            int
+	height           int
+	rasterData       []byte
+	columnFormatHigh [][]byte
+	columnFormatLow  [][]byte
+}
+
+func NewEscposImage(img image.Image, threshold uint8) *ESCImage {
+	bounds := img.Bounds()
+	return &ESCImage{
+		img:       img,
+		threshold: threshold,
+		width:     bounds.Dx(),
+		height:    bounds.Dy(),
+	}
+}
 
 // BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
 // Requiere que la imagen sea convertible a formato raster de 1 bit.
 // Importante no imprimir sin salto de linea \n o Feed(1), ya que colisiona y genera caracteres no legibles.
-func (p *Printer) BitImage(img *Image, density int) error {
+func (p *ESCPrinter) BitImage(img *ESCImage, density int) error {
 	if img == nil {
 		return errors.New("BitImage: la imagen no puede ser nil")
 	}
-	if err := validateInteger(density, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "BitImage", "tamaño"); err != nil {
+	if err := cons.ValidateInteger(density, imaging.ImgDefault, imaging.ImgDoubleHeight|imaging.ImgDoubleWidth, "BitImage", "tamaño"); err != nil {
 		return fmt.Errorf("BitImage: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -29,8 +51,8 @@ func (p *Printer) BitImage(img *Image, density int) error {
 	}
 
 	// Cabecera de datos: xL xH yL yH
-	// xL xH: ancho en bytes (img.GetWidthBytes()) - 2 bytes
-	// yL yH: alto en puntos (img.GetHeight()) - 2 bytes
+	// xL xH: ancho en bytes (_2D.GetWidthBytes()) - 2 bytes
+	// yL yH: alto en puntos (_2D.GetHeight()) - 2 bytes
 	headerBytes, err := dataHeader([]int{img.GetWidthBytes(), img.GetHeight()}, true) // true para 2 bytes por valor
 	if err != nil {
 		return fmt.Errorf("BitImage: falló al crear la cabecera de datos: %w", err)
@@ -38,7 +60,7 @@ func (p *Printer) BitImage(img *Image, density int) error {
 
 	// Comando: GS v 0 m xL xH yL yH d1...dk
 	// m es el modo de tamaño (0-3)
-	cmdHeader := []byte{GS, 'v', '0', byte(density)}
+	cmdHeader := []byte{cons.GS, 'v', '0', byte(density)}
 	cmdHeader = append(cmdHeader, headerBytes...)
 
 	_, err = p.Connector.Write(cmdHeader)
@@ -57,22 +79,22 @@ func (p *Printer) BitImage(img *Image, density int) error {
 // TODO: Revisar implementación ya que parece no implementar bien el comando de imagen.
 // BitImageColumnFormat imprime una imagen utilizando el comando de modo gráfico (ESC *).
 // Este comando imprime por líneas de 8 o 24 puntos verticales.
-func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
+func (p *ESCPrinter) BitImageColumnFormat(img *ESCImage, size int) error {
 	if img == nil {
 		return errors.New("BitImageColumnFormat: la imagen no puede ser nil")
 	}
 	// PHP valida size 0-3. La lógica interna usa los bits 1 y 2.
-	if err := validateInteger(size, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "BitImageColumnFormat", "tamaño"); err != nil {
+	if err := cons.ValidateInteger(size, imaging.ImgDefault, imaging.ImgDoubleHeight|imaging.ImgDoubleWidth, "BitImageColumnFormat", "tamaño"); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: %w", err)
 	}
 
 	// La clase PHP establece el espaciado de línea a 16 (ESC 3 16) antes de imprimir líneas de imagen
 	// y lo restablece después. Esto es necesario para que las líneas de imagen no tengan espacio entre ellas.
-	if err := p.SetLineSpacing(intPtr(16)); err != nil {
+	if err := p.SetLineSpacing(utils.IntPtr(16)); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: falló al establecer el espaciado de línea: %w", err)
 	}
 	// Asegurar que el espaciado se restablezca incluso si hay un error.
-	defer func(p *Printer, height *int) {
+	defer func(p *ESCPrinter, height *int) {
 		err := p.SetLineSpacing(height)
 		if err != nil {
 			log.Printf("image: error al restablecer espaciado")
@@ -93,10 +115,10 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 	// El modo por defecto (IMG_DEFAULT=0) suele ser 24 puntos verticales, doble densidad horizontal (m=33).
 
 	densityCode := 33 // Valor por defecto: 24 puntos verticales, doble densidad horizontal
-	if (size & cons.ImgDoubleHeight) == cons.ImgDoubleHeight {
+	if (size & imaging.ImgDoubleHeight) == imaging.ImgDoubleHeight {
 		densityCode &^= 32 // Desactivar bit 5 (32) -> 8 puntos verticales
 	}
-	if (size & cons.ImgDoubleWidth) == cons.ImgDoubleWidth {
+	if (size & imaging.ImgDoubleWidth) == imaging.ImgDoubleWidth {
 		densityCode &^= 1 // Desactivar bit 0 (1) -> densidad horizontal normal
 	}
 
@@ -117,7 +139,7 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 
 	for _, lineData := range colFormatData {
 		// Comando para cada línea: ESC * m nL nH d1...dk
-		cmd := []byte{ESC, '*', byte(densityCode)}
+		cmd := []byte{cons.ESC, '*', byte(densityCode)}
 		cmd = append(cmd, headerBytes...)
 		cmd = append(cmd, lineData...) // Datos de la línea de la imagen
 
@@ -138,121 +160,43 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 	return nil
 }
 
-// Graphics imprime una imagen utilizando los comandos de gráfico GS ( L.
-// Este método es a menudo más robusto para imágenes grandes o de alta calidad.
-func (p *Printer) Graphics(img *Image, size int) error {
-	if img == nil {
-		return errors.New("Graphics: la imagen no puede ser nil")
-	}
-	if err := validateInteger(size, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "Graphics", "tamaño"); err != nil {
-		return fmt.Errorf("Graphics: %w", err)
-	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
-
-	rasterData, err := img.ToRasterFormat() // Requiere implementación real
-	if err != nil {
-		return fmt.Errorf("Graphics: falló al obtener los datos raster: %w", err)
-	}
-
-	// Cabecera de imagen: xL xH yL yH (ancho en puntos, alto en puntos) - 2 bytes cada uno
-	imgHeaderBytes, err := dataHeader([]int{img.GetWidth(), img.GetHeight()}, true) // true para 2 bytes por valor
-	if err != nil {
-		return fmt.Errorf("Graphics: falló al crear la cabecera de imagen: %w", err)
-	}
-
-	// Construir los datos para el comando 'p' (imprimir datos gráficos definidos por el usuario)
-	// Formato: tono xm ym colors imgHeader rasterData
-	// tono: '0' (normal)
-	// xm: multiplicador horizontal ('1' o '2')
-	// ym: multiplicador vertical ('1' o '2')
-	// colors: '1' (1 bit por píxel)
-	// PHP usa chr(1) o chr(2) para xm/ym. Replicamos.
-	xm := byte(1)
-	if (size & cons.ImgDoubleWidth) == cons.ImgDoubleWidth {
-		xm = 2
-	}
-	ym := byte(1)
-	if (size & cons.ImgDoubleHeight) == cons.ImgDoubleHeight {
-		ym = 2
-	}
-
-	graphicsDataP := []byte{'0', xm, ym, '1'}                // tono, xm, ym, colors
-	graphicsDataP = append(graphicsDataP, imgHeaderBytes...) // Cabecera de imagen
-	graphicsDataP = append(graphicsDataP, rasterData...)     // Datos raster
-
-	// Enviar comando para definir/imprimir los datos gráficos (fn='p')
-	// El wrapper calcula pL pH.
-	if err := p.wrapperSendGraphicsData(byte('0'), byte('p'), graphicsDataP); err != nil {
-		return fmt.Errorf("Graphics: falló al enviar los datos gráficos (fn 'p'): %w", err)
-	}
-
-	// Enviar comando para imprimir el último dato gráfico definido (fn='2')
-	// Este comando no tiene datos adicionales después de m y fn.
-	if err := p.wrapperSendGraphicsData(byte('0'), byte('2'), []byte{}); err != nil {
-		return fmt.Errorf("Graphics: falló al enviar el comando de impresión (fn '2'): %w", err)
-	}
-
-	return nil
-}
-
 // SetColor establece el color de impresión (para impresoras con múltiples colores).
 // color puede ser COLOR_1 (negro) o COLOR_2 (rojo).
-func (p *Printer) SetColor(color int) error {
-	if err := validateInteger(color, cons.Color1, cons.Color2, "SetColor", "color"); err != nil {
+func (p *ESCPrinter) SetColor(color int) error {
+	if err := cons.ValidateInteger(color, imaging.Color1, imaging.Color2, "SetColor", "color"); err != nil {
 		return fmt.Errorf("SetColor: %w", err)
 	}
 	// ESC r n - n=0: Color 1, 1: Color 2
-	cmd := []byte{ESC, 'r', byte(color)}
+	cmd := []byte{cons.ESC, 'r', byte(color)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetReverseColors habilita o deshabilita la impresión en colores inversos.
-func (p *Printer) SetReverseColors(on bool) error {
+func (p *ESCPrinter) SetReverseColors(on bool) error {
 	// GS B n - n=1: habilitar, 0: deshabilitar
 	val := byte(0)
 	if on {
 		val = 1
 	}
-	cmd := []byte{GS, 'B', val}
+	cmd := []byte{cons.GS, 'B', val}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
-// Image La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
-// debe ser proporcionada. Esto implica manipulación de píxeles y formatos específicos de ESC/POS.
-type Image struct {
-	img              image.Image
-	threshold        uint8
-	width            int
-	height           int
-	rasterData       []byte
-	columnFormatHigh [][]byte
-	columnFormatLow  [][]byte
-}
-
-func NewEscposImage(img image.Image, threshold uint8) *Image {
-	bounds := img.Bounds()
-	return &Image{
-		img:       img,
-		threshold: threshold,
-		width:     bounds.Dx(),
-		height:    bounds.Dy(),
-	}
-}
-
-func (ei *Image) GetWidth() int {
+func (ei *ESCImage) GetWidth() int {
 	return ei.width
 }
 
-func (ei *Image) GetHeight() int {
+func (ei *ESCImage) GetHeight() int {
 	return ei.height
 }
 
-func (ei *Image) GetWidthBytes() int {
+func (ei *ESCImage) GetWidthBytes() int {
 	return (ei.width + 7) / 8
 }
 
-func (ei *Image) ToRasterFormat() ([]byte, error) {
+func (ei *ESCImage) ToRasterFormat() ([]byte, error) {
 	if ei.rasterData == nil {
 		if err := ei.processRasterData(); err != nil {
 			return nil, err
@@ -261,7 +205,7 @@ func (ei *Image) ToRasterFormat() ([]byte, error) {
 	return ei.rasterData, nil
 }
 
-func (ei *Image) ToColumnFormat(highDensity bool) ([][]byte, error) {
+func (ei *ESCImage) ToColumnFormat(highDensity bool) ([][]byte, error) {
 	if highDensity {
 		if ei.columnFormatHigh == nil {
 			if err := ei.processColumnData(true); err != nil {
@@ -279,7 +223,7 @@ func (ei *Image) ToColumnFormat(highDensity bool) ([][]byte, error) {
 	return ei.columnFormatLow, nil
 }
 
-func (ei *Image) processRasterData() error {
+func (ei *ESCImage) processRasterData() error {
 	if ei.img == nil {
 		return errors.New("imagen no inicializada")
 	}
@@ -303,7 +247,7 @@ func (ei *Image) processRasterData() error {
 	return nil
 }
 
-func (ei *Image) processColumnData(highDensity bool) error {
+func (ei *ESCImage) processColumnData(highDensity bool) error {
 	if ei.img == nil {
 		return errors.New("imagen no inicializada")
 	}
@@ -365,7 +309,7 @@ func (ei *Image) processColumnData(highDensity bool) error {
 	return nil
 }
 
-func (ei *Image) isBlack(x, y int) bool {
+func (ei *ESCImage) isBlack(x, y int) bool {
 	if x < 0 || y < 0 || x >= ei.width || y >= ei.height {
 		return false
 	}
@@ -391,7 +335,7 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			data, err := intLowHigh(input, cons.DimensionBytes)
+			data, err := utils.IntLowHigh(input, utils.DimensionBytes)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
@@ -407,45 +351,12 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// intLowHigh convierte un entero en un slice de bytes en orden bajo-alto (Little Endian).
-// input es el entero a convertir.
-// length es el número de bytes deseado (1 a 4).
-func intLowHigh(input, length int) ([]byte, error) {
-	if length < 1 || length > 4 { // PHP limita a 1-4, nos ceñimos a eso.
-		return nil, fmt.Errorf("intLowHigh: la longitud debe estar entre 1 y 4, se recibió %d", length)
-	}
-
-	// El rango máximo para `length` bytes es 2^(length*8) - 1.
-	// PHP usa (256 << (length*8)) - 1. Para length=1, (256 << 8) - 1 = 2^8 - 1 = 255.
-	// Para length=2, (256 << 16) - 1 = 2^16 - 1 = 65535.
-	// Para length=4, (256 << 32) - 1 - esto desborda int en PHP.
-	// Usemos uint32 para la comparación para manejar hasta 4 bytes correctamente.
-	var maxInput uint32
-	if length == 4 {
-		maxInput = math.MaxUint32 // 2^32 - 1
-	} else {
-		maxInput = (uint32(1) << uint(length*8)) - 1
-	}
-
-	if input < 0 || uint32(input) > maxInput {
-		return nil, fmt.Errorf("intLowHigh: la entrada %d está fuera del rango para %d bytes (0-%d)", input, length, maxInput)
-	}
-
-	buf := make([]byte, cons.Uint32Size)
-	// Usar encoding/binary para asegurar el orden Little Endian
-	// Convertimos el int a uint32 para usar PutUint32
-	binary.LittleEndian.PutUint32(buf, uint32(input))
-
-	// Si la longitud es menor a 4, solo tomamos los primeros `length` bytes
-	return buf[:length], nil
-}
-
 // TODO: Revisar ya que comando no existe en impresora
 // wrapperSend2dCodeData envía una parte de un comando de código 2D (GS ( k ...).
 // fn y cn son bytes de función y código.
 // data son los bytes de datos.
 // m es un byte de modo opcional ('0' o '1' para algunas funciones).
-func (p *Printer) wrapperSend2dCodeData(fn, cn byte, data []byte, m byte) error {
+func (p *ESCPrinter) wrapperSend2dCodeData(fn, cn byte, data []byte, m byte) error {
 	// Formato del comando: GS ( k pL pH cn fn [m] d1...dk
 	// pL pH: longitud del payload que sigue (cn + fn + [m] + data)
 	// cn: código del símbolo (0 para PDF417, 1 para QR)
@@ -460,17 +371,17 @@ func (p *Printer) wrapperSend2dCodeData(fn, cn byte, data []byte, m byte) error 
 	payloadLen += len(data) // + longitud de los datos
 
 	// pL pH es la longitud total del payload en formato low-high (2 bytes)
-	headerBytes, err := intLowHigh(payloadLen, 2)
+	headerBytes, err := utils.IntLowHigh(payloadLen, 2)
 	if err != nil {
 		return fmt.Errorf("wrapperSend2dCodeData: falló al crear la cabecera de longitud: %w", err)
 	}
 
 	// Construir el comando completo
 	var cmd bytes.Buffer
-	cmd.Write([]byte{GS, '(', 'k'}) // Prefijo
-	cmd.Write(headerBytes)          // pL pH
-	cmd.WriteByte(cn)               // cn
-	cmd.WriteByte(fn)               // fn
+	cmd.Write([]byte{cons.GS, '(', 'k'}) // Prefijo
+	cmd.Write(headerBytes)               // pL pH
+	cmd.WriteByte(cn)                    // cn
+	cmd.WriteByte(fn)                    // fn
 	if m != 0 {
 		cmd.WriteByte(m) // [m] opcional
 	}
@@ -484,7 +395,7 @@ func (p *Printer) wrapperSend2dCodeData(fn, cn byte, data []byte, m byte) error 
 // wrapperSendGraphicsData envía una parte de un comando gráfico (GS ( L ...).
 // m y fn son bytes de modo y función.
 // data son los bytes de datos.
-func (p *Printer) wrapperSendGraphicsData(m, fn byte, data []byte) error {
+func (p *ESCPrinter) wrapperSendGraphicsData(m, fn byte, data []byte) error {
 	// Formato del comando: GS ( L pL pH m fn [data]
 	// pL pH: longitud del payload que sigue (m + fn + data)
 	// m: byte de modo ('0' para este conjunto de comandos gráficos)
@@ -494,25 +405,41 @@ func (p *Printer) wrapperSendGraphicsData(m, fn byte, data []byte) error {
 	payloadLen := 2 + len(data) // m (1 byte) + fn (1 byte) + longitud de los datos
 
 	// pL pH es la longitud total del payload en formato low-high (2 bytes)
-	headerBytes, err := intLowHigh(payloadLen, 2)
+	headerBytes, err := utils.IntLowHigh(payloadLen, 2)
 	if err != nil {
 		return fmt.Errorf("wrapperSendGraphicsData: falló al crear la cabecera de longitud: %w", err)
 	}
 
 	// Construir el comando completo
 	var cmd bytes.Buffer
-	cmd.Write([]byte{GS, '(', 'L'}) // Prefijo
-	cmd.Write(headerBytes)          // pL pH
-	cmd.WriteByte(m)                // m
-	cmd.WriteByte(fn)               // fn
-	cmd.Write(data)                 // [data]
+	cmd.Write([]byte{cons.GS, '(', 'L'}) // Prefijo
+	cmd.Write(headerBytes)               // pL pH
+	cmd.WriteByte(m)                     // m
+	cmd.WriteByte(fn)                    // fn
+	cmd.Write(data)                      // [data]
 
 	_, err = p.Connector.Write(cmd.Bytes())
 	return err
 }
 
-// intPtr es una función de ayuda para obtener un puntero a un int.
-// Útil para métodos con parámetros opcionales *int (como SetLineSpacing).
-func intPtr(i int) *int {
-	return &i
+// ImageWithDithering procesa una imagen con dithering y la imprime
+// usando el comando de imagen de bits (GS v 0).
+// density: modo de densidad (0-3)
+// ditherMethod: dithering a utilizar
+func (p *ESCPrinter) ImageWithDithering(img image.Image, density int, ditherMethod imaging.DitherMode, size int) error {
+	if img == nil {
+		return fmt.Errorf("ImageWithDithering: la imagen no puede ser nil")
+	}
+
+	// Procesar la imagen con dithering
+	processedImg, err := imaging.ProcessImageWithDithering(img, ditherMethod, size)
+	if err != nil {
+		return fmt.Errorf("ImageWithDithering: error al procesar la imagen: %w", err)
+	}
+
+	// Convertir a formato escpos.Image
+	escposImg := NewEscposImage(processedImg, 128)
+
+	// Imprimir usando BitImage
+	return p.BitImage(escposImg, density)
 }

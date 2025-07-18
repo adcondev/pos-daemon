@@ -1,8 +1,8 @@
-package escpos
+package command
 
 import (
-	"errors"
 	"fmt"
+	"pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 const (
@@ -16,6 +16,37 @@ const (
 	STATUS_INK_B         int = 6 // GS I 6 (Estado de la tinta/cinta B)
 	STATUS_PEELER        int = 8 // GS I 8 (Estado del peeler - para etiquetas)
 
+)
+
+// ESCPrinter representa una impresora térmica ESC/POS.
+type ESCPrinter struct {
+	Connector      Connector
+	Profile        *CapabilityProfile
+	CharacterTable int // La tabla de caracteres (codepage) actualmente seleccionada.
+}
+
+// Printer defines the interface for any ESC/POS compatible printer
+type Printer interface {
+	Initialize() error
+	Pulse(int, int, int) error
+	Close() error
+	Status() (Status, error)
+}
+
+// Status represents the printer status
+type Status struct {
+	Online      bool
+	PaperStatus PaperStatus
+	DrawerOpen  bool
+	// Additional status fields
+}
+
+type PaperStatus int
+
+const (
+	PaperOK PaperStatus = iota
+	PaperLow
+	PaperOut
 )
 
 // Connector define la interfaz para la conexión física con la impresora.
@@ -66,66 +97,28 @@ func LoadProfile(name string) (*CapabilityProfile, error) {
 	return nil, fmt.Errorf("perfil de capacidad desconocido: %s", name)
 }
 
-// Printer representa una impresora térmica ESC/POS.
-type Printer struct {
-	Connector      Connector
-	profile        *CapabilityProfile
-	characterTable int // La tabla de caracteres (codepage) actualmente seleccionada.
-}
-
-// NewPrinter crea una nueva instancia de Printer.
-// Requiere un Connector y opcionalmente un CapabilityProfile.
-// Si el perfil es nil, carga el perfil por defecto.
-func NewPrinter(connector Connector, profile *CapabilityProfile) (*Printer, error) {
-	if connector == nil {
-		return nil, errors.New("Connector no puede ser nil")
-	}
-	if profile == nil {
-		// Cargar perfil por defecto si no se proporciona ninguno
-		defaultProfile, err := LoadProfile("default")
-		if err != nil {
-			return nil, fmt.Errorf("falló al cargar el perfil de capacidad por defecto: %w", err)
-		}
-		profile = defaultProfile
-	}
-
-	p := &Printer{
-		Connector:      connector,
-		profile:        profile,
-		characterTable: 0, // Tabla de caracteres por defecto
-	}
-
-	// Inicializar la impresora
-	if err := p.Initialize(); err != nil {
-		// Si la inicialización falla, consideramos que la creación de la impresora falla.
-		return nil, fmt.Errorf("falló al inicializar la impresora: %w", err)
-	}
-
-	return p, nil
-}
-
 // --- Métodos Públicos (Espejo de la clase PHP) ---
 
 // Initialize restablece la impresora a su configuración por defecto (ESC @).
-func (p *Printer) Initialize() error {
-	_, err := p.Connector.Write([]byte{ESC, '@'})
+func (p *ESCPrinter) Initialize() error {
+	_, err := p.Connector.Write([]byte{protocol.ESC, '@'})
 	if err == nil {
-		p.characterTable = 0 // Resetear el seguimiento de la tabla de caracteres
+		p.CharacterTable = 0 // Resetear el seguimiento de la tabla de caracteres
 	}
 	return err
 }
 
 // Close finaliza la conexión con la impresora.
-func (p *Printer) Close() error {
+func (p *ESCPrinter) Close() error {
 	return p.Connector.Close()
 }
 
 // GetPrintConnector devuelve el conector que está utilizando la impresora.
-func (p *Printer) GetPrintConnector() Connector {
+func (p *ESCPrinter) GetPrintConnector() Connector {
 	return p.Connector
 }
 
 // GetPrinterCapabilityProfile devuelve el perfil de capacidad de la impresora.
-func (p *Printer) GetPrinterCapabilityProfile() *CapabilityProfile {
-	return p.profile
+func (p *ESCPrinter) GetPrinterCapabilityProfile() *CapabilityProfile {
+	return p.Profile
 }
