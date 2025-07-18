@@ -80,6 +80,101 @@
           "155548835"
         ],
         "impuestos": []
+      },
+      {
+        "clave": "0001",
+        "descripcion": "MANTENIMIENTO OTROS CORRECTIVOS",
+        "precio_venta": "37041.8",
+        "cantidad": "1",
+        "total": "37041.8",
+        "unidad": "PIEZA",
+        "clave_producto_servicio": "52101502",
+        "clave_unidad_sat": "MTK",
+        "venta_granel": "0",
+        "impuestos": []
+      },
+      {
+        "clave": "S0001-15976",
+        "descripcion": "ESTUCO ACRILICO UV RD",
+        "precio_venta": "96.774131113464",
+        "cantidad": "1",
+        "total": "99.99",
+        "unidad": "PIEZA",
+        "clave_producto_servicio": "31211707",
+        "clave_unidad_sat": "H87",
+        "venta_granel": "0",
+        "impuestos": [
+          {
+            "factor": "Tasa",
+            "base": "96.770000",
+            "importe": "15.480000",
+            "impuestos": "002",
+            "tasa": "0.160000",
+            "entidad": "Federal",
+            "tipo": "T"
+          },
+          {
+            "factor": "Tasa",
+            "base": "96.770000",
+            "importe": "7.740000",
+            "impuestos": "003",
+            "tasa": "0.080000",
+            "entidad": "Federal",
+            "tipo": "T"
+          },
+          {
+            "factor": "Tasa",
+            "base": "96.770000",
+            "importe": "10.320000",
+            "impuestos": "002",
+            "tasa": "0.106666",
+            "entidad": "Federal",
+            "tipo": "R"
+          },
+          {
+            "factor": "Tasa",
+            "base": "96.770000",
+            "importe": "9.680000",
+            "impuestos": "001",
+            "tasa": "0.100000",
+            "entidad": "Federal",
+            "tipo": "R"
+          }
+        ]
+      },
+      {
+        "clave": "S0001-15997",
+        "descripcion": "AGUA DESTILADA",
+        "precio_venta": "68.965517241379",
+        "cantidad": "1",
+        "total": "80",
+        "unidad": "PIEZA",
+        "clave_producto_servicio": "31211900",
+        "clave_unidad_sat": "H87",
+        "venta_granel": "0",
+        "impuestos": [
+          {
+            "factor": "Tasa",
+            "base": "68.970000",
+            "importe": "11.030000",
+            "impuestos": "002",
+            "tasa": "0.160000",
+            "entidad": "Federal",
+            "tipo": "T"
+          }
+        ]
+      },
+      {
+        "clave": "CRA000016",
+        "descripcion": "Crayolas",
+        "precio_venta": "30",
+        "cantidad": "1",
+        "total": "30",
+        "unidad": "PIEZA",
+        "clave_producto_servicio": "60121509",
+        "clave_unidad_sat": "H87",
+        "venta_granel": "0",
+        "impuestos": []
       }
     ],
     "impuestos": [],
