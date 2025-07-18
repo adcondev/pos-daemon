@@ -9,8 +9,9 @@ import (
 	"log"
 	"os"
 	"pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/pkg/escpos"
 	"pos-daemon.adcon.dev/pkg/escpos/command"
-	"pos-daemon.adcon.dev/pkg/escpos/printer"
+	"pos-daemon.adcon.dev/pkg/escpos/imaging"
 
 	"pos-daemon.adcon.dev/pkg/escpos/connector"
 	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
@@ -23,7 +24,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &models.LocalConfigData{}
+	dataConfig := &models.ConfigData{}
 
 	dataConfig, err = models.BytesToConfig(jsonBytes)
 	if err != nil {
@@ -75,7 +76,7 @@ func main() {
 	// --- 2. Crear una instancia de la clase ESCPrinter ---
 	// Pasamos el conector y nil para usar el CapabilityProfile por defecto.
 	log.Println("Creando instancia de ESCPrinter.")
-	printer, err := printer.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
+	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
 	if err != nil {
 		// El constructor de ESCPrinter llama a Initialize(), que hace un primer Write().
 		// Si Initialize falla, puede ser un problema de conexión o que el primer Write no funcionó.
@@ -176,7 +177,7 @@ func main() {
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
-	if err = printer.BitImage(escposQR, cons.ImgDefault); err != nil {
+	if err = printer.BitImage(escposQR, imaging.ImgDefault); err != nil {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
@@ -203,7 +204,7 @@ func main() {
 	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
 	// Imprimir la imagen con dithering de Floyd-Steinberg
-	if err := printer.ImageWithDithering(imgLogo, cons.ImgDefault, cons.FloydStein, cons.DefaultPrintSize); err != nil {
+	if err := printer.ImageWithDithering(imgLogo, imaging.ImgDefault, imaging.FloydStein, imaging.DefaultPrintSize); err != nil {
 		log.Printf("Error al imprimir logo con dithering: %v", err)
 	}
 
@@ -213,7 +214,7 @@ func main() {
 	}
 
 	// Cortar papel
-	if err = printer.Cut(command.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
+	if err = printer.Cut(cons.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
 		log.Printf("Error al cortar papel: %v", err)
 	}
 

@@ -7,12 +7,11 @@ import (
 	"os"
 	"pos-daemon.adcon.dev/internal/models"
 	"pos-daemon.adcon.dev/internal/service"
-	"pos-daemon.adcon.dev/pkg/escpos/command"
-	"pos-daemon.adcon.dev/pkg/escpos/printer"
+	"pos-daemon.adcon.dev/pkg/escpos"
 	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 	"strconv"
 
-	"pos-daemon.adcon.dev/pkg/escpos/connector"
+	conn "pos-daemon.adcon.dev/pkg/escpos/connector"
 )
 
 func main() {
@@ -22,7 +21,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &models.LocalConfigData{}
+	dataConfig := &models.ConfigData{}
 
 	dataConfig, err = models.BytesToConfig(jsonBytes)
 	if err != nil {
@@ -55,7 +54,7 @@ func main() {
 
 	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connector.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := conn.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
@@ -74,7 +73,7 @@ func main() {
 	// --- 2. Crear una instancia de la clase ESCPrinter ---
 	// Pasamos el conector y nil para usar el CapabilityProfile por defecto.
 	log.Println("Creando instancia de ESCPrinter.")
-	printer, err := printer.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
+	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
 	if err != nil {
 		// El constructor de ESCPrinter llama a Initialize(), que hace un primer Write().
 		// Si Initialize falla, puede ser un problema de conexión o que el primer Write no funcionó.
@@ -86,9 +85,9 @@ func main() {
 	// Aunque Connector.Close() también cerrará el handle, ESCPrinter.Close()
 	// se asegura de que el búfer de impresión esté vacío (si se hubiera usado)
 	// y de que el method finalize() del conector se llame (en nuestra simple
-	// implementación de connector.Close(), esto es lo mismo).
-	// Dejaremos solo el defer connector.Close() por simplicidad ya que ESCPrinter.Close()
-	// simplemente llama a connector.Close() en este port.
+	// implementación de conn.Close(), esto es lo mismo).
+	// Dejaremos solo el defer conn.Close() por simplicidad ya que ESCPrinter.Close()
+	// simplemente llama a conn.Close() en este port.
 
 	// --- 3. Usar los métodos de la clase ESCPrinter para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
@@ -99,9 +98,9 @@ func main() {
 		return
 	}
 
-	dataTicket := &models.TicketData{}
+	dataTicket := &models.NewTicketData{}
 
-	dataTicket, err = models.BytesToTicket(jsonBytes)
+	dataTicket, err = models.BytesToNewTicket(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -143,7 +142,7 @@ func main() {
 	if err = printer.Text("Regimen Fiscal: " + dataTicket.SucursalRegimen + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
-	if err = printer.Text("Email: " + dataTicket.ClienteEmails + "\n"); err != nil {
+	if err = printer.Text("Email: " + dataTicket.ClienteEmail + "\n"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 	if err = printer.Text("Cliente: " + dataTicket.ClienteNombre + "\n"); err != nil {
@@ -318,7 +317,7 @@ func main() {
 	}
 
 	// Cortar papel
-	if err = printer.Cut(command.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
+	if err = printer.Cut(cons.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
 		log.Printf("Error al cortar papel: %v", err)
 	}
 
