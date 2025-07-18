@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/skip2/go-qrcode"
 	"image"
 	"io"
 	"log"
@@ -19,7 +20,7 @@ const (
 	LEN_CANT      int = 4
 	LEN_DESC      int = 22
 	LEN_PRECIO    int = 10
-	LEN_TOTAL     int = 11
+	LEN_TOTAL     int = 10
 	LEN_DECIMALES int = 2
 )
 
@@ -62,14 +63,12 @@ func (tc *TicketConstructor) PrintTicket() error {
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
+	if err := tc.printer.SetJustification(cons.Center); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
-		log.Printf("Error al establecer énfasis: %v", err)
-	}
+
 	// Tipo de fuente
-	if err := tc.printer.SetFont(cons.FONT_A); err != nil {
+	if err := tc.printer.SetFont(cons.A); err != nil {
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
@@ -77,44 +76,24 @@ func (tc *TicketConstructor) PrintTicket() error {
 	if err != nil {
 		return fmt.Errorf("ticket printer: error al establecer ancho de impresión: %w", err)
 	}
-	err = tc.printer.SetPrintLeftMargin(0)
+	err = tc.printer.SetPrintLeftMargin(0) // TODO Por lo pronto solo 2 tamaños de papel 80mm y 58mm
 	if err != nil {
 		return fmt.Errorf("ticket printer: error al establecer ancho de impresió izquierdo: %w", err)
 	}
-	if err := tc.printer.TextLn("Ticket Width: " + strconv.Itoa(int(tc.template.Data.TicketWidth))); err != nil {
-		log.Printf("ticket_printer: error al imprimir texto: %v", err)
-	}
+
 	tc.printHeader()
 	tc.printCustomerInfo()
 	tc.printTicketInfo()
-
-	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(cons.JUSTIFY_LEFT); err != nil {
-		log.Printf("Error al establecer justificación: %v", err)
+	if err := tc.printer.Feed(1); err != nil {
+		log.Printf("Error al alimentar papel: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
-		log.Printf("Error al establecer énfasis: %v", err)
-	}
-	// Tipo de fuente
-	if err := tc.printer.SetFont(cons.FONT_A); err != nil {
-		log.Printf("Error al establecer fuente: %v", err)
-	}
-
 	taxes := tc.printItems()
 	tc.printTaxes(taxes)
 	tc.printPaymentInfo()
-
-	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
-		log.Printf("Error al establecer justificación: %v", err)
+	if err := tc.printer.Feed(1); err != nil {
+		log.Printf("Error al alimentar papel: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
-		log.Printf("Error al establecer énfasis: %v", err)
-	}
-	// Tipo de fuente
-	if err := tc.printer.SetFont(cons.FONT_A); err != nil {
-		log.Printf("Error al establecer fuente: %v", err)
-	}
+	tc.printQr()
 
 	tc.printFooter()
 
@@ -140,20 +119,24 @@ func (tc *TicketConstructor) printHeader() {
 
 	// Print custom header if available
 	if tmpl.CambiarCabecera != "" {
-		if err := tc.printer.TextLn("Cabecera: " + tmpl.CambiarCabecera); err != nil {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tmpl.CambiarCabecera); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.Feed(1); err != nil {
-			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
 
 	// Print logo placeholder if configured
 	if tmpl.VerLogotipo {
+
 		logoPath := "./img/perro.jpeg"
-		logoFile, err := os.Open(logoPath)
-		if err != nil {
-			log.Fatalf("datosTckt printer: error abriendo archivo de logo (%s): %v", logoPath, err)
+		logoFile, oerr := os.Open(logoPath)
+		if oerr != nil {
+			log.Fatalf("datosTckt printer: error abriendo archivo de logo (%s): %v", logoPath, oerr)
 		}
 		defer func(logoFile *os.File) {
 			err := logoFile.Close()
@@ -163,95 +146,158 @@ func (tc *TicketConstructor) printHeader() {
 		}(logoFile)
 
 		// Decodificar según el formato real
-		imgLogo, format, err := image.Decode(logoFile)
-		if err != nil {
-			log.Fatalf("datosTckt printer: error decodificando imagen de logo (%s): %v", logoPath, err)
+		imgLogo, format, derr := image.Decode(logoFile)
+		if derr != nil {
+			log.Fatalf("datosTckt printer: error decodificando imagen de logo (%s): %v", logoPath, derr)
 		}
 		log.Printf("datosTckt printer: logo cargado desde %s (formato %s)", logoPath, format)
 
+		if err := tc.printer.Feed(1); err != nil {
+			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
+		}
 		// Imprimir la imagen con dithering de Floyd-Steinberg
-		if err := tc.printer.ImageWithDithering(imgLogo, cons.IMG_DEFAULT, cons.FloydStein, cons.DefaultPrintSize); err != nil {
+		if err := tc.printer.ImageWithDithering(imgLogo, cons.ImgDefault, cons.FloydStein, tmpl.LogoWidth*2); err != nil {
 			log.Printf("datosTckt printer: error al imprimir logo con dithering: %v", err)
 		}
+		if err := tc.printer.Feed(1); err != nil {
+			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
+		}
+	}
 
+	// Print store name
+	if tmpl.VerNombre && datosTckt.SucursalNombre != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn("Matriz\n" + datosTckt.SucursalNombre); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
 		if err := tc.printer.Feed(1); err != nil {
 			log.Printf("ticket_printer: error al alimentar papel después de imprimir logo: %v", err)
 		}
 	}
 
-	// Print store name
-	if tmpl.VerNombre {
-		if err := tc.printer.TextLn("Sucursal Nombre: " + datosTckt.SucursalNombre); err != nil {
+	// Print commercial name
+	if tmpl.VerNombreC && datosTckt.SucursalNombreComercial != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Nombre Comercial: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-	}
-
-	// Print commercial name
-	if tmpl.VerNombreC {
-		if err := tc.printer.TextLn("Sucursal Nombre Comercial: " + datosTckt.SucursalNombreComercial); err != nil {
+		// Si es mas grande fijar al doble de tamaño
+		if tmpl.RazonSocialSize > 10 {
+			if err := tc.printer.SetFont(cons.B); err != nil {
+				log.Printf("Error al establecer fuente: %v", err)
+			}
+			if err := tc.printer.SetTextSize(2, 2); err != nil {
+				log.Printf("Error al establecer tamaño de texto: %v", err)
+			}
+		}
+		if err := tc.printer.TextLn(datosTckt.SucursalNombreComercial); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		// TODO Revisar si es default el tamaño de texto
+		if eer := tc.printer.SetTextSize(1, 1); eer != nil {
+			log.Printf("Error al establecer tamaño de texto: %v", eer)
+		}
+		if err := tc.printer.SetFont(cons.A); err != nil {
+			log.Printf("Error al establecer fuente: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
 
 	// Print RFC
-	if tmpl.VerRFC {
-		if err := tc.printer.TextLn("Sucursal RFC: " + datosTckt.SucursalRFC); err != nil {
+	if tmpl.VerRFC && datosTckt.SucursalRFC != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("RFC: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-	}
-
-	// Print address
-	if dom := ""; tmpl.VerDom {
-		dom = fmt.Sprintf("%s %s", datosTckt.SucursalCalle, datosTckt.SucursalNumero)
-		if datosTckt.SucursalNumeroInt != "" {
-			dom = dom + fmt.Sprintf(" Int. %s", datosTckt.SucursalNumeroInt)
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		dom = dom + "\n"
-		dom = dom + fmt.Sprintf("Col. %s\n", datosTckt.SucursalColonia)
-		dom = dom + fmt.Sprintf("%s, %s, %s\n", datosTckt.SucursalLocalidad, datosTckt.SucursalEstado, datosTckt.SucursalPais)
-		dom = dom + fmt.Sprintf("C.P. %s", datosTckt.SucursalCP)
-
-		if err := tc.printer.TextLn("Sucursal Domicilio: " + dom); err != nil {
+		if err := tc.printer.TextLn(datosTckt.SucursalRFC); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
 	// Print tax regime
-	if reg := ""; tmpl.VerRegimen {
-		reg = fmt.Sprintf("Sucursal Régimen Fiscal: %s - %s", datosTckt.SucursalRegimenClave, datosTckt.SucursalRegimen)
-		if err := tc.printer.TextLn(reg); err != nil {
+	if tmpl.VerRegimen && datosTckt.SucursalRegimen != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Régimen Fiscal: "); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(datosTckt.SucursalRegimen); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
 	// Print email
-	if tmpl.VerEmail {
-		if err := tc.printer.TextLn("Sucursal Email: " + datosTckt.SucursalEmails); err != nil {
+	if tmpl.VerEmail && datosTckt.SucursalEmails != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Email: "); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(datosTckt.SucursalEmails); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	// Print phone if configured
-	if tmpl.VerTelefono && datosTckt.SucursalTelefono != "" {
-		if err := tc.printer.TextLn("Sucursal Telefono: " + datosTckt.SucursalTelefono); err != nil {
+	// Print address
+	if dom := ""; tmpl.VerDom && datosTckt.SucursalCalle != "" && datosTckt.SucursalNumero != "" && datosTckt.SucursalColonia != "" {
+		dom = fmt.Sprintf("%s %s,", datosTckt.SucursalCalle, datosTckt.SucursalNumero)
+		if datosTckt.SucursalNumeroInt != "" {
+			dom = dom + fmt.Sprintf(" Int. %s,", datosTckt.SucursalNumeroInt)
+		}
+		dom = dom + fmt.Sprintf(" Col. %s,", datosTckt.SucursalColonia)
+		dom = dom + fmt.Sprintf(" %s, %s, %s, ", datosTckt.SucursalLocalidad, datosTckt.SucursalEstado, datosTckt.SucursalPais)
+		dom = dom + fmt.Sprintf(" C.P. %s", datosTckt.SucursalCP)
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Domicilio: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-	}
-	if err := tc.printer.Feed(1); err != nil {
-		log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(dom); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+
+		}
 	}
 }
 
 // printCustomerInfo prints the customer information
 func (tc *TicketConstructor) printCustomerInfo() {
-	if tc.template.Data.VerNombreCliente {
-		if err := tc.printer.TextLn("Cliente Nombre: " + tc.ticket.Data.ClienteNombre); err != nil {
+	if tc.template.Data.VerNombreCliente && tc.ticket.Data.ClienteNombre != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Cliente: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.TextLn("Cliente RFC: " + tc.ticket.Data.ClienteRFC); err != nil {
-			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.Feed(1); err != nil {
+		if err := tc.printer.TextLn(tc.ticket.Data.ClienteNombre); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
@@ -262,54 +308,56 @@ func (tc *TicketConstructor) printTicketInfo() {
 	tmpl := tc.template.Data
 	tcktData := tc.ticket.Data
 
-	if serieFolio := ""; tmpl.VerFolio {
-		serieFolio = fmt.Sprintf("Serie Folio: %s %s", tcktData.Serie, tcktData.Folio)
-		if err := tc.printer.TextLn(serieFolio); err != nil {
+	if tmpl.VerFolio && tcktData.Folio != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Folio: "); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tcktData.Folio); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	if fecha := ""; tmpl.VerFecha {
-		fecha = fmt.Sprintf("Fecha: %s", tcktData.FechaSistema)
-		if err := tc.printer.TextLn(fecha); err != nil {
+	if tmpl.VerFecha && tcktData.FechaSistema != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Fecha: "); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tcktData.FechaSistema); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	if sucTienda := ""; tmpl.VerTienda {
-		sucTienda = fmt.Sprintf("Sucursal Tienda: %s\n", tcktData.SucursalTienda)
-		if err := tc.printer.TextLn(sucTienda); err != nil {
+	if tmpl.VerTienda && tcktData.SucursalTienda != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text("Tienda: "); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tcktData.SucursalTienda); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	if err := tc.printer.TextLn("Vendedor: " + tcktData.Vendedor); err != nil {
-		log.Printf("ticket_printer: error al imprimir texto: %v", err)
-	}
-	if err := tc.printer.Feed(1); err != nil {
-		log.Printf("ticket_printer: error al cortarpapel: %v", err)
-	}
+	// TODO Determinar si se requiere bool en template para vendedor
 }
 
 // printItems prints the purchased items
 func (tc *TicketConstructor) printItems() map[string]float64 {
-	tmpl := tc.template.Data
-
-	cant := ""
-	if tmpl.VerCantProductos {
-		cant = tckt.PadCenter("CANT", LEN_CANT, ' ')
-	}
-	producto := tckt.PadCenter("PRODUCTO", LEN_DESC, ' ')
-	precio := ""
-	if tmpl.VerPrecioU {
-		precio = tckt.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
-	}
-	subtotal := tckt.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
-
-	if err := tc.printer.TextLn(cant + producto + precio + subtotal); err != nil {
-		log.Printf("Error al imprimir artículo 1: %v", err)
-	}
-
 	const IVA_TRAS int = 0
 	const IEPS_TRAS int = 1
 	const IVA_RET int = 2
@@ -321,19 +369,50 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	var ivaRetenido_sum float64
 	var isrRetenido_sum float64
 
+	tmpl := tc.template.Data
+
+	precio := ""
+	producto := tckt.PadCenter("PRODUCTO", LEN_DESC+LEN_PRECIO, ' ')
+	if tmpl.VerPrecioU {
+		precio = tckt.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
+		producto = tckt.PadCenter("PRODUCTO", LEN_DESC, ' ')
+	}
+	cant := ""
+	subtotal := tckt.PadCenter("SUBTOTAL", LEN_TOTAL+LEN_CANT, ' ')
+	if tmpl.VerCantProductos {
+		cant = tckt.PadCenter("CANT", LEN_CANT, ' ')
+		subtotal = tckt.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
+	}
+
+	// Configurar justificación y estilo
+	if err := tc.printer.SetJustification(cons.Left); err != nil {
+		log.Printf("Error al establecer justificación: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+	if err := tc.printer.TextLn(cant + producto + precio + subtotal); err != nil {
+		log.Printf("Error al imprimir artículo 1: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+
 	// Print each conc
 	conceptoRow := ""
 	for _, conc := range tc.ticket.Data.Conceptos {
 		cant = ""
+		subtotal = tckt.PadCenter("$"+tckt.FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL+LEN_CANT, ' ')
 		if tmpl.VerCantProductos {
 			cant = tckt.PadCenter(strconv.FormatFloat(conc.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
+			subtotal = tckt.PadCenter("$"+tckt.FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
 		}
-		producto = tckt.PadCenter(tckt.Substr(conc.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
-		precio := ""
+		precio = ""
+		producto = tckt.PadCenter(tckt.Substr(conc.Descripcion, LEN_DESC+LEN_PRECIO-2), LEN_DESC+LEN_PRECIO, ' ')
 		if tmpl.VerPrecioU {
 			precio = tckt.PadCenter("$"+tckt.FormatFloat(conc.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
+			producto = tckt.PadCenter(tckt.Substr(conc.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
 		}
-		subtotal = tckt.PadCenter("$"+tckt.FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
 
 		subtotal_sum = subtotal_sum + conc.Total
 
@@ -353,19 +432,21 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(cons.JUSTIFY_RIGHT); err != nil {
+	if err := tc.printer.SetJustification(cons.Right); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
+	}
+
+	if err := tc.printer.Text("Subtotal: $"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	// Tipo de fuente
-	if err := tc.printer.SetFont(cons.FONT_B); err != nil {
-		log.Printf("Error al establecer fuente: %v", err)
-	}
-
-	if err := tc.printer.TextLn("Subtotal: $" + tckt.FormatFloat(subtotal_sum, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(tckt.FormatFloat(subtotal_sum, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
 	return map[string]float64{
@@ -379,18 +460,57 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 
 // printTaxes prints tax information if configured
 func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
-	if tc.template.Data.VerImpuestos || tc.template.Data.VerImpuestosTotal || tc.template.Data.IncluyeImpuestos {
-		if err := tc.printer.TextLn("IVA Trasladado: $" + tckt.FormatFloat(taxes["ivaTrasladado"], LEN_DECIMALES)); err != nil {
+	if (tc.template.Data.VerImpuestos || tc.template.Data.VerImpuestosTotal) && tc.template.Data.IncluyeImpuestos {
+		if err := tc.printer.Text("IVA Trasladado: $"); err != nil {
+			log.Printf("Error al imprimir: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["ivaTrasladado"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.TextLn("IEPS Trasladado: $" + tckt.FormatFloat(taxes["iepsTrasladado"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+
+		if err := tc.printer.Text("IVA Retenido: $"); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.TextLn("IVA Retenido: $" + tckt.FormatFloat(taxes["ivaRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["ivaRetenido"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.TextLn("ISR Retenido: $" + tckt.FormatFloat(taxes["isrRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+
+		if err := tc.printer.Text("IEPS Trasladado: $"); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.Text(tckt.FormatFloat(taxes["iepsTrasladado"], LEN_DECIMALES)); err != nil {
+			log.Printf("Error al imprimir suma: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+
+		if err := tc.printer.Text("ISR Retenido: $"); err != nil {
+			log.Printf("Error al imprimir suma: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["isrRetenido"], LEN_DECIMALES)); err != nil {
+			log.Printf("Error al imprimir suma: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
 }
@@ -399,14 +519,43 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 func (tc *TicketConstructor) printPaymentInfo() {
 	tcktData := tc.ticket.Data.DocumentosPago[0]
 
-	if err := tc.printer.TextLn("Total Field: $" + tckt.FormatFloat(tcktData.Total, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.Text("Total: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.TextLn("Efectivo: $" + tckt.FormatFloat(tcktData.FormasPago[0].Cantidad, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.Total, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.TextLn("Cambio: $" + tckt.FormatFloat(tcktData.Cambio, LEN_DECIMALES) + "\n"); err != nil {
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+
+	if err := tc.printer.Text("Efectivo: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.FormasPago[0].Cantidad, LEN_DECIMALES)); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+
+	if err := tc.printer.Text("Cambio: $"); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.Cambio, LEN_DECIMALES)); err != nil {
+		log.Printf("Error al imprimir suma: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
 	}
 }
 
@@ -414,17 +563,90 @@ func (tc *TicketConstructor) printPaymentInfo() {
 func (tc *TicketConstructor) printFooter() {
 	tmpl := tc.template.Data
 
+	if err := tc.printer.SetJustification(cons.Center); err != nil {
+		log.Printf("Error al establecer justificación: %v", err)
+	}
+
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+	if err := tc.printer.SetTextSize(2, 2); err != nil {
+		log.Printf("Error al establecer tamaño de texto: %v", err)
+	}
+	if err := tc.printer.TextLn("PAGADO"); err != nil {
+		log.Printf("Error al imprimir: %v", err)
+	}
+	if err := tc.printer.SetTextSize(1, 1); err != nil {
+		log.Printf("Error al establecer tamaño de texto: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+
+	if err := tc.printer.Feed(1); err != nil {
+		log.Printf("Error al alimentar papel: %v", err)
+	}
+
+	if err := tc.printer.TextLn(fmt.Sprintf("Cantidad de Productos: %d", len(tc.ticket.Data.Conceptos))); err != nil {
+		log.Printf("Error al imprimir: %v", err)
+	}
+
 	if tmpl.VerLeyenda && tmpl.CambiarReclamacion != "" {
 		if err := tc.printer.TextLn(tmpl.CambiarReclamacion); err != nil {
 			log.Printf("Error al imprimir: %v", err)
 		}
-		if err := tc.printer.Feed(1); err != nil {
-			log.Printf("Error al imprimir: %v", err)
-		}
 	}
 
+	// Print phone if configured
+	if tmpl.VerTelefono && tc.ticket.Data.SucursalTelefono != "" {
+		if err := tc.printer.SetEmphasis(true); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+		if err := tc.printer.TextLn("Teléfono: " + tc.ticket.Data.SucursalTelefono); err != nil {
+			log.Printf("ticket_printer: error al imprimir texto: %v", err)
+		}
+		if err := tc.printer.SetEmphasis(false); err != nil {
+			log.Printf("Error al establecer énfasis: %v", err)
+		}
+	}
 	// Print footer message
+	if err := tc.printer.SetEmphasis(true); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
 	if err := tc.printer.TextLn(tmpl.CambiarPie); err != nil {
 		log.Printf("Error al imprimir: %v", err)
+	}
+	if err := tc.printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
+}
+
+func (tc *TicketConstructor) printQr() {
+	if err := tc.printer.SetJustification(cons.Center); err != nil {
+		log.Printf("Error al establecer justificación: %v", err)
+	}
+	if err := tc.printer.TextLn(tc.ticket.Data.AutofacturaLink); err != nil {
+		log.Printf("Error al imprimir: %v", err)
+	}
+
+	// Generar el código QR en memoria
+	// El parámetro 256 define el tamaño en píxeles
+	qr, err := qrcode.New(tc.ticket.Data.AutofacturaLinkQr, qrcode.Medium)
+	if err != nil {
+		log.Fatalf("Error generando QR: %v", err)
+	}
+
+	// Obtener la imagen del QR
+	var size = 256
+	qrImage := qr.Image(size)
+
+	// Crear un objeto escpos.Image desde la imagen generada
+	// El valor 128 es el umbral para determinar qué píxeles son negros (0-255)
+	escposQR := esc.NewEscposImage(qrImage, 128)
+
+	// Imprimir usando uno de los métodos disponibles
+	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
+	if err = tc.printer.BitImage(escposQR, cons.ImgDefault); err != nil {
+		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 }

@@ -1,6 +1,6 @@
 {
   "data": {
-    "Printer": "EC-PM-80250",
-    "DebugLog": true
+    "printer": "EC-PM-80250",
+    "debug_log": true
   }
 }
