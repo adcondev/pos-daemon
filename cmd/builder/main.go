@@ -7,24 +7,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"pos-daemon.adcon.dev/internal/local_config"
+	"pos-daemon.adcon.dev/internal/models"
 	"pos-daemon.adcon.dev/pkg/escpos"
-	conn "pos-daemon.adcon.dev/pkg/escpos/connectors"
+	conn "pos-daemon.adcon.dev/pkg/escpos/connector"
 	"strings"
 
 	srvc "pos-daemon.adcon.dev/internal/service"
 )
 
 func main() {
-	jsonBytes, err := local_config.JSONFileToBytes("./internal/api/schema/local_config.json")
+	jsonBytes, err := models.JSONFileToBytes("./internal/api/rest/config.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de local_config: %v", err)
 		return
 	}
 
-	dataConfig := &local_config.LocalConfigData{}
+	dataConfig := &models.ConfigData{}
 
-	dataConfig, err = local_config.BytesToConfig(jsonBytes)
+	dataConfig, err = models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -94,28 +94,28 @@ func main() {
 		}
 	}()
 
-	// --- 2. Crear una instancia de la clase Printer ---
-	log.Println("Creando instancia de Printer.")
+	// --- 2. Crear una instancia de la clase ESCPrinter ---
+	log.Println("Creando instancia de ESCPrinter.")
 	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
 	if err != nil {
 		log.Fatalf("Error fatal al crear e inicializar la impresora: %v", err)
 	}
-	log.Println("Instancia de Printer creada e inicializada.")
+	log.Println("Instancia de ESCPrinter creada e inicializada.")
 
-	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
+	// --- 3. Usar los métodos de la clase ESCPrinter para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS...")
 	// Create a new ticket constructor that outputs to stdout
 	constructor := srvc.NewTicketConstructor(os.Stdout, printer)
 
 	// Load template data
-	templateData, err := os.ReadFile(filepath.Join("./internal/api/schema/", "ticket_template.json"))
+	templateData, err := os.ReadFile(filepath.Join("./internal/api/rest/", "new_ticket_template.json"))
 	if err != nil {
 		fmt.Printf("Error loading template: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Load ticket data
-	ticketData, err := os.ReadFile(filepath.Join("./internal/api/schema/", "new_ticket.json"))
+	ticketData, err := os.ReadFile(filepath.Join("./internal/api/rest/", "new_ticket.json"))
 	if err != nil {
 		fmt.Printf("Error loading ticket data: %v\n", err)
 		os.Exit(1)

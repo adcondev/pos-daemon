@@ -136,7 +136,7 @@ func main() {
 	// Construir comandos ESC/POS
 	cmd := []byte{}
 	cmd = append(cmd, 0x1B, 0x40) // ESC @ -> Inicializa impresora
-	// cmd = append(cmd, 0x1B, 0x74, 0x11) // ESC t 17 -> Windows-1252 / Latin-1
+	// command = append(command, 0x1B, 0x74, 0x11) // ESC t 17 -> Windows-1252 / Latin-1
 	cmd = append(cmd, 0x1B, 0x74, 0x13) // ESC t 19 -> Código de página CP858 (Mantener si la impresora lo soporta bien)
 
 	cmd = append(cmd, 0x1B, 0x61, 0x01) // ESC a 1 -> Centrado
@@ -171,7 +171,7 @@ func main() {
 
 	cmd = append(cmd, 0x1B, 0x61, 0x01)                        // Centrado
 	cmd = append(cmd, toCP858("¡Gracias por tu compra!\n")...) // Contiene '¡' y 'ú'
-	// cmd = append(cmd, []byte("\n\n\n")...)
+	// command = append(command, []byte("\n\n\n")...)
 	cmd = append(cmd, []byte{0x1B, 'd', byte(3)}...)
 
 	cmd = append(cmd, 0x1D, 0x56, 0x00) // GS V 0 -> Corte total

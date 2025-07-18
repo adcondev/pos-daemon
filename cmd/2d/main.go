@@ -8,24 +8,24 @@ import (
 	_ "image/png"
 	"log"
 	"os"
+	"pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/pkg/escpos/command"
+	"pos-daemon.adcon.dev/pkg/escpos/printer"
 
-	"pos-daemon.adcon.dev/internal/local_config"
-	"pos-daemon.adcon.dev/internal/ticket"
-	"pos-daemon.adcon.dev/pkg/escpos"
-	"pos-daemon.adcon.dev/pkg/escpos/connectors"
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
+	"pos-daemon.adcon.dev/pkg/escpos/connector"
+	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 func main() {
-	jsonBytes, err := local_config.JSONFileToBytes("./internal/api/schema/local_config.json")
+	jsonBytes, err := models.JSONFileToBytes("./internal/api/rest/config.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de local_config: %v", err)
 		return
 	}
 
-	dataConfig := &local_config.LocalConfigData{}
+	dataConfig := &models.LocalConfigData{}
 
-	dataConfig, err = local_config.BytesToConfig(jsonBytes)
+	dataConfig, err = models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -56,7 +56,7 @@ func main() {
 
 	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connectors.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := connector.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
@@ -72,37 +72,37 @@ func main() {
 	}()
 	log.Println("Conector de Windows (API Spooler) creado exitosamente.")
 
-	// --- 2. Crear una instancia de la clase Printer ---
+	// --- 2. Crear una instancia de la clase ESCPrinter ---
 	// Pasamos el conector y nil para usar el CapabilityProfile por defecto.
-	log.Println("Creando instancia de Printer.")
-	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
+	log.Println("Creando instancia de ESCPrinter.")
+	printer, err := printer.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
 	if err != nil {
-		// El constructor de Printer llama a Initialize(), que hace un primer Write().
+		// El constructor de ESCPrinter llama a Initialize(), que hace un primer Write().
 		// Si Initialize falla, puede ser un problema de conexión o que el primer Write no funcionó.
 		log.Fatalf("Error fatal al crear e inicializar la impresora: %v", err)
 	}
-	log.Println("Instancia de Printer creada e inicializada.")
+	log.Println("Instancia de ESCPrinter creada e inicializada.")
 
-	// IMPORTANTE: También es buena práctica usar defer en Printer.Close()
-	// Aunque Connector.Close() también cerrará el handle, Printer.Close()
+	// IMPORTANTE: También es buena práctica usar defer en ESCPrinter.Close()
+	// Aunque Connector.Close() también cerrará el handle, ESCPrinter.Close()
 	// se asegura de que el búfer de impresión esté vacío (si se hubiera usado)
 	// y de que el method finalize() del conector se llame (en nuestra simple
 	// implementación de connector.Close(), esto es lo mismo).
-	// Dejaremos solo el defer connector.Close() por simplicidad ya que Printer.Close()
+	// Dejaremos solo el defer connector.Close() por simplicidad ya que ESCPrinter.Close()
 	// simplemente llama a connector.Close() en este port.
 
-	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
+	// --- 3. Usar los métodos de la clase ESCPrinter para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
 
-	jsonBytes, err = ticket.JSONFileToBytes("./internal/api/schema/ticket.json")
+	jsonBytes, err = models.JSONFileToBytes("./internal/api/rest/ticket.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de tickets: %v", err)
 		return
 	}
 
-	dataTicket := &ticket.TicketData{}
+	dataTicket := &models.TicketData{}
 
-	dataTicket, err = ticket.BytesToTicket(jsonBytes)
+	dataTicket, err = models.BytesToTicket(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -172,7 +172,7 @@ func main() {
 
 	// Crear un objeto escpos.Image desde la imagen generada
 	// El valor 128 es el umbral para determinar qué píxeles son negros (0-255)
-	escposQR := escpos.NewEscposImage(qrImage, 128)
+	escposQR := command.NewEscposImage(qrImage, 128)
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
@@ -180,9 +180,9 @@ func main() {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
-	logoPath := "./img/perro.jpeg"
+	logoPath := "./_2D/perro.jpeg"
 	if _, err := os.Stat(logoPath); os.IsNotExist(err) {
-		logoPath = "./img/perro.png"
+		logoPath = "./_2D/perro.png"
 	}
 	logoFile, err := os.Open(logoPath)
 	if err != nil {
@@ -213,7 +213,7 @@ func main() {
 	}
 
 	// Cortar papel
-	if err = printer.Cut(escpos.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
+	if err = printer.Cut(command.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
 		log.Printf("Error al cortar papel: %v", err)
 	}
 

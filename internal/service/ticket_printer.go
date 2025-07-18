@@ -8,11 +8,10 @@ import (
 	"io"
 	"log"
 	"os"
-	tckt "pos-daemon.adcon.dev/internal/ticket"
-	tmpt "pos-daemon.adcon.dev/internal/ticket_template"
-	esc "pos-daemon.adcon.dev/pkg/escpos"
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
-
+	tckt "pos-daemon.adcon.dev/internal/models"
+	esc "pos-daemon.adcon.dev/pkg/escpos/command"
+	dith "pos-daemon.adcon.dev/pkg/escpos/imaging"
+	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 	"strconv"
 )
 
@@ -22,18 +21,19 @@ const (
 	LEN_PRECIO    int = 10
 	LEN_TOTAL     int = 10
 	LEN_DECIMALES int = 2
+	MAX_ROW_CHARS     = 48
 )
 
 // TicketConstructor handles the construction and printing of tickets
 type TicketConstructor struct {
-	template tmpt.TicketTemplate
-	ticket   tckt.Ticket
+	template tckt.NewTicketTemplate
+	ticket   tckt.NewTicket
 	writer   io.Writer
-	printer  *esc.Printer
+	printer  *esc.ESCPrinter
 }
 
 // NewTicketConstructor creates a new ticket constructor with the specified writer
-func NewTicketConstructor(writer io.Writer, printer *esc.Printer) *TicketConstructor {
+func NewTicketConstructor(writer io.Writer, printer *esc.ESCPrinter) *TicketConstructor {
 	return &TicketConstructor{
 		writer:  writer,
 		printer: printer,
@@ -103,7 +103,7 @@ func (tc *TicketConstructor) PrintTicket() error {
 	}
 
 	// Cortar papel
-	if err = tc.printer.Cut(esc.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
+	if err = tc.printer.Cut(cons.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
 		log.Printf("Error al cortar papel: %v", err)
 	}
 
@@ -156,7 +156,7 @@ func (tc *TicketConstructor) printHeader() {
 			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
 		}
 		// Imprimir la imagen con dithering de Floyd-Steinberg
-		if err := tc.printer.ImageWithDithering(imgLogo, cons.ImgDefault, cons.FloydStein, tmpl.LogoWidth*2); err != nil {
+		if err := tc.printer.ImageWithDithering(imgLogo, dith.ImgDefault, dith.FloydStein, tmpl.LogoWidth*2); err != nil {
 			log.Printf("datosTckt printer: error al imprimir logo con dithering: %v", err)
 		}
 		if err := tc.printer.Feed(1); err != nil {
@@ -372,16 +372,16 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	tmpl := tc.template.Data
 
 	precio := ""
-	producto := tckt.PadCenter("PRODUCTO", LEN_DESC+LEN_PRECIO, ' ')
+	producto := PadCenter("PRODUCTO", LEN_DESC+LEN_PRECIO, ' ')
 	if tmpl.VerPrecioU {
-		precio = tckt.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
-		producto = tckt.PadCenter("PRODUCTO", LEN_DESC, ' ')
+		precio = PadCenter("PRECIO/U", LEN_PRECIO, ' ')
+		producto = PadCenter("PRODUCTO", LEN_DESC, ' ')
 	}
 	cant := ""
-	subtotal := tckt.PadCenter("SUBTOTAL", LEN_TOTAL+LEN_CANT, ' ')
+	subtotal := PadCenter("SUBTOTAL", LEN_TOTAL+LEN_CANT, ' ')
 	if tmpl.VerCantProductos {
-		cant = tckt.PadCenter("CANT", LEN_CANT, ' ')
-		subtotal = tckt.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
+		cant = PadCenter("CANT", LEN_CANT, ' ')
+		subtotal = PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
 	}
 
 	// Configurar justificación y estilo
@@ -402,16 +402,45 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	conceptoRow := ""
 	for _, conc := range tc.ticket.Data.Conceptos {
 		cant = ""
-		subtotal = tckt.PadCenter("$"+tckt.FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL+LEN_CANT, ' ')
+
+		subtotal = PadCenter("$"+FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL+LEN_CANT, ' ')
 		if tmpl.VerCantProductos {
-			cant = tckt.PadCenter(strconv.FormatFloat(conc.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
-			subtotal = tckt.PadCenter("$"+tckt.FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
+			cant = PadCenter(strconv.FormatFloat(conc.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
+			subtotal = PadCenter("$"+FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
 		}
 		precio = ""
-		producto = tckt.PadCenter(tckt.Substr(conc.Descripcion, LEN_DESC+LEN_PRECIO-2), LEN_DESC+LEN_PRECIO, ' ')
+		producto = PadCenter(Substr(conc.Descripcion, LEN_DESC+LEN_PRECIO-2), LEN_DESC+LEN_PRECIO, ' ')
 		if tmpl.VerPrecioU {
-			precio = tckt.PadCenter("$"+tckt.FormatFloat(conc.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
-			producto = tckt.PadCenter(tckt.Substr(conc.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
+			precio = PadCenter("$"+FormatFloat(conc.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
+			producto = PadCenter(Substr(conc.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
+		}
+
+		conceptoRow = cant + producto + precio + subtotal
+		if len(conceptoRow) > MAX_ROW_CHARS {
+			log.Printf("Advertencia: la fila del concepto excede el máximo de caracteres (%d): %s", MAX_ROW_CHARS, conceptoRow)
+			// Truncar la fila si es necesario
+			conceptoRow = conceptoRow[:MAX_ROW_CHARS]
+		}
+		if err := tc.printer.TextLn(conceptoRow); err != nil {
+			log.Printf("Error al imprimir artículo 2: %v", err)
+		}
+		if tmpl.VerSeries && len(conc.Series) > 0 {
+			for _, serie := range conc.Series {
+				cant = PadCenter("", LEN_CANT, ' ')
+				producto = PadCenter(Substr(serie, LEN_DESC+LEN_PRECIO-2), LEN_DESC, ' ')
+				precio = PadCenter("", LEN_PRECIO, ' ')
+				subtotal = PadCenter("", LEN_TOTAL, ' ')
+
+				conceptoRow = cant + producto + precio + subtotal
+				if len(conceptoRow) > MAX_ROW_CHARS {
+					log.Printf("Advertencia: la fila del concepto excede el máximo de caracteres (%d): %s", MAX_ROW_CHARS, conceptoRow)
+					// Truncar la fila si es necesario
+					conceptoRow = conceptoRow[:MAX_ROW_CHARS]
+				}
+				if err := tc.printer.TextLn(conceptoRow); err != nil {
+					log.Printf("Error al imprimir artículo 2: %v", err)
+				}
+			}
 		}
 
 		subtotal_sum = subtotal_sum + conc.Total
@@ -425,10 +454,6 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 			isrRetenido_sum = isrRetenido_sum + conc.Impuestos[ISR_RET].Importe
 		}
 
-		conceptoRow = cant + producto + precio + subtotal
-		if err := tc.printer.TextLn(conceptoRow); err != nil {
-			log.Printf("Error al imprimir artículo 2: %v", err)
-		}
 	}
 
 	// Configurar justificación y estilo
@@ -442,7 +467,7 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(tckt.FormatFloat(subtotal_sum, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(subtotal_sum, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -467,7 +492,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["ivaTrasladado"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["ivaTrasladado"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -480,7 +505,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["ivaRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["ivaRetenido"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -493,7 +518,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.Text(tckt.FormatFloat(taxes["iepsTrasladado"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.Text(FormatFloat(taxes["iepsTrasladado"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -506,7 +531,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tckt.FormatFloat(taxes["isrRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["isrRetenido"], LEN_DECIMALES)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -525,7 +550,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.Total, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.Total, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -538,7 +563,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.FormasPago[0].Cantidad, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.FormasPago[0].Cantidad, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -551,7 +576,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(tckt.FormatFloat(tcktData.Cambio, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.Cambio, LEN_DECIMALES)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -646,7 +671,7 @@ func (tc *TicketConstructor) printQr() {
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
-	if err = tc.printer.BitImage(escposQR, cons.ImgDefault); err != nil {
+	if err = tc.printer.BitImage(escposQR, dith.ImgDefault); err != nil {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 }

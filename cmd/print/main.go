@@ -5,27 +5,26 @@ import (
 	// "fmt"
 	"log"
 	"os"
-	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
+	"pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/internal/service"
+	"pos-daemon.adcon.dev/pkg/escpos/command"
+	"pos-daemon.adcon.dev/pkg/escpos/printer"
+	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 	"strconv"
 
-	"pos-daemon.adcon.dev/internal/ticket"
-	"pos-daemon.adcon.dev/pkg/escpos/connectors"
-
-	// "time" // Descomentar si necesitas pausas
-	"pos-daemon.adcon.dev/internal/local_config"
-	"pos-daemon.adcon.dev/pkg/escpos" // !!! REEMPLAZA con la ruta real de tu módulo
+	"pos-daemon.adcon.dev/pkg/escpos/connector"
 )
 
 func main() {
-	jsonBytes, err := local_config.JSONFileToBytes("./internal/api/schema/local_config.json")
+	jsonBytes, err := models.JSONFileToBytes("./internal/api/rest/config.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de local_config: %v", err)
 		return
 	}
 
-	dataConfig := &local_config.LocalConfigData{}
+	dataConfig := &models.LocalConfigData{}
 
-	dataConfig, err = local_config.BytesToConfig(jsonBytes)
+	dataConfig, err = models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -56,7 +55,7 @@ func main() {
 
 	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connectors.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := connector.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
@@ -72,37 +71,37 @@ func main() {
 	}()
 	log.Println("Conector de Windows (API Spooler) creado exitosamente.")
 
-	// --- 2. Crear una instancia de la clase Printer ---
+	// --- 2. Crear una instancia de la clase ESCPrinter ---
 	// Pasamos el conector y nil para usar el CapabilityProfile por defecto.
-	log.Println("Creando instancia de Printer.")
-	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
+	log.Println("Creando instancia de ESCPrinter.")
+	printer, err := printer.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
 	if err != nil {
-		// El constructor de Printer llama a Initialize(), que hace un primer Write().
+		// El constructor de ESCPrinter llama a Initialize(), que hace un primer Write().
 		// Si Initialize falla, puede ser un problema de conexión o que el primer Write no funcionó.
 		log.Fatalf("Error fatal al crear e inicializar la impresora: %v", err)
 	}
-	log.Println("Instancia de Printer creada e inicializada.")
+	log.Println("Instancia de ESCPrinter creada e inicializada.")
 
-	// IMPORTANTE: También es buena práctica usar defer en Printer.Close()
-	// Aunque Connector.Close() también cerrará el handle, Printer.Close()
+	// IMPORTANTE: También es buena práctica usar defer en ESCPrinter.Close()
+	// Aunque Connector.Close() también cerrará el handle, ESCPrinter.Close()
 	// se asegura de que el búfer de impresión esté vacío (si se hubiera usado)
 	// y de que el method finalize() del conector se llame (en nuestra simple
 	// implementación de connector.Close(), esto es lo mismo).
-	// Dejaremos solo el defer connector.Close() por simplicidad ya que Printer.Close()
+	// Dejaremos solo el defer connector.Close() por simplicidad ya que ESCPrinter.Close()
 	// simplemente llama a connector.Close() en este port.
 
-	// --- 3. Usar los métodos de la clase Printer para enviar comandos ---
+	// --- 3. Usar los métodos de la clase ESCPrinter para enviar comandos ---
 	log.Println("Enviando comandos de impresión ESC/POS a la cola de Windows...")
 
-	jsonBytes, err = ticket.JSONFileToBytes("./internal/api/schema/ticket.json")
+	jsonBytes, err = models.JSONFileToBytes("./internal/api/rest/ticket.json")
 	if err != nil {
 		log.Printf("Error al leer archivo JSON de tickets: %v", err)
 		return
 	}
 
-	dataTicket := &ticket.TicketData{}
+	dataTicket := &models.TicketData{}
 
-	dataTicket, err = ticket.BytesToTicket(jsonBytes)
+	dataTicket, err = models.BytesToTicket(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -179,10 +178,10 @@ func main() {
 	const LEN_TOTAL int = 11
 	const LEN_DECIMALES int = 2
 
-	cant := ticket.PadCenter("CANT", LEN_CANT, ' ')
-	producto := ticket.PadCenter("PRODUCTO", LEN_DESC, ' ')
-	precio := ticket.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
-	subtotal := ticket.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
+	cant := service.PadCenter("CANT", LEN_CANT, ' ')
+	producto := service.PadCenter("PRODUCTO", LEN_DESC, ' ')
+	precio := service.PadCenter("PRECIO/U", LEN_PRECIO, ' ')
+	subtotal := service.PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
 
 	if err = printer.Text(cant + producto + precio + subtotal + "\n"); err != nil {
 		log.Printf("Error al imprimir artículo 1: %v", err)
@@ -201,10 +200,10 @@ func main() {
 	var totalFinal float64
 
 	for _, v := range dataTicket.Conceptos {
-		cant = ticket.PadCenter(strconv.FormatFloat(v.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
-		producto = ticket.PadCenter(ticket.Substr(v.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
-		precio = ticket.PadCenter("$"+ticket.FormatFloat(v.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
-		subtotal = ticket.PadCenter("$"+ticket.FormatFloat(v.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
+		cant = service.PadCenter(strconv.FormatFloat(v.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
+		producto = service.PadCenter(service.Substr(v.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
+		precio = service.PadCenter("$"+service.FormatFloat(v.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
+		subtotal = service.PadCenter("$"+service.FormatFloat(v.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
 
 		subtotal_sum = subtotal_sum + v.Total
 
@@ -239,31 +238,31 @@ func main() {
 		log.Printf("Error al establecer justificación derecha: %v", err)
 	}
 
-	if err = printer.Text("Subtotal: $" + ticket.FormatFloat(subtotal_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Subtotal: $" + service.FormatFloat(subtotal_sum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IVA Trasladado: $" + ticket.FormatFloat(ivaTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IVA Trasladado: $" + service.FormatFloat(ivaTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IEPS Trasladado: $" + ticket.FormatFloat(iepsTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IEPS Trasladado: $" + service.FormatFloat(iepsTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IVA Retenido: $" + ticket.FormatFloat(ivaRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IVA Retenido: $" + service.FormatFloat(ivaRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("ISR Retenido: $" + ticket.FormatFloat(isrRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("ISR Retenido: $" + service.FormatFloat(isrRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("Total Calc: $" + ticket.FormatFloat(totalFinal, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Total Calc: $" + service.FormatFloat(totalFinal, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("Total Field: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].Total, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Total Field: $" + service.FormatFloat(dataTicket.DocumentosPago[0].Total, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("Efectivo: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].FormasPago[0].Cantidad, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Efectivo: $" + service.FormatFloat(dataTicket.DocumentosPago[0].FormasPago[0].Cantidad, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("Cambio: $" + ticket.FormatFloat(dataTicket.DocumentosPago[0].Cambio, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Cambio: $" + service.FormatFloat(dataTicket.DocumentosPago[0].Cambio, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 
@@ -301,11 +300,11 @@ func main() {
 
 	// Impresión de imagen (requiere implementar EscposImage y sus métodos)
 	// log.Println("Intentando imprimir imagen...")
-	// // Supongamos que tienes una imagen cargada en un objeto img *escpos.EscposImage
-	// // img, err := escpos.NewEscposImageFromBytes(imageData) // Implementar esta función
+	// // Supongamos que tienes una imagen cargada en un objeto _2D *escpos.EscposImage
+	// // _2D, err := escpos.NewEscposImageFromBytes(imageData) // Implementar esta función
 	// // if err == nil {
 	// // 	// Puedes usar BitImage, BitImageColumnFormat o Graphics
-	// // 	if printErr := printer.Graphics(img, escpos.IMG_DEFAULT); printErr != nil {
+	// // 	if printErr := printer.Graphics(_2D, escpos.IMG_DEFAULT); printErr != nil {
 	// // 		log.Printf("Error al imprimir imagen: %v", printErr)
 	// // 	}
 	// // 	if feedErr := printer.Feed(2); feedErr != nil { log.Printf("Error Feed: %v", feedErr) }
@@ -319,7 +318,7 @@ func main() {
 	}
 
 	// Cortar papel
-	if err = printer.Cut(escpos.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
+	if err = printer.Cut(command.CUT_FULL, 0); err != nil { // CUT_FULL o CUT_PARTIAL
 		log.Printf("Error al cortar papel: %v", err)
 	}
 

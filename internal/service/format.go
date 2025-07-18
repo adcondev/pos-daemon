@@ -1,4 +1,4 @@
-package ticket
+package service
 
 import (
 	"fmt"
