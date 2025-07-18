@@ -109,7 +109,7 @@ func main() {
 	}
 
 	// Configurar justificación y estilo
-	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.Center); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
@@ -169,7 +169,7 @@ func main() {
 	}
 
 	// Imprimir detalles de artículos (alineado a la izquierda)
-	if err = printer.SetJustification(cons.JUSTIFY_LEFT); err != nil {
+	if err = printer.SetJustification(cons.Left); err != nil {
 		log.Printf("Error al establecer justificación izquierda: %v", err)
 	}
 
@@ -225,7 +225,7 @@ func main() {
 	totalFinal = subtotal_sum + ivaTrasladado_sum + iepsTrasladado_sum + ivaRetenido_sum + isrRetenido_sum
 
 	// Imprimir detalles de artículos (alineado a la izquierda)
-	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.Center); err != nil {
 		log.Printf("Error al establecer justificación izquierda: %v", err)
 	}
 	// Imprimir total (en negrita y alineado a la derecha)
@@ -235,7 +235,7 @@ func main() {
 	if err = printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err = printer.SetJustification(cons.JUSTIFY_RIGHT); err != nil {
+	if err = printer.SetJustification(cons.Right); err != nil {
 		log.Printf("Error al establecer justificación derecha: %v", err)
 	}
 
@@ -270,7 +270,7 @@ func main() {
 	if err = printer.SetEmphasis(false); err != nil {
 		log.Printf("Error al restablecer énfasis: %v", err)
 	}
-	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.Center); err != nil {
 		log.Printf("Error al establecer justificación centro: %v", err)
 	}
 

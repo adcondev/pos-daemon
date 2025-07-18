@@ -193,3 +193,8 @@ func writePrinter(handle syscall.Handle, data []byte) (uint32, error) {
 	}
 	return bytesWritten, nil
 }
+
+func (c *WindowsPrintConnector) Read(buf []byte) (int, error) {
+	buf = nil // No implementado, ya que Spooler no soporta lectura de estado de impresora directamente
+	return 0, errors.New("Spooler no soporta lectura de estado de impresora directamente")
+}

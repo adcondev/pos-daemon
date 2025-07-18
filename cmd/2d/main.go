@@ -3,10 +3,8 @@ package main
 
 import (
 	"github.com/skip2/go-qrcode"
-	"golang.org/x/image/bmp"
 	"image"
 	_ "image/jpeg"
-	"image/png"
 	_ "image/png"
 	"log"
 	"os"
@@ -111,7 +109,7 @@ func main() {
 	}
 
 	// Configurar justificación y estilo
-	if err = printer.SetJustification(cons.JUSTIFY_CENTER); err != nil {
+	if err = printer.SetJustification(cons.Center); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
@@ -172,47 +170,13 @@ func main() {
 	var size = 256
 	qrImage := qr.Image(size)
 
-	// Guardar imagen como PNG
-	pngFile, err := os.Create("./img/qr.png")
-	if err != nil {
-		log.Fatalf("Error creando archivo PNG: %v", err)
-	}
-	defer func(pngFile *os.File) {
-		err := pngFile.Close()
-		if err != nil {
-			log.Printf("error al cerrar png: %v", err)
-		}
-	}(pngFile)
-
-	if err = png.Encode(pngFile, qrImage); err != nil {
-		log.Fatalf("Error guardando imagen PNG: %v", err)
-	}
-	log.Println("Se guardó el archivo qr.png con éxito")
-
-	bmpFile, err := os.Create("./img/qr.bmp")
-	if err != nil {
-		log.Fatalf("Error creando archivo BMP: %v", err)
-	}
-	defer func(bmpFile *os.File) {
-		err := bmpFile.Close()
-		if err != nil {
-			log.Printf("error al cerrar bmp: %v", err)
-		}
-	}(bmpFile)
-
-	// Se puede convertir a BMP directamente, ya que Image es de tipo image.Image
-	if err = bmp.Encode(bmpFile, qrImage.(image.Image)); err != nil {
-		log.Fatalf("Error guardando imagen BMP: %v", err)
-	}
-	log.Println("Se guardó el archivo qr.bmp con éxito")
-
 	// Crear un objeto escpos.Image desde la imagen generada
 	// El valor 128 es el umbral para determinar qué píxeles son negros (0-255)
 	escposQR := escpos.NewEscposImage(qrImage, 128)
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
-	if err = printer.BitImage(escposQR, cons.IMG_DEFAULT); err != nil {
+	if err = printer.BitImage(escposQR, cons.ImgDefault); err != nil {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
@@ -239,7 +203,7 @@ func main() {
 	log.Printf("Logo cargado desde %s (formato %s)", logoPath, format)
 
 	// Imprimir la imagen con dithering de Floyd-Steinberg
-	if err := printer.ImageWithDithering(imgLogo, cons.IMG_DEFAULT, cons.FloydStein, cons.DefaultPrintSize); err != nil {
+	if err := printer.ImageWithDithering(imgLogo, cons.ImgDefault, cons.FloydStein, cons.DefaultPrintSize); err != nil {
 		log.Printf("Error al imprimir logo con dithering: %v", err)
 	}
 
