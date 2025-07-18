@@ -14,11 +14,12 @@ import (
 
 // BitImage imprime una imagen utilizando el comando de imagen de bits (GS v 0).
 // Requiere que la imagen sea convertible a formato raster de 1 bit.
+// Importante no imprimir sin salto de linea \n o Feed(1), ya que colisiona y genera caracteres no legibles.
 func (p *Printer) BitImage(img *Image, density int) error {
 	if img == nil {
 		return errors.New("BitImage: la imagen no puede ser nil")
 	}
-	if err := validateInteger(density, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "BitImage", "tamaño"); err != nil {
+	if err := validateInteger(density, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "BitImage", "tamaño"); err != nil {
 		return fmt.Errorf("BitImage: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -61,7 +62,7 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 		return errors.New("BitImageColumnFormat: la imagen no puede ser nil")
 	}
 	// PHP valida size 0-3. La lógica interna usa los bits 1 y 2.
-	if err := validateInteger(size, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "BitImageColumnFormat", "tamaño"); err != nil {
+	if err := validateInteger(size, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "BitImageColumnFormat", "tamaño"); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: %w", err)
 	}
 
@@ -92,10 +93,10 @@ func (p *Printer) BitImageColumnFormat(img *Image, size int) error {
 	// El modo por defecto (IMG_DEFAULT=0) suele ser 24 puntos verticales, doble densidad horizontal (m=33).
 
 	densityCode := 33 // Valor por defecto: 24 puntos verticales, doble densidad horizontal
-	if (size & cons.IMG_DOUBLE_HEIGHT) == cons.IMG_DOUBLE_HEIGHT {
+	if (size & cons.ImgDoubleHeight) == cons.ImgDoubleHeight {
 		densityCode &^= 32 // Desactivar bit 5 (32) -> 8 puntos verticales
 	}
-	if (size & cons.IMG_DOUBLE_WIDTH) == cons.IMG_DOUBLE_WIDTH {
+	if (size & cons.ImgDoubleWidth) == cons.ImgDoubleWidth {
 		densityCode &^= 1 // Desactivar bit 0 (1) -> densidad horizontal normal
 	}
 
@@ -143,7 +144,7 @@ func (p *Printer) Graphics(img *Image, size int) error {
 	if img == nil {
 		return errors.New("Graphics: la imagen no puede ser nil")
 	}
-	if err := validateInteger(size, cons.IMG_DEFAULT, cons.IMG_DOUBLE_HEIGHT|cons.IMG_DOUBLE_WIDTH, "Graphics", "tamaño"); err != nil {
+	if err := validateInteger(size, cons.ImgDefault, cons.ImgDoubleHeight|cons.ImgDoubleWidth, "Graphics", "tamaño"); err != nil {
 		return fmt.Errorf("Graphics: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -166,11 +167,11 @@ func (p *Printer) Graphics(img *Image, size int) error {
 	// colors: '1' (1 bit por píxel)
 	// PHP usa chr(1) o chr(2) para xm/ym. Replicamos.
 	xm := byte(1)
-	if (size & cons.IMG_DOUBLE_WIDTH) == cons.IMG_DOUBLE_WIDTH {
+	if (size & cons.ImgDoubleWidth) == cons.ImgDoubleWidth {
 		xm = 2
 	}
 	ym := byte(1)
-	if (size & cons.IMG_DOUBLE_HEIGHT) == cons.IMG_DOUBLE_HEIGHT {
+	if (size & cons.ImgDoubleHeight) == cons.ImgDoubleHeight {
 		ym = 2
 	}
 
@@ -196,7 +197,7 @@ func (p *Printer) Graphics(img *Image, size int) error {
 // SetColor establece el color de impresión (para impresoras con múltiples colores).
 // color puede ser COLOR_1 (negro) o COLOR_2 (rojo).
 func (p *Printer) SetColor(color int) error {
-	if err := validateInteger(color, cons.COLOR_1, cons.COLOR_2, "SetColor", "color"); err != nil {
+	if err := validateInteger(color, cons.Color1, cons.Color2, "SetColor", "color"); err != nil {
 		return fmt.Errorf("SetColor: %w", err)
 	}
 	// ESC r n - n=0: Color 1, 1: Color 2

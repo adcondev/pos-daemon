@@ -2,15 +2,16 @@ package escpos
 
 import (
 	"fmt"
+	"log"
 	"math"
 	bin "pos-daemon.adcon.dev/pkg/escpos/constants"
 	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 )
 
 // SetJustification establece la alineación del texto (izquierda, centro, derecha).
-func (p *Printer) SetJustification(justification int) error {
-	if err := validateInteger(justification, cons.JUSTIFY_LEFT, cons.JUSTIFY_RIGHT, "SetJustification", "justificación"); err != nil {
-		return fmt.Errorf("SetJustification: %w", err)
+func (p *Printer) SetJustification(justification cons.Justify) error {
+	if err := ValidateJustifyMode(justification); err != nil {
+		log.Printf("Justificacion no valida")
 	}
 	// ESC a n - n=0: izquierda, 1: centro, 2: derecha
 	cmd := []byte{ESC, 'a', byte(justification)}
@@ -19,11 +20,10 @@ func (p *Printer) SetJustification(justification int) error {
 }
 
 // SetFont establece la fuente (A, B o C).
-func (p *Printer) SetFont(font int) error {
-	if err := validateInteger(font, cons.FONT_A, cons.FONT_C, "SetFont", "fuente"); err != nil {
-		return fmt.Errorf("SetFont: %w", err)
+func (p *Printer) SetFont(font cons.Font) error {
+	if err := ValidateFont(font); err != nil {
+		log.Printf("Fuente no válida: %v", err)
 	}
-	// ESC M n - n=0: Fuente A, 1: Fuente B, 2: Fuente C
 	cmd := []byte{ESC, 'M', byte(font)}
 	_, err := p.Connector.Write(cmd)
 	return err
@@ -55,11 +55,9 @@ func (p *Printer) SetDoubleStrike(on bool) error {
 
 // SetUnderline establece el modo de subrayado (ninguno, simple, doble).
 // Puede aceptar 0 (none), 1 (single), 2 (double).
-func (p *Printer) SetUnderline(underline int) error {
-	// La clase PHP también acepta booleanos y los convierte.
-	// En Go, la validación de tipo estática nos da la garantía, así que solo validamos el rango entero.
-	if err := validateInteger(underline, cons.UNDERLINE_NONE, cons.UNDERLINE_DOUBLE, "SetUnderline", "subrayado"); err != nil {
-		return fmt.Errorf("SetUnderline: %w", err)
+func (p *Printer) SetUnderline(underline cons.UnderlineMode) error {
+	if err := ValidateUnderline(underline); err != nil {
+		log.Printf("Subrayado no valido: %v", err)
 	}
 	// ESC - n - n=0: ninguno, 1: simple, 2: doble
 	cmd := []byte{ESC, '-', byte(underline)}

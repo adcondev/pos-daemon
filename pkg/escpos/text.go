@@ -8,7 +8,7 @@ import (
 // Maneja los saltos de línea '\n' convirtiéndolos a LF.
 func (p *Printer) Text(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
-	bytesToSend := strings.ReplaceAll(str, "\n", string(LF))
+	bytesToSend := strings.ReplaceAll(strings.ToUpper(str), "\n", string(LF))
 	_, err := p.Connector.Write(toCP858(bytesToSend))
 	return err
 }

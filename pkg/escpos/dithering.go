@@ -37,7 +37,7 @@ func (p *Printer) ImageWithDithering(img image.Image, density int, ditherMethod 
 // Devuelve una imagen en escala de grises o binaria según el método de dithering
 func ProcessImageWithDithering(img image.Image, ditherMethod dith.DitherMode, size int) (image.Image, error) {
 	// Redimensionar a 256x256 si es necesario
-	img = ResizeImage(img, size, size)
+	img = ResizeImage(img, size)
 
 	// Convertir a escala de grises primero
 	grayImg := image.NewGray(img.Bounds())
@@ -45,7 +45,7 @@ func ProcessImageWithDithering(img image.Image, ditherMethod dith.DitherMode, si
 
 	// Aplicar dithering según el método seleccionado
 	switch ditherMethod {
-	case dith.None:
+	case dith.NoDither:
 		// No aplicar dithering, solo binarizar con un threshold
 		return ThresholdImage(grayImg, dith.DefaultThreshold), nil
 
@@ -173,22 +173,21 @@ func OrderedDither(img *image.Gray, baseThreshold uint8) *image.Gray {
 // ResizeImage redimensiona una imagen a un tamaño específico
 // Implementación simplificada - para una implementación más sofisticada,
 // considera usar paquetes como github.com/nfnt/resize
-func ResizeImage(img image.Image, width, height int) image.Image {
-	// Aquí deberías usar una biblioteca de redimensionado más sofisticada
-	// Como simplificación, solo creamos una nueva imagen del tamaño deseado
-	// y copiamos la imagen original escalándola
-
+func ResizeImage(img image.Image, width int) image.Image {
+	// Obtener las dimensiones originales de la imagen
 	bounds := img.Bounds()
-	if bounds.Dx() == width && bounds.Dy() == height {
-		return img // No es necesario redimensionar
-	}
+	originalWidth := bounds.Dx()
+	originalHeight := bounds.Dy()
+
+	// Calcular la nueva altura manteniendo la proporción
+	height := int(float64(width) * float64(originalHeight) / float64(originalWidth))
 
 	// Crea una nueva imagen del tamaño deseado
 	result := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Factores de escalado
-	scaleX := float64(bounds.Dx()) / float64(width)
-	scaleY := float64(bounds.Dy()) / float64(height)
+	scaleX := float64(originalWidth) / float64(width)
+	scaleY := float64(originalHeight) / float64(height)
 
 	// Escala básica por aproximación de vecino más cercano
 	for y := 0; y < height; y++ {

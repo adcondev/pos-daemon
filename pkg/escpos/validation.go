@@ -2,7 +2,7 @@ package escpos
 
 import (
 	"fmt"
-	bc "pos-daemon.adcon.dev/pkg/escpos/constants"
+	cons "pos-daemon.adcon.dev/pkg/escpos/constants"
 	"regexp"
 	"strings"
 )
@@ -23,25 +23,48 @@ func validateInteger(test, min, max int, source, argument string) error {
 	return validateIntegerMulti(test, [][]int{{min, max}}, source, argument)
 }
 
-func ValidateBarcodeTextPosition(pos bc.BarcodeTextPos) error {
-	const (
-		minPos = bc.TextNone
-		maxPos = bc.TextBoth
-	)
-	if pos < minPos || pos > maxPos {
+func ValidateBarcodeTextPosition(pos cons.BarcodeTextPos) error {
+	if pos < cons.TextNone || pos > cons.TextBoth {
 		return fmt.Errorf("posición de texto inválida: %d", pos)
 	}
 	return nil
 }
 
-func ValidateBarcodeType(barcode bc.BarcodeType) error {
+func ValidateBarcodeType(barcode cons.BarcodeType) error {
 	switch barcode {
-	case bc.UpcA, bc.UpcE, bc.Jan13, bc.Jan8,
-		bc.Code39, bc.Itf, bc.Codabar,
-		bc.Code93, bc.Code128:
+	case cons.UpcA, cons.UpcE, cons.Jan13, cons.Jan8,
+		cons.Code39, cons.Itf, cons.Codabar,
+		cons.Code93, cons.Code128:
 		return nil
 	default:
 		return fmt.Errorf("tipo de código de barras inválido: %d", barcode)
+	}
+}
+
+func ValidateJustifyMode(mode cons.Justify) error {
+	switch mode {
+	case cons.Left, cons.Right, cons.Center:
+		return nil
+	default:
+		return fmt.Errorf("tipo de justificación inválida: %d", mode)
+	}
+}
+
+func ValidateFont(font cons.Font) error {
+	switch font {
+	case cons.A, cons.B:
+		return nil
+	default:
+		return fmt.Errorf("tipo de fuente inválida: %d", font)
+	}
+}
+
+func ValidateUnderline(under cons.UnderlineMode) error {
+	switch under {
+	case cons.NoUnderline, cons.Single, cons.Double:
+		return nil
+	default:
+		return fmt.Errorf("tipo de fuente inválida: %d", under)
 	}
 }
 
