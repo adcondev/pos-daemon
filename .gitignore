@@ -49,6 +49,7 @@ go.work.sum
 !*.json
 
 !/.github/*
+!/.github/workflows/*
 # !Makefile
 
 # ...even if they are in subdirectories

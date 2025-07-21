@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Mantener dependencias Go actualizadas
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automerge"
+    commit-message:
+        prefix: "deps"
+        include: "scope"
+
+  # Mantener las Github Actions actualizadas
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
