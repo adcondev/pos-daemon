@@ -1,8 +1,6 @@
 //go:build windows
 // +build windows
 
-//
-package connec
 package connector
 
 import (
