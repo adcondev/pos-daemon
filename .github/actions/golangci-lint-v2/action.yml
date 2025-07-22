@@ -1,0 +1,47 @@
+name: 'GolangCI Lint v2'
+description: 'Runs golangci-lint v2.x with correct flags'
+inputs:
+  go-version:
+    description: 'Go version to use'
+    required: false
+    default: '1.24'
+  golangci-lint-version:
+    description: 'Version of golangci-lint to use'
+    required: false
+    default: '2.3.0'
+  working-directory:
+    description: 'Directory to run golangci-lint in'
+    required: false
+    default: '.'
+  timeout:
+    description: 'Timeout for golangci-lint'
+    required: false
+    default: '3m'
+  args:
+    description: 'Additional arguments to pass to golangci-lint'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Download and install golangci-lint
+      shell: bash
+      run: |
+        VERSION=${{ inputs.golangci-lint-version }}
+        curl -sSfL "https://github.com/golangci/golangci-lint/releases/download/v${VERSION}/golangci-lint-${VERSION}-linux-amd64.tar.gz" | tar -xz
+        mkdir -p "${HOME}/.local/bin/"
+        mv "golangci-lint-${VERSION}-linux-amd64/golangci-lint" "${HOME}/.local/bin/"
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+    - name: Run golangci-lint
+      shell: bash
+      run: |
+        cd ${{ inputs.working-directory }}
+        golangci-lint --version
+        golangci-lint run --timeout=${{ inputs.timeout }} ${{ inputs.args }}

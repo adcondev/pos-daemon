@@ -51,7 +51,7 @@ go.work.sum
 !/.github/*
 !/.github/workflows/*
 
-!.golangci.yml
+!*.yml
 
 # !Makefile
 
