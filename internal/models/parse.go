@@ -2,13 +2,30 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	fp "path/filepath"
+	"strings"
 )
 
 // JSONFileToBytes lee un archivo JSON y devuelve su contenido como bytes
 func JSONFileToBytes(filepath string) ([]byte, error) {
+	// Validar que el archivo esté dentro de un directorio permitido
+	allowedDir := "./internal/api/rest" // directorio permitido
+	absPath, err := fp.Abs(filepath)
+	if err != nil {
+		return nil, err
+	}
+	absAllowedDir, err := fp.Abs(allowedDir)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasPrefix(absPath, absAllowedDir) {
+		return nil, fmt.Errorf("acceso denegado al archivo fuera del directorio permitido")
+	}
+
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err

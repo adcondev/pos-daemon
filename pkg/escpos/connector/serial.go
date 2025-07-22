@@ -74,8 +74,11 @@ func (c *SerialConnector) open() error {
 	}
 
 	// Set read timeout
-	if err := port.SetReadTimeout(c.config.Timeout); err != nil {
-		port.Close()
+	if err = port.SetReadTimeout(c.config.Timeout); err != nil {
+		err = port.Close()
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("failed to set read timeout: %w", err)
 	}
 
@@ -146,6 +149,11 @@ func IsPortInUse(portName string) bool {
 	if err != nil {
 		return true // El puerto está en uso o no disponible
 	}
-	defer port.Close()
+	defer func(port serial.Port) {
+		err = port.Close()
+		if err != nil {
+			fmt.Printf("Error closing port %s: %v\n", portName, err)
+		}
+	}(port)
 	return false // El puerto está disponible
 }

@@ -13,7 +13,7 @@ import (
 	"pos-daemon.adcon.dev/pkg/escpos/command"
 	"pos-daemon.adcon.dev/pkg/escpos/imaging"
 
-	"pos-daemon.adcon.dev/pkg/escpos/connector"
+	conn "pos-daemon.adcon.dev/pkg/escpos/connector"
 	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
@@ -24,9 +24,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &models.ConfigData{}
-
-	dataConfig, err = models.BytesToConfig(jsonBytes)
+	dataConfig, err := models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -57,7 +55,7 @@ func main() {
 
 	// --- 1. Crear una instancia del WindowsPrintConnector ---
 	// Usamos el WindowsPrintConnector que usa la API de Spooler.
-	connector, err := connector.NewWindowsPrintConnector(dataConfig.Printer)
+	connector, err := conn.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
@@ -101,9 +99,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &models.TicketData{}
-
-	dataTicket, err = models.BytesToTicket(jsonBytes)
+	dataTicket, err := models.BytesToTicket(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return

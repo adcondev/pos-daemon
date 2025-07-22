@@ -145,11 +145,16 @@ func OrderedDither(img *image.Gray, baseThreshold uint8) *image.Gray {
 			ty := (y - bounds.Min.Y) % 4
 			t := threshold[ty][tx]
 
-			// Ajustar el umbral base con la matriz
-			adjustedThreshold := (baseThreshold * t) / 128
+			// Ajustar el umbral - convertir el valor de la matriz a un modificador
+			adjustedThreshold := int(baseThreshold) + int(t) - 128
+			if adjustedThreshold < 0 {
+				adjustedThreshold = 0
+			} else if adjustedThreshold > 255 {
+				adjustedThreshold = 255
+			}
 
 			// Aplicar umbral
-			if img.GrayAt(x, y).Y > adjustedThreshold {
+			if img.GrayAt(x, y).Y > uint8(adjustedThreshold) {
 				result.SetGray(x, y, color.Gray{Y: 255})
 			} else {
 				result.SetGray(x, y, color.Gray{Y: 0})
@@ -164,26 +169,27 @@ func OrderedDither(img *image.Gray, baseThreshold uint8) *image.Gray {
 // Implementación simplificada - para una implementación más sofisticada,
 // considera usar paquetes como github.com/nfnt/resize
 func ResizeImage(img image.Image, width int) image.Image {
-	// Obtener las dimensiones originales de la imagen
+	// Obtener las dimensiones originales
 	bounds := img.Bounds()
 	originalWidth := bounds.Dx()
 	originalHeight := bounds.Dy()
 
-	// Calcular la nueva altura manteniendo la proporción
+	// Calcular nueva altura manteniendo proporción
 	height := int(float64(width) * float64(originalHeight) / float64(originalWidth))
 
-	// Crea una nueva imagen del tamaño deseado
+	// Crear nueva imagen
 	result := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	// Factores de escalado
 	scaleX := float64(originalWidth) / float64(width)
 	scaleY := float64(originalHeight) / float64(height)
 
-	// Escala básica por aproximación de vecino más cercano
+	// Escala con corrección de redondeo para vecino más cercano
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			srcX := bounds.Min.X + int(float64(x)*scaleX)
-			srcY := bounds.Min.Y + int(float64(y)*scaleY)
+			// Agregamos 0.5 para un redondeo adecuado
+			srcX := bounds.Min.X + int(float64(x)*scaleX+0.5)
+			srcY := bounds.Min.Y + int(float64(y)*scaleY+0.5)
 			result.Set(x, y, img.At(srcX, srcY))
 		}
 	}

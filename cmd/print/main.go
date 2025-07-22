@@ -21,9 +21,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &models.ConfigData{}
-
-	dataConfig, err = models.BytesToConfig(jsonBytes)
+	dataConfig, err := models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -98,9 +96,7 @@ func main() {
 		return
 	}
 
-	dataTicket := &models.NewTicketData{}
-
-	dataTicket, err = models.BytesToNewTicket(jsonBytes)
+	dataTicket, err := models.BytesToNewTicket(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return
@@ -123,7 +119,6 @@ func main() {
 		log.Printf("Error al establcer fuente: %v", err)
 	}
 
-	// TODO: Implementar imagen en ticket
 	heart := "***     ***\n******* *******\n***************\n*************\n*********\n*****\n***\n*\n"
 	if err = printer.Text(heart); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
