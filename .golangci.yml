@@ -1,4 +1,4 @@
-version: '1'        # <- aquí va el número de versión de esquema
+version: '2'        # <- aquí va el número de versión de esquema
 run:
   timeout: 3m
 linters:
