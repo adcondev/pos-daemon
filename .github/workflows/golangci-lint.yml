@@ -22,4 +22,4 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v2.3.0
-          args: --timeout=3m --format=colored-line-number
+          args: --timeout=3m
