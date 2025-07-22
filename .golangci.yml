@@ -1,0 +1,11 @@
+version: '2'        # <- aquí va el número de versión de esquema
+run:
+  timeout: 3m
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec

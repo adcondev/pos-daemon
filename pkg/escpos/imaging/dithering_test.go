@@ -158,7 +158,7 @@ func TestResizeImageMaintainsContent(t *testing.T) {
 	// Creamos una imagen con un patrón simple y reconocible (una cruz)
 	src := image.NewGray(image.Rect(0, 0, 5, 5))
 
-	// Inicializamos todo a 0 (negro)
+	// Inicializamos a 0 (negro)
 	for y := 0; y < 5; y++ {
 		for x := 0; x < 5; x++ {
 			src.SetGray(x, y, color.Gray{Y: 0})

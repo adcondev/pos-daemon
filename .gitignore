@@ -50,6 +50,9 @@ go.work.sum
 
 !/.github/*
 !/.github/workflows/*
+
+!.golangci.yml
+
 # !Makefile
 
 # ...even if they are in subdirectories
