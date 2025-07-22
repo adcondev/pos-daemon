@@ -12,20 +12,42 @@ import (
 
 // JSONFileToBytes lee un archivo JSON y devuelve su contenido como bytes
 func JSONFileToBytes(filepath string) ([]byte, error) {
+	// Normalizar la ruta para evitar ataques con ../ y similares
+	filepath = fp.Clean(filepath)
+
+	// Validar extensión del archivo
+	if !strings.HasSuffix(strings.ToLower(filepath), ".json") {
+		return nil, fmt.Errorf("solo se permiten archivos JSON")
+	}
+
 	// Validar que el archivo esté dentro de un directorio permitido
-	allowedDir := "./internal/api/rest" // directorio permitido
+	allowedDir := "./internal/api/rest"
 	absPath, err := fp.Abs(filepath)
 	if err != nil {
 		return nil, err
 	}
+
+	// Resolver enlaces simbólicos si existen
+	absPath, err = fp.EvalSymlinks(absPath)
+	if err != nil {
+		return nil, err
+	}
+
 	absAllowedDir, err := fp.Abs(allowedDir)
 	if err != nil {
 		return nil, err
 	}
+
+	absAllowedDir, err = fp.EvalSymlinks(absAllowedDir)
+	if err != nil {
+		return nil, err
+	}
+
 	if !strings.HasPrefix(absPath, absAllowedDir) {
 		return nil, fmt.Errorf("acceso denegado al archivo fuera del directorio permitido")
 	}
 
+	// Abrir el archivo después de todas las validaciones
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err

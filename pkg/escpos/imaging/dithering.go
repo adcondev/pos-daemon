@@ -86,19 +86,19 @@ func FloydSteinbergDither(img *image.Gray, threshold uint8) *image.Gray {
 			result.SetGray(x+bounds.Min.X, y+bounds.Min.Y, color.Gray{Y: uint8(newPixel)})
 
 			// Calcular el error
-			quant_error := oldPixel - newPixel
+			quantError := oldPixel - newPixel
 
 			// Distribuir el error a los píxeles vecinos
 			if x < width-1 {
-				buffer[y][x+1] += quant_error * 7.0 / 16.0
+				buffer[y][x+1] += quantError * 7.0 / 16.0
 			}
 			if y < height-1 {
 				if x > 0 {
-					buffer[y+1][x-1] += quant_error * 3.0 / 16.0
+					buffer[y+1][x-1] += quantError * 3.0 / 16.0
 				}
-				buffer[y+1][x] += quant_error * 5.0 / 16.0
+				buffer[y+1][x] += quantError * 5.0 / 16.0
 				if x < width-1 {
-					buffer[y+1][x+1] += quant_error * 1.0 / 16.0
+					buffer[y+1][x+1] += quantError * 1.0 / 16.0
 				}
 			}
 		}
@@ -153,8 +153,12 @@ func OrderedDither(img *image.Gray, baseThreshold uint8) *image.Gray {
 				adjustedThreshold = 255
 			}
 
-			// Aplicar umbral
-			if img.GrayAt(x, y).Y > uint8(adjustedThreshold) {
+			// Crear una variable explícita para la conversión segura
+			//nolint:gosec // Seguro porque adjustedThreshold está limitado a 0-255
+			thresholdValue := uint8(adjustedThreshold)
+
+			// Aplicar umbral con el valor ya convertido
+			if img.GrayAt(x, y).Y > thresholdValue {
 				result.SetGray(x, y, color.Gray{Y: 255})
 			} else {
 				result.SetGray(x, y, color.Gray{Y: 0})

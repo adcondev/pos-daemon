@@ -22,9 +22,7 @@ func main() {
 		return
 	}
 
-	dataConfig := &models.ConfigData{}
-
-	dataConfig, err = models.BytesToConfig(jsonBytes)
+	dataConfig, err := models.BytesToConfig(jsonBytes)
 	if err != nil {
 		log.Printf("Error al deserializar JSON a objeto: %v", err)
 		return

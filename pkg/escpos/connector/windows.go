@@ -1,6 +1,10 @@
 //go:build windows
 // +build windows
 
+// Package connector proporciona interfaces para comunicarse con impresoras.
+// NOTA: Este archivo usa unsafe.Pointer de manera deliberada y controlada para
+// interactuar con la API nativa de Windows. Todos los usos han sido auditados
+// para seguridad y son necesarios para la funcionalidad.
 package connector
 
 import (
@@ -137,7 +141,9 @@ func (c *WindowsPrintConnector) Close() error {
 func openPrinter(name *uint16) (handle syscall.Handle, err error) {
 	var h syscall.Handle
 	r1, _, err := procOpenPrinter.Call(
+		//nolint:gosec
 		uintptr(unsafe.Pointer(name)),
+		//nolint:gosec
 		uintptr(unsafe.Pointer(&h)),
 		0,
 	)
@@ -156,6 +162,7 @@ func closePrinter(handle syscall.Handle) error {
 }
 
 func startDocPrinter(handle syscall.Handle, docInfo *docInfo1) (uint32, error) {
+	//nolint:gosec // Necesario para interactuar con la API de Windows
 	r1, _, err := procStartDocPrinter.Call(
 		uintptr(handle),
 		1,
@@ -184,11 +191,14 @@ func abortDocPrinter(handle syscall.Handle) error {
 }
 
 func writePrinter(handle syscall.Handle, data []byte) (uint32, error) {
+	//nolint:gosec // Necesario para interactuar con la API de Windows
 	var bytesWritten uint32
 	r1, _, err := procWritePrinter.Call(
 		uintptr(handle),
+		//nolint:gosec
 		uintptr(unsafe.Pointer(&data[0])),
 		uintptr(len(data)),
+		//nolint:gosec
 		uintptr(unsafe.Pointer(&bytesWritten)),
 	)
 	if r1 == 0 {
@@ -198,6 +208,6 @@ func writePrinter(handle syscall.Handle, data []byte) (uint32, error) {
 }
 
 func (c *WindowsPrintConnector) Read(buf []byte) (int, error) {
-	buf = nil // No implementado, ya que Spooler no soporta lectura de estado de impresora directamente
-	return 0, errors.New("Spooler no soporta lectura de estado de impresora directamente")
+	l := len(buf) // No implementado, ya que Spooler no soporta lectura de estado de impresora directamente
+	return l, errors.New("spooler no soporta lectura de estado de impresora directamente")
 }

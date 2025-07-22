@@ -9,15 +9,6 @@ import (
 // --- Funciones de Ayuda para Validación ---
 // Estas funciones validan los argumentos y devuelven un error si son inválidos.
 
-// validateBoolean es en gran parte redundante en Go debido al tipado estático.
-
-func ValidateFloat(test float64, min, max float64, source, argument string) error {
-	if test < min || test > max {
-		return fmt.Errorf("el argumento '%s' (%f) dado a %s debe estar en el rango %f a %f", argument, test, source, min, max)
-	}
-	return nil
-}
-
 func ValidateInteger(test, min, max int, source, argument string) error {
 	return ValidateIntegerMulti(test, [][]int{{min, max}}, source, argument)
 }
@@ -97,14 +88,6 @@ func ValidateIntegerMulti(test int, ranges [][]int, source, argument string) err
 
 		return fmt.Errorf("el argumento '%s' (%d) dado a %s debe estar en el rango %s", argument, test, source, rangeStr)
 	}
-	return nil
-}
-
-// validateString es en gran parte redundante en Go debido al tipado estático.
-// El chequeo de PHP sobre objetos con __toString no aplica directamente en Go.
-func ValidateString(test string, source, argument string) error {
-	// En Go, el tipado estático ya asegura que es una cadena si el argumento es string.
-	// La función se mantiene por completitud del port, pero siempre devuelve nil.
 	return nil
 }
 
