@@ -21,5 +21,5 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v2.3.0       # Versión específica de la familia 2.x
-          args: --timeout=3m --out-format=colored-line-number
+          version: v2.3.0
+          args: --timeout=3m --format=colored-line-number
