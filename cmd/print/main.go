@@ -181,16 +181,16 @@ func main() {
 		log.Printf("Error al imprimir artículo 1: %v", err)
 	}
 
-	const IVA_TRAS int = 0
-	const IEPS_TRAS int = 1
-	const IVA_RET int = 2
-	const ISR_RET = 3
+	const IvaTras int = 0
+	const IepsTras int = 1
+	const IvaRet int = 2
+	const IsrRet = 3
 
-	var subtotal_sum float64
-	var ivaTrasladado_sum float64
-	var iepsTrasladado_sum float64
-	var ivaRetenido_sum float64
-	var isrRetenido_sum float64
+	var subtotalSum float64
+	var ivatrasladadoSum float64
+	var iepstrasladadoSum float64
+	var ivaretenidoSum float64
+	var isrretenidoSum float64
 	var totalFinal float64
 
 	for _, v := range dataTicket.Conceptos {
@@ -199,15 +199,15 @@ func main() {
 		precio = service.PadCenter("$"+service.FormatFloat(v.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
 		subtotal = service.PadCenter("$"+service.FormatFloat(v.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
 
-		subtotal_sum = subtotal_sum + v.Total
+		subtotalSum = subtotalSum + v.Total
 
 		if len(v.Impuestos) > 0 {
-			ivaTrasladado_sum = ivaTrasladado_sum + v.Impuestos[IVA_TRAS].Importe
+			ivatrasladadoSum = ivatrasladadoSum + v.Impuestos[IvaTras].Importe
 		}
 		if len(v.Impuestos) > 1 {
-			iepsTrasladado_sum = iepsTrasladado_sum + v.Impuestos[IEPS_TRAS].Importe
-			ivaRetenido_sum = ivaRetenido_sum + v.Impuestos[IVA_RET].Importe
-			isrRetenido_sum = isrRetenido_sum + v.Impuestos[ISR_RET].Importe
+			iepstrasladadoSum = iepstrasladadoSum + v.Impuestos[IepsTras].Importe
+			ivaretenidoSum = ivaretenidoSum + v.Impuestos[IvaRet].Importe
+			isrretenidoSum = isrretenidoSum + v.Impuestos[IsrRet].Importe
 		}
 
 		if err = printer.Text(cant + producto + precio + subtotal + "\n"); err != nil {
@@ -215,7 +215,7 @@ func main() {
 		}
 	}
 
-	totalFinal = subtotal_sum + ivaTrasladado_sum + iepsTrasladado_sum + ivaRetenido_sum + isrRetenido_sum
+	totalFinal = subtotalSum + ivatrasladadoSum + iepstrasladadoSum + ivaretenidoSum + isrretenidoSum
 
 	// Imprimir detalles de artículos (alineado a la izquierda)
 	if err = printer.SetJustification(cons.Center); err != nil {
@@ -232,19 +232,19 @@ func main() {
 		log.Printf("Error al establecer justificación derecha: %v", err)
 	}
 
-	if err = printer.Text("Subtotal: $" + service.FormatFloat(subtotal_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("Subtotal: $" + service.FormatFloat(subtotalSum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IVA Trasladado: $" + service.FormatFloat(ivaTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IVA Trasladado: $" + service.FormatFloat(ivatrasladadoSum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IEPS Trasladado: $" + service.FormatFloat(iepsTrasladado_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IEPS Trasladado: $" + service.FormatFloat(iepstrasladadoSum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("IVA Retenido: $" + service.FormatFloat(ivaRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("IVA Retenido: $" + service.FormatFloat(ivaretenidoSum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err = printer.Text("ISR Retenido: $" + service.FormatFloat(isrRetenido_sum, LEN_DECIMALES) + "\n"); err != nil {
+	if err = printer.Text("ISR Retenido: $" + service.FormatFloat(isrretenidoSum, LEN_DECIMALES) + "\n"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err = printer.Text("Total Calc: $" + service.FormatFloat(totalFinal, LEN_DECIMALES) + "\n"); err != nil {

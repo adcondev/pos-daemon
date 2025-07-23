@@ -49,3 +49,30 @@ func Substr(s string, length int) string {
 func FormatFloat(f float64, decimals int) string {
 	return fmt.Sprintf("%.*f", decimals, f)
 }
+
+// SplitString divide s en partes de length caracteres (runas).
+func SplitString(s string, length int) []string {
+	if length <= 0 {
+		return nil
+	}
+
+	var result []string
+	runes := []rune(s)
+
+	for i := 0; i < len(runes); i += length {
+		end := i + length
+		if end > len(runes) {
+			end = len(runes)
+		}
+		result = append(result, string(runes[i:end]))
+	}
+	return result
+}
+
+func CountChars(s string) int {
+	count := 0
+	for range s {
+		count++
+	}
+	return count
+}

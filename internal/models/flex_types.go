@@ -12,6 +12,12 @@ type BoolFlex bool
 
 // UnmarshalJSON implementa la interfaz json.Unmarshaler para BoolFlex
 func (b *BoolFlex) UnmarshalJSON(data []byte) error {
+	// Maneja el caso de null
+	if string(data) == "null" {
+		*b = false
+		return nil
+	}
+
 	// Intenta como bool
 	var boolVal bool
 	if err := json.Unmarshal(data, &boolVal); err == nil {
@@ -42,6 +48,11 @@ type IntFlex int
 
 // UnmarshalJSON implementa la interfaz json.Unmarshaler para IntFlex
 func (i *IntFlex) UnmarshalJSON(data []byte) error {
+	// Maneja el caso de null
+	if string(data) == "null" {
+		*i = 0
+		return nil
+	}
 	// Intenta como entero
 	var intVal int
 	if err := json.Unmarshal(data, &intVal); err == nil {

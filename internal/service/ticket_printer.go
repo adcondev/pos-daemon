@@ -13,15 +13,16 @@ import (
 	dith "pos-daemon.adcon.dev/pkg/escpos/imaging"
 	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 	"strconv"
+	"strings"
 )
 
 const (
-	LEN_CANT      int = 4
-	LEN_DESC      int = 22
-	LEN_PRECIO    int = 10
-	LEN_TOTAL     int = 10
-	LEN_DECIMALES int = 2
-	MAX_ROW_CHARS     = 48
+	LenCant      int = 4
+	LenDesc      int = 22
+	LenPrecio    int = 10
+	LenTotal     int = 10
+	LenDecimales int = 2
+	MaxRowChars  int = 46
 )
 
 // TicketConstructor handles the construction and printing of tickets
@@ -358,84 +359,93 @@ func (tc *TicketConstructor) printTicketInfo() {
 
 // printItems prints the purchased items
 func (tc *TicketConstructor) printItems() map[string]float64 {
-	const IVA_TRAS int = 0
-	const IEPS_TRAS int = 1
-	const IVA_RET int = 2
-	const ISR_RET = 3
+	const IvaTras int = 0
+	const IepsTras int = 1
+	const IvaRet int = 2
+	const IsrRet = 3
 
-	var subtotal_sum float64
-	var ivaTrasladado_sum float64
-	var iepsTrasladado_sum float64
-	var ivaRetenido_sum float64
-	var isrRetenido_sum float64
+	var subtotalSum float64
+	var ivatrasladadoSum float64
+	var iepstrasladadoSum float64
+	var ivaretenidoSum float64
+	var isrretenidoSum float64
 
 	tmpl := tc.template.Data
 
-	precio := ""
-	producto := PadCenter("PRODUCTO", LEN_DESC+LEN_PRECIO, ' ')
+	precioCol := ""
+	productoCol := PadCenter("PRODUCTO", LenDesc+LenPrecio, ' ')
 	if tmpl.VerPrecioU {
-		precio = PadCenter("PRECIO/U", LEN_PRECIO, ' ')
-		producto = PadCenter("PRODUCTO", LEN_DESC, ' ')
+		precioCol = PadCenter("PRECIO/U", LenPrecio, ' ')
+		productoCol = PadCenter("PRODUCTO", LenDesc, ' ')
 	}
-	cant := ""
-	subtotal := PadCenter("SUBTOTAL", LEN_TOTAL+LEN_CANT, ' ')
+	cantCol := ""
+	subtotalCol := PadLeft("SUBTOTAL", LenTotal+LenCant, ' ')
 	if tmpl.VerCantProductos {
-		cant = PadCenter("CANT", LEN_CANT, ' ')
-		subtotal = PadCenter("SUBTOTAL", LEN_TOTAL, ' ')
+		cantCol = PadCenter("CANT", LenCant, ' ')
+		subtotalCol = PadLeft("SUBTOTAL", LenTotal, ' ')
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(cons.Left); err != nil {
+	if err := tc.printer.SetJustification(cons.Right); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(cant + producto + precio + subtotal); err != nil {
+	columnas := cantCol + productoCol + precioCol + subtotalCol
+	if err := tc.printer.TextLn(columnas); err != nil {
 		log.Printf("Error al imprimir artículo 1: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
+	if len(columnas) != MaxRowChars {
+		log.Printf("Advertencia: la fila del concepto excede o es menor al máximo de caracteres: %d / %d): %s", len(columnas), MaxRowChars, "|"+columnas+"|")
+	}
 
 	// Print each conc
 	conceptoRow := ""
 	for _, conc := range tc.ticket.Data.Conceptos {
-		cant = ""
-
-		subtotal = PadCenter("$"+FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL+LEN_CANT, ' ')
+		cant := ""
+		subtotal := PadLeft("$"+FormatFloat(conc.Total, LenDecimales), LenTotal+LenCant, ' ')
 		if tmpl.VerCantProductos {
-			cant = PadCenter(strconv.FormatFloat(conc.Cantidad, 'f', -1, 64), LEN_CANT, ' ')
-			subtotal = PadCenter("$"+FormatFloat(conc.Total, LEN_DECIMALES), LEN_TOTAL, ' ')
+			cant = PadCenter(strconv.FormatFloat(conc.Cantidad, 'f', -1, 64), LenCant, ' ')
+			subtotal = PadLeft("$"+FormatFloat(conc.Total, LenDecimales), LenTotal, ' ')
 		}
-		precio = ""
-		producto = PadCenter(Substr(conc.Descripcion, LEN_DESC+LEN_PRECIO-2), LEN_DESC+LEN_PRECIO, ' ')
+		precio := ""
+		seriesStr := ""
+		if tmpl.VerSeries && len(conc.Series) > 0 {
+			seriesStr = ", " + strings.Join(conc.Series, ", ")
+		}
+		productos := SplitString(conc.Descripcion+", "+seriesStr, LenDesc+LenPrecio-2)
+		productos[0] = PadCenter(productos[0], LenDesc+LenPrecio, ' ')
 		if tmpl.VerPrecioU {
-			precio = PadCenter("$"+FormatFloat(conc.PrecioVenta, LEN_DECIMALES), LEN_PRECIO, ' ')
-			producto = PadCenter(Substr(conc.Descripcion, LEN_DESC-2), LEN_DESC, ' ')
+			precio = PadCenter("$"+FormatFloat(conc.PrecioVenta, LenDecimales), LenPrecio, ' ')
+			productos = SplitString(conc.Descripcion+seriesStr, LenDesc-2)
+			productos[0] = PadCenter(productos[0], LenDesc, ' ')
 		}
 
-		conceptoRow = cant + producto + precio + subtotal
-		if len(conceptoRow) > MAX_ROW_CHARS {
-			log.Printf("Advertencia: la fila del concepto excede el máximo de caracteres (%d): %s", MAX_ROW_CHARS, conceptoRow)
-			// Truncar la fila si es necesario
-			conceptoRow = conceptoRow[:MAX_ROW_CHARS]
+		conceptoRow = cant + productos[0] + precio + subtotal
+		if len(conceptoRow) != MaxRowChars {
+			log.Printf("Advertencia: la fila del concepto excede o es menor al máximo de caracteres: %d / %d): %s", len(conceptoRow), MaxRowChars, "|"+conceptoRow+"|")
 		}
 		if err := tc.printer.TextLn(conceptoRow); err != nil {
-			log.Printf("Error al imprimir artículo 2: %v", err)
+			log.Printf("Error al imprimir fila 1 de artículo 1: %v", err)
 		}
-		if tmpl.VerSeries && len(conc.Series) > 0 {
-			for _, serie := range conc.Series {
-				cant = PadCenter("", LEN_CANT, ' ')
-				producto = PadCenter(Substr(serie, LEN_DESC+LEN_PRECIO-2), LEN_DESC, ' ')
-				precio = PadCenter("", LEN_PRECIO, ' ')
-				subtotal = PadCenter("", LEN_TOTAL, ' ')
+
+		if len(productos) > 1 {
+			for _, prod := range productos[1:] {
+				cant = PadCenter("", LenCant, ' ')
+				producto := PadCenter(prod, LenDesc+LenPrecio, ' ')
+				if tmpl.VerPrecioU {
+					producto = PadCenter(prod, LenDesc, ' ')
+				}
+				precio = PadCenter("", LenPrecio, ' ')
+				subtotal = PadLeft("", LenTotal, ' ')
 
 				conceptoRow = cant + producto + precio + subtotal
-				if len(conceptoRow) > MAX_ROW_CHARS {
-					log.Printf("Advertencia: la fila del concepto excede el máximo de caracteres (%d): %s", MAX_ROW_CHARS, conceptoRow)
-					// Truncar la fila si es necesario
-					conceptoRow = conceptoRow[:MAX_ROW_CHARS]
+				if len(conceptoRow) != MaxRowChars {
+					log.Printf("Advertencia: la fila del concepto excede o es menor al máximo de caracteres: %d / %d): %s", len(conceptoRow), MaxRowChars, "|"+conceptoRow+"|")
 				}
 				if err := tc.printer.TextLn(conceptoRow); err != nil {
 					log.Printf("Error al imprimir artículo 2: %v", err)
@@ -443,15 +453,15 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 			}
 		}
 
-		subtotal_sum = subtotal_sum + conc.Total
+		subtotalSum = subtotalSum + conc.Total
 
 		if len(conc.Impuestos) > 0 {
-			ivaTrasladado_sum = ivaTrasladado_sum + conc.Impuestos[IVA_TRAS].Importe
+			ivatrasladadoSum = ivatrasladadoSum + conc.Impuestos[IvaTras].Importe
 		}
 		if len(conc.Impuestos) > 1 {
-			iepsTrasladado_sum = iepsTrasladado_sum + conc.Impuestos[IEPS_TRAS].Importe
-			ivaRetenido_sum = ivaRetenido_sum + conc.Impuestos[IVA_RET].Importe
-			isrRetenido_sum = isrRetenido_sum + conc.Impuestos[ISR_RET].Importe
+			iepstrasladadoSum = iepstrasladadoSum + conc.Impuestos[IepsTras].Importe
+			ivaretenidoSum = ivaretenidoSum + conc.Impuestos[IvaRet].Importe
+			isrretenidoSum = isrretenidoSum + conc.Impuestos[IsrRet].Importe
 		}
 
 	}
@@ -467,7 +477,7 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(subtotal_sum, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(subtotalSum, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -475,10 +485,10 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	}
 
 	return map[string]float64{
-		"ivaTrasladado":  ivaTrasladado_sum,
-		"iepsTrasladado": iepsTrasladado_sum,
-		"ivaRetenido":    ivaRetenido_sum,
-		"isrRetenido":    isrRetenido_sum,
+		"ivaTrasladado":  ivatrasladadoSum,
+		"iepsTrasladado": iepstrasladadoSum,
+		"ivaRetenido":    ivaretenidoSum,
+		"isrRetenido":    isrretenidoSum,
 	}
 
 }
@@ -492,7 +502,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(FormatFloat(taxes["ivaTrasladado"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["ivaTrasladado"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -505,7 +515,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(FormatFloat(taxes["ivaRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["ivaRetenido"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -518,7 +528,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.Text(FormatFloat(taxes["iepsTrasladado"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["iepsTrasladado"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -531,7 +541,7 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.SetEmphasis(true); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(FormatFloat(taxes["isrRetenido"], LEN_DECIMALES)); err != nil {
+		if err := tc.printer.TextLn(FormatFloat(taxes["isrRetenido"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
 		if err := tc.printer.SetEmphasis(false); err != nil {
@@ -550,7 +560,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.Total, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.Total, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -563,7 +573,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.FormasPago[0].Cantidad, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.FormasPago[0].Cantidad, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -576,7 +586,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 	if err := tc.printer.SetEmphasis(true); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.Cambio, LEN_DECIMALES)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(tcktData.Cambio, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(false); err != nil {
@@ -612,7 +622,11 @@ func (tc *TicketConstructor) printFooter() {
 		log.Printf("Error al alimentar papel: %v", err)
 	}
 
-	if err := tc.printer.TextLn(fmt.Sprintf("Cantidad de Productos: %d", len(tc.ticket.Data.Conceptos))); err != nil {
+	cantSum := 0.0
+	for _, cant := range tc.ticket.Data.Conceptos {
+		cantSum += cant.Cantidad
+	}
+	if err := tc.printer.TextLn(fmt.Sprintf("Cantidad de Productos: %s", strconv.FormatFloat(cantSum, 'f', -1, 64))); err != nil {
 		log.Printf("Error al imprimir: %v", err)
 	}
 
@@ -665,7 +679,7 @@ func (tc *TicketConstructor) printQr() {
 	var size = 256
 	qrImage := qr.Image(size)
 
-	// Crear un objeto escpos.Image desde la imagen generada
+	// Crear un objeto Image desde la imagen generada
 	// El valor 128 es el umbral para determinar qué píxeles son negros (0-255)
 	escposQR := esc.NewEscposImage(qrImage, 128)
 

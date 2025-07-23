@@ -16,15 +16,15 @@
     "ver_folio": "1",
     "ver_fecha": "1",
     "ver_tienda": "1",
-    "cambiar_cabecera": "",
+    "cambiar_cabecera": "Ejemplo Cabecera",
     "ver_precio_u": "1",
-    "incluye_impuestos": "0",
+    "incluye_impuestos": "1",
     "ver_cant_productos": "1",
-    "cambiar_reclamacion": "PARA CUALQUIER RECLAMACION ES NECESARIO \r\n\r\nPRESENTAR SU TICKET DE COMPRAS",
+    "cambiar_reclamacion": "PARA CUALQUIER RECLAMACION ES NECESARIO\r\nPRESENTAR SU TICKET DE COMPRAS",
     "ver_telefono": "1",
     "cambiar_pie": "¡GRACIAS POR SU COMPRA!",
-    "ver_impuestos": "0",
-    "ver_impuestos_total": "0",
+    "ver_impuestos": "1",
+    "ver_impuestos_total": "1",
     "ver_series": "1"
   }
 }
