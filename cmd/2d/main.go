@@ -114,7 +114,7 @@ func main() {
 	}
 
 	// Tipo de fuente
-	if err = printer.SetFont(0); err != nil {
+	if err = printer.SetFont(1); err != nil {
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
@@ -123,7 +123,7 @@ func main() {
 	}
 
 	// Imprimir texto
-	if err = printer.Text("BARCODE\n"); err != nil {
+	if err = printer.Text("BARCODE\n12345678901234567890123456789012345678901234567890"); err != nil {
 		log.Printf("Error al imprimir texto: %v", err)
 	}
 
@@ -151,14 +151,16 @@ func main() {
 	} // Espacio después del código de barras
 
 	// QR
-
+	if err = printer.SetEmphasis(false); err != nil {
+		log.Printf("Error al establecer énfasis: %v", err)
+	}
 	if err = printer.Text("QR Code: " + dataTicket.AutofacturaLink + "\n"); err != nil {
 		log.Printf("Error al imprimir QR Code: %v", err)
 	}
 
 	// Generar el código QR en memoria
 	// El parámetro 256 define el tamaño en píxeles
-	qr, err := qrcode.New(dataTicket.AutofacturaLinkQr, qrcode.Medium)
+	qr, err := qrcode.New(dataTicket.AutofacturaLinkQr, qrcode.High)
 	if err != nil {
 		log.Fatalf("Error generando QR: %v", err)
 	}
@@ -177,16 +179,16 @@ func main() {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 
-	logoPath := "./_2D/perro.jpeg"
+	logoPath := "./img/perro.jpeg"
 	if _, err := os.Stat(logoPath); os.IsNotExist(err) {
-		logoPath = "./_2D/perro.png"
+		logoPath = "./img/perro.png"
 	}
 	logoFile, err := os.Open(logoPath)
 	if err != nil {
 		log.Fatalf("Error abriendo archivo de logo (%s): %v", logoPath, err)
 	}
 	defer func(logoFile *os.File) {
-		err := logoFile.Close()
+		err = logoFile.Close()
 		if err != nil {
 			log.Printf("main: error al cerrar archivo de logo")
 		}
