@@ -1,30 +1,29 @@
-package command
+package escpos
 
 import (
 	"fmt"
 	"log"
 	"math"
-	form "pos-daemon.adcon.dev/pkg/escpos/protocol"
-	"pos-daemon.adcon.dev/pkg/escpos/utils"
+	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
 // SetJustification establece la alineación del texto (izquierda, centro, derecha).
-func (p *ESCPrinter) SetJustification(justification form.Justify) error {
-	if err := form.ValidateJustifyMode(justification); err != nil {
+func (p *ESCPrinter) SetJustification(justification Justify) error {
+	if err := ValidateJustifyMode(justification); err != nil {
 		log.Printf("Justificacion no valida")
 	}
 	// ESC a n - n=0: izquierda, 1: centro, 2: derecha
-	cmd := []byte{form.ESC, 'a', byte(justification)}
+	cmd := []byte{ESC, 'a', byte(justification)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetFont establece la fuente (A, B o C).
-func (p *ESCPrinter) SetFont(font form.Font) error {
-	if err := form.ValidateFont(font); err != nil {
+func (p *ESCPrinter) SetFont(font Font) error {
+	if err := ValidateFont(font); err != nil {
 		log.Printf("Fuente no válida: %v", err)
 	}
-	cmd := []byte{form.ESC, 'M', byte(font)}
+	cmd := []byte{ESC, 'M', byte(font)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -36,7 +35,7 @@ func (p *ESCPrinter) SetEmphasis(on bool) error {
 	if on {
 		val = 1
 	}
-	cmd := []byte{form.ESC, 'E', val}
+	cmd := []byte{ESC, 'E', val}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -48,34 +47,34 @@ func (p *ESCPrinter) SetDoubleStrike(on bool) error {
 	if on {
 		val = 1
 	}
-	cmd := []byte{form.ESC, 'G', val}
+	cmd := []byte{ESC, 'G', val}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetUnderline establece el modo de subrayado (ninguno, simple, doble).
 // Puede aceptar 0 (none), 1 (single), 2 (double).
-func (p *ESCPrinter) SetUnderline(underline form.UnderlineMode) error {
-	if err := form.ValidateUnderline(underline); err != nil {
+func (p *ESCPrinter) SetUnderline(underline UnderlineMode) error {
+	if err := ValidateUnderline(underline); err != nil {
 		log.Printf("Subrayado no valido: %v", err)
 	}
 	// ESC - n - n=0: ninguno, 1: simple, 2: doble
-	cmd := []byte{form.ESC, '-', byte(underline)}
+	cmd := []byte{ESC, '-', byte(underline)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetTextSize establece el tamaño del texto usando multiplicadores de ancho y alto (1-8).
 func (p *ESCPrinter) SetTextSize(widthMultiplier, heightMultiplier int) error {
-	if err := form.ValidateInteger(widthMultiplier, 1, 8, "SetTextSize", "multiplicador de ancho"); err != nil {
+	if err := ValidateInteger(widthMultiplier, 1, 8, "SetTextSize", "multiplicador de ancho"); err != nil {
 		return fmt.Errorf("SetTextSize: %w", err)
 	}
-	if err := form.ValidateInteger(heightMultiplier, 1, 8, "SetTextSize", "multiplicador de alto"); err != nil {
+	if err := ValidateInteger(heightMultiplier, 1, 8, "SetTextSize", "multiplicador de alto"); err != nil {
 		return fmt.Errorf("SetTextSize: %w", err)
 	}
 	// GS ! n - n es una combinación de bits de los multiplicadores (ancho-1) * 16 + (alto-1)
 	c := byte(((widthMultiplier - 1) << 4) | (heightMultiplier - 1))
-	cmd := []byte{form.GS, '!', c}
+	cmd := []byte{GS, '!', c}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -86,21 +85,21 @@ func (p *ESCPrinter) SetTextSize(widthMultiplier, heightMultiplier int) error {
 func (p *ESCPrinter) SetLineSpacing(height *int) error {
 	if height == nil {
 		// ESC 2 - Restablecer espaciado de línea por defecto
-		_, err := p.Connector.Write([]byte{form.ESC, '2'})
+		_, err := p.Connector.Write([]byte{ESC, '2'})
 		return err
 	}
-	if err := form.ValidateInteger(*height, 1, 255, "SetLineSpacing", "altura"); err != nil {
+	if err := ValidateInteger(*height, 1, 255, "SetLineSpacing", "altura"); err != nil {
 		return fmt.Errorf("SetLineSpacing: %w", err)
 	}
 	// ESC 3 n - Establecer espaciado de línea a n
-	cmd := []byte{form.ESC, '3', byte(*height)}
+	cmd := []byte{ESC, '3', byte(*height)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetPrintLeftMargin establece el margen izquierdo de impresión en puntos.
 func (p *ESCPrinter) SetPrintLeftMargin(margin int) error {
-	if err := form.ValidateInteger(margin, 0, 65535, "SetPrintLeftMargin", "margen"); err != nil {
+	if err := ValidateInteger(margin, 0, 65535, "SetPrintLeftMargin", "margen"); err != nil {
 		return fmt.Errorf("SetPrintLeftMargin: %w", err)
 	}
 	// GS L nL nH - Establece el margen izquierdo a nL + nH * 256 puntos
@@ -108,7 +107,7 @@ func (p *ESCPrinter) SetPrintLeftMargin(margin int) error {
 	if err != nil {
 		return fmt.Errorf("SetPrintLeftMargin: falló al formatear bytes del margen: %w", err)
 	}
-	cmd := []byte{form.GS, 'L'}
+	cmd := []byte{GS, 'L'}
 	cmd = append(cmd, marginBytes...)
 	_, err = p.Connector.Write(cmd)
 	return err
@@ -116,7 +115,7 @@ func (p *ESCPrinter) SetPrintLeftMargin(margin int) error {
 
 // SetPrintWidth establece el ancho del área de impresión en puntos.
 func (p *ESCPrinter) SetPrintWidth(width int) error {
-	if err := form.ValidateInteger(width, 1, 65535, "SetPrintWidth", "ancho"); err != nil {
+	if err := ValidateInteger(width, 1, 65535, "SetPrintWidth", "ancho"); err != nil {
 		return fmt.Errorf("SetPrintWidth: %w", err)
 	}
 
@@ -128,7 +127,7 @@ func (p *ESCPrinter) SetPrintWidth(width int) error {
 	if err != nil {
 		return fmt.Errorf("SetPrintWidth: falló al formatear bytes del ancho: %w", err)
 	}
-	cmd := []byte{form.GS, 'W'}
+	cmd := []byte{GS, 'W'}
 	cmd = append(cmd, widthBytes...)
 	_, err = p.Connector.Write(cmd)
 	return err

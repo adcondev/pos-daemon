@@ -1,14 +1,13 @@
-package command
+package escpos
 
 import (
 	"fmt"
 	"golang.org/x/text/encoding/charmap"
-	"pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 // SelectCharacterTable selecciona la tabla de caracteres (codepage) a utilizar.
 func (p *ESCPrinter) SelectCharacterTable(table int) error {
-	if err := protocol.ValidateInteger(table, 0, 255, "SelectCharacterTable", "tabla"); err != nil {
+	if err := ValidateInteger(table, 0, 255, "SelectCharacterTable", "tabla"); err != nil {
 		return fmt.Errorf("SelectCharacterTable: %w", err)
 	}
 
@@ -22,10 +21,10 @@ func (p *ESCPrinter) SelectCharacterTable(table int) error {
 	var cmd []byte
 	if p.Profile.SupportsStarCommands {
 		// Este comando es probable que sea específico de Star Micronics.
-		cmd = []byte{protocol.ESC, protocol.GS, 't', byte(table)}
+		cmd = []byte{ESC, GS, 't', byte(table)}
 	} else {
 		// Comando ESC/POS estándar para seleccionar tabla de caracteres.
-		cmd = []byte{protocol.ESC, 't', byte(table)}
+		cmd = []byte{ESC, 't', byte(table)}
 	}
 
 	_, err := p.Connector.Write(cmd)

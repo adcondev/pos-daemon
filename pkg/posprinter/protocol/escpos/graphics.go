@@ -1,4 +1,4 @@
-package command
+package escpos
 
 import (
 	"bytes"
@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"image"
 	"log"
-	"pos-daemon.adcon.dev/pkg/escpos/imaging"
-	"pos-daemon.adcon.dev/pkg/escpos/utils"
-
-	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
+	imaging2 "pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	utils2 "pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
 // Image La implementación real para cargar y convertir imágenes (ToRasterFormat, ToColumnFormat)
@@ -41,7 +39,7 @@ func (p *ESCPrinter) BitImage(img *ESCImage, density int) error {
 	if img == nil {
 		return errors.New("BitImage: la imagen no puede ser nil")
 	}
-	if err := cons.ValidateInteger(density, imaging.ImgDefault, imaging.ImgDoubleHeight|imaging.ImgDoubleWidth, "BitImage", "tamaño"); err != nil {
+	if err := ValidateInteger(density, imaging2.ImgDefault, imaging2.ImgDoubleHeight|imaging2.ImgDoubleWidth, "BitImage", "tamaño"); err != nil {
 		return fmt.Errorf("BitImage: %w", err)
 	} // Combinación de IMG_DEFAULT, IMG_DOUBLE_WIDTH, IMG_DOUBLE_HEIGHT
 
@@ -60,7 +58,7 @@ func (p *ESCPrinter) BitImage(img *ESCImage, density int) error {
 
 	// Comando: GS v 0 m xL xH yL yH d1...dk
 	// m es el modo de tamaño (0-3)
-	cmdHeader := []byte{cons.GS, 'v', '0', byte(density)}
+	cmdHeader := []byte{GS, 'v', '0', byte(density)}
 	cmdHeader = append(cmdHeader, headerBytes...)
 
 	_, err = p.Connector.Write(cmdHeader)
@@ -84,13 +82,13 @@ func (p *ESCPrinter) BitImageColumnFormat(img *ESCImage, size int) error {
 		return errors.New("BitImageColumnFormat: la imagen no puede ser nil")
 	}
 	// PHP valida size 0-3. La lógica interna usa los bits 1 y 2.
-	if err := cons.ValidateInteger(size, imaging.ImgDefault, imaging.ImgDoubleHeight|imaging.ImgDoubleWidth, "BitImageColumnFormat", "tamaño"); err != nil {
+	if err := ValidateInteger(size, imaging2.ImgDefault, imaging2.ImgDoubleHeight|imaging2.ImgDoubleWidth, "BitImageColumnFormat", "tamaño"); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: %w", err)
 	}
 
 	// La clase PHP establece el espaciado de línea a 16 (ESC 3 16) antes de imprimir líneas de imagen
 	// y lo restablece después. Esto es necesario para que las líneas de imagen no tengan espacio entre ellas.
-	if err := p.SetLineSpacing(utils.IntPtr(16)); err != nil {
+	if err := p.SetLineSpacing(utils2.IntPtr(16)); err != nil {
 		return fmt.Errorf("BitImageColumnFormat: falló al establecer el espaciado de línea: %w", err)
 	}
 	// Asegurar que el espaciado se restablezca incluso si hay un error.
@@ -115,10 +113,10 @@ func (p *ESCPrinter) BitImageColumnFormat(img *ESCImage, size int) error {
 	// El modo por defecto (IMG_DEFAULT=0) suele ser 24 puntos verticales, doble densidad horizontal (m=33).
 
 	densityCode := 33 // Valor por defecto: 24 puntos verticales, doble densidad horizontal
-	if (size & imaging.ImgDoubleHeight) == imaging.ImgDoubleHeight {
+	if (size & imaging2.ImgDoubleHeight) == imaging2.ImgDoubleHeight {
 		densityCode &^= 32 // Desactivar bit 5 (32) -> 8 puntos verticales
 	}
-	if (size & imaging.ImgDoubleWidth) == imaging.ImgDoubleWidth {
+	if (size & imaging2.ImgDoubleWidth) == imaging2.ImgDoubleWidth {
 		densityCode &^= 1 // Desactivar bit 0 (1) -> densidad horizontal normal
 	}
 
@@ -139,7 +137,7 @@ func (p *ESCPrinter) BitImageColumnFormat(img *ESCImage, size int) error {
 
 	for _, lineData := range colFormatData {
 		// Comando para cada línea: ESC * m nL nH d1...dk
-		cmd := []byte{cons.ESC, '*', byte(densityCode)}
+		cmd := []byte{ESC, '*', byte(densityCode)}
 		cmd = append(cmd, headerBytes...)
 		cmd = append(cmd, lineData...) // Datos de la línea de la imagen
 
@@ -163,11 +161,11 @@ func (p *ESCPrinter) BitImageColumnFormat(img *ESCImage, size int) error {
 // SetColor establece el color de impresión (para impresoras con múltiples colores).
 // color puede ser COLOR_1 (negro) o COLOR_2 (rojo).
 func (p *ESCPrinter) SetColor(color int) error {
-	if err := cons.ValidateInteger(color, imaging.Color1, imaging.Color2, "SetColor", "color"); err != nil {
+	if err := ValidateInteger(color, imaging2.Color1, imaging2.Color2, "SetColor", "color"); err != nil {
 		return fmt.Errorf("SetColor: %w", err)
 	}
 	// ESC r n - n=0: Color 1, 1: Color 2
-	cmd := []byte{cons.ESC, 'r', byte(color)}
+	cmd := []byte{ESC, 'r', byte(color)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -179,7 +177,7 @@ func (p *ESCPrinter) SetReverseColors(on bool) error {
 	if on {
 		val = 1
 	}
-	cmd := []byte{cons.GS, 'B', val}
+	cmd := []byte{GS, 'B', val}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -335,7 +333,7 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 	for _, input := range inputs {
 		if long {
 			// Formato de 2 bytes (nL nH) - rango 0 a 65535
-			data, err := utils.IntLowHigh(input, utils.DimensionBytes)
+			data, err := utils2.IntLowHigh(input, utils2.DimensionBytes)
 			if err != nil {
 				return nil, fmt.Errorf("dataHeader: falló al formatear el entero %d como 2 bytes: %w", input, err)
 			}
@@ -355,13 +353,13 @@ func dataHeader(inputs []int, long bool) ([]byte, error) {
 // usando el comando de imagen de bits (GS v 0).
 // density: modo de densidad (0-3)
 // ditherMethod: dithering a utilizar
-func (p *ESCPrinter) ImageWithDithering(img image.Image, density int, ditherMethod imaging.DitherMode, size int) error {
+func (p *ESCPrinter) ImageWithDithering(img image.Image, density int, ditherMethod imaging2.DitherMode, size int) error {
 	if img == nil {
 		return fmt.Errorf("ImageWithDithering: la imagen no puede ser nil")
 	}
 
 	// Procesar la imagen con dithering
-	processedImg, err := imaging.ProcessImageWithDithering(img, ditherMethod, size)
+	processedImg, err := imaging2.ProcessImageWithDithering(img, ditherMethod, size)
 	if err != nil {
 		return fmt.Errorf("ImageWithDithering: error al procesar la imagen: %w", err)
 	}

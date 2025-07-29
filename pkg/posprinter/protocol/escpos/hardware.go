@@ -1,19 +1,18 @@
-package command
+package escpos
 
 import (
 	"fmt"
-	hw "pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 // Pulse envía un pulso a un pin del conector del cajón portamonedas para abrirlo.
 func (p *ESCPrinter) Pulse(pin int, onMS, offMS int) error {
-	if err := hw.ValidateInteger(pin, 0, 1, "Pulse", "pin"); err != nil {
+	if err := ValidateInteger(pin, 0, 1, "Pulse", "pin"); err != nil {
 		return fmt.Errorf("Pulse: %w", err)
 	} // Pin 0 o 1
-	if err := hw.ValidateInteger(onMS, 1, 511, "Pulse", "onMS"); err != nil {
+	if err := ValidateInteger(onMS, 1, 511, "Pulse", "onMS"); err != nil {
 		return fmt.Errorf("Pulse: %w", err)
 	} // Tiempo ON en ms (1-511)
-	if err := hw.ValidateInteger(offMS, 1, 511, "Pulse", "offMS"); err != nil {
+	if err := ValidateInteger(offMS, 1, 511, "Pulse", "offMS"); err != nil {
 		return fmt.Errorf("Pulse: %w", err)
 	} // Tiempo OFF en ms (1-511) - a menudo ignorado por la impresora para el segundo pulso
 
@@ -21,7 +20,7 @@ func (p *ESCPrinter) Pulse(pin int, onMS, offMS int) error {
 	// m: pin del cajón (0 o 1). PHP usa pin + 48 ('0' o '1'). Replicamos.
 	// t1: Tiempo ON (t1 * 2 ms). PHP envía on_ms / 2. Replicamos.
 	// t2: Tiempo OFF (t2 * 2 ms). PHP envía off_ms / 2. Replicamos.
-	cmd := []byte{hw.ESC, 'p', byte(pin + 48), byte(onMS / 2), byte(offMS / 2)}
+	cmd := []byte{ESC, 'p', byte(pin + 48), byte(onMS / 2), byte(offMS / 2)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -33,41 +32,41 @@ func (p *ESCPrinter) Cut(mode int, lines int) error {
 	// El comando estándar es GS V m [n], donde m es 0,1,48,49 (full/partial)
 	// o m es 65,66 ('A'/'B') con un parámetro n adicional para líneas de avance.
 	// Replicamos el comportamiento de PHP usando 'A' o 'B' y el parámetro lines.
-	if err := hw.ValidateInteger(mode, hw.CUT_FULL, hw.CUT_PARTIAL, "Cut", "modo"); err != nil {
+	if err := ValidateInteger(mode, CUT_FULL, CUT_PARTIAL, "Cut", "modo"); err != nil {
 		return fmt.Errorf("Cut: %w", err)
 	} // 65 ('A') o 66 ('B')
-	if err := hw.ValidateInteger(lines, 0, 255, "Cut", "líneas"); err != nil {
+	if err := ValidateInteger(lines, 0, 255, "Cut", "líneas"); err != nil {
 		return fmt.Errorf("Cut: %w", err)
 	}
 
-	cmd := []byte{hw.GS, 'V', byte(mode), byte(lines)} // GS V 'A'/'B' n
+	cmd := []byte{GS, 'V', byte(mode), byte(lines)} // GS V 'A'/'B' n
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // Feed avanza el papel el número especificado de líneas.
 func (p *ESCPrinter) Feed(lines int) error {
-	if err := hw.ValidateInteger(lines, 1, 255, "Feed", "líneas"); err != nil {
+	if err := ValidateInteger(lines, 1, 255, "Feed", "líneas"); err != nil {
 		return fmt.Errorf("Feed: %w", err)
 	}
 	if lines <= 1 {
 		// Usar solo LF para una línea es un poco más rápido a veces
-		_, err := p.Connector.Write([]byte{hw.LF})
+		_, err := p.Connector.Write([]byte{LF})
 		return err
 	}
 	// ESC d n - Imprime los datos del búfer y alimenta n líneas
-	cmd := []byte{hw.ESC, 'd', byte(lines)}
+	cmd := []byte{ESC, 'd', byte(lines)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // FeedReverse retrocede el papel el número especificado de líneas.
 func (p *ESCPrinter) FeedReverse(lines int) error {
-	if err := hw.ValidateInteger(lines, 1, 255, "FeedReverse", "líneas"); err != nil {
+	if err := ValidateInteger(lines, 1, 255, "FeedReverse", "líneas"); err != nil {
 		return fmt.Errorf("FeedReverse: %w", err)
 	}
 	// ESC e n - Alimenta el papel hacia atrás n líneas
-	cmd := []byte{hw.ESC, 'e', byte(lines)}
+	cmd := []byte{ESC, 'e', byte(lines)}
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -75,7 +74,7 @@ func (p *ESCPrinter) FeedReverse(lines int) error {
 // FeedForm alimenta el papel hasta el principio del siguiente formulario (poco común en impresoras de recibos).
 func (p *ESCPrinter) FeedForm() error {
 	// FF - Form Feed
-	_, err := p.Connector.Write([]byte{hw.FF})
+	_, err := p.Connector.Write([]byte{FF})
 	return err
 }
 
@@ -83,6 +82,6 @@ func (p *ESCPrinter) FeedForm() error {
 // Este comando NO es ESC/POS estándar y es probable que sea específico del fabricante (como Star).
 func (p *ESCPrinter) Release() error {
 	// Advertencia: ESC q es probablemente específico del fabricante y no estándar ESC/POS.
-	_, err := p.Connector.Write([]byte{hw.ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
+	_, err := p.Connector.Write([]byte{ESC, 'q'}) // PHP envía ESC seguido del byte 113 ('q')
 	return err
 }

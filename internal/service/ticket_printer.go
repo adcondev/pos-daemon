@@ -9,9 +9,8 @@ import (
 	"log"
 	"os"
 	tckt "pos-daemon.adcon.dev/internal/models"
-	esc "pos-daemon.adcon.dev/pkg/escpos/command"
-	dith "pos-daemon.adcon.dev/pkg/escpos/imaging"
-	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	cons "pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 	"strconv"
 	"strings"
 )
@@ -30,11 +29,11 @@ type TicketConstructor struct {
 	template tckt.NewTicketTemplate
 	ticket   tckt.NewTicket
 	writer   io.Writer
-	printer  *esc.ESCPrinter
+	printer  *cons.ESCPrinter
 }
 
 // NewTicketConstructor creates a new ticket constructor with the specified writer
-func NewTicketConstructor(writer io.Writer, printer *esc.ESCPrinter) *TicketConstructor {
+func NewTicketConstructor(writer io.Writer, printer *cons.ESCPrinter) *TicketConstructor {
 	return &TicketConstructor{
 		writer:  writer,
 		printer: printer,
@@ -157,7 +156,7 @@ func (tc *TicketConstructor) printHeader() {
 			log.Printf("ticket_printer: error al alimentar papel después de imprimir cabecera: %v", err)
 		}
 		// Imprimir la imagen con dithering de Floyd-Steinberg
-		if err := tc.printer.ImageWithDithering(imgLogo, dith.ImgDefault, dith.FloydStein, tmpl.LogoWidth*2); err != nil {
+		if err := tc.printer.ImageWithDithering(imgLogo, imaging.ImgDefault, imaging.FloydStein, tmpl.LogoWidth*2); err != nil {
 			log.Printf("datosTckt printer: error al imprimir logo con dithering: %v", err)
 		}
 		if err := tc.printer.Feed(1); err != nil {
@@ -681,11 +680,11 @@ func (tc *TicketConstructor) printQr() {
 
 	// Crear un objeto Image desde la imagen generada
 	// El valor 128 es el umbral para determinar qué píxeles son negros (0-255)
-	escposQR := esc.NewEscposImage(qrImage, 128)
+	escposQR := cons.NewEscposImage(qrImage, 128)
 
 	// Imprimir usando uno de los métodos disponibles
 	// Opción 1: BitImage - básico pero compatible con la mayoría de impresoras
-	if err = tc.printer.BitImage(escposQR, dith.ImgDefault); err != nil {
+	if err = tc.printer.BitImage(escposQR, imaging.ImgDefault); err != nil {
 		log.Printf("Error al imprimir QR con BitImage: %v", err)
 	}
 }

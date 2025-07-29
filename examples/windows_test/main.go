@@ -1,4 +1,4 @@
-// examples/printer_test/main.go
+// examples/windows_test/main.go
 package main
 
 import (
@@ -8,13 +8,10 @@ import (
 	_ "image/png"
 	"log"
 	"os"
+	conn "pos-daemon.adcon.dev/pkg/posprinter/connector"
+	imaging2 "pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 	"time"
-
-	"pos-daemon.adcon.dev/pkg/escpos"
-	"pos-daemon.adcon.dev/pkg/escpos/command"
-	conn "pos-daemon.adcon.dev/pkg/escpos/connector"
-	"pos-daemon.adcon.dev/pkg/escpos/imaging"
-	cons "pos-daemon.adcon.dev/pkg/escpos/protocol"
 )
 
 func main() {
@@ -43,7 +40,12 @@ func main() {
 			log.Printf("Error al cerrar el conector: %v", closeErr)
 		}
 	}()
-	log.Println("Conector creado exitosamente.")
+	// Después de crear el conector y abrir la conexión
+	log.Println("Conector Bluetooth creado exitosamente.")
+
+	// Añadir un retraso para estabilizar la conexión antes de inicializar
+	log.Println("Esperando para estabilizar conexión Bluetooth...")
+	time.Sleep(2 * time.Second)
 
 	// Crear instancia de ESCPrinter
 	printer, err := escpos.NewPrinter(connector, nil)
@@ -55,7 +57,7 @@ func main() {
 	// --- PRUEBAS DE IMPRESIÓN ---
 
 	// Encabezado
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.SetEmphasis(true); err != nil {
@@ -78,7 +80,7 @@ func main() {
 	}
 
 	// Izquierda
-	if err = printer.SetJustification(cons.Left); err != nil {
+	if err = printer.SetJustification(escpos.Left); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("Texto alineado a la IZQUIERDA\n"); err != nil {
@@ -86,7 +88,7 @@ func main() {
 	}
 
 	// Centro
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("Texto alineado al CENTRO\n"); err != nil {
@@ -94,7 +96,7 @@ func main() {
 	}
 
 	// Derecha
-	if err = printer.SetJustification(cons.Right); err != nil {
+	if err = printer.SetJustification(escpos.Right); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("Texto alineado a la DERECHA\n\n"); err != nil {
@@ -102,13 +104,13 @@ func main() {
 	}
 
 	// --- PRUEBA 2: ESTILOS DE TEXTO ---
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE ESTILOS ===\n\n"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Left); err != nil {
+	if err = printer.SetJustification(escpos.Left); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -149,13 +151,13 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE ACENTOS ===\n\n"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Left); err != nil {
+	if err = printer.SetJustification(escpos.Left); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -178,7 +180,7 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE TAMAÑOS ===\n\n"); err != nil {
@@ -273,7 +275,7 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE FUENTES ===\n\n"); err != nil {
@@ -305,13 +307,13 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE ANCHO DE LÍNEA ===\n\n"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Left); err != nil {
+	if err = printer.SetJustification(escpos.Left); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -346,7 +348,7 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE CÓDIGO DE BARRAS ===\n\n"); err != nil {
@@ -360,7 +362,7 @@ func main() {
 	if err = printer.SetBarcodeWidth(3); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetBarcodeTextPosition(cons.TextBelow); err != nil {
+	if err = printer.SetBarcodeTextPosition(escpos.TextBelow); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -368,7 +370,7 @@ func main() {
 	if err = printer.Text("UPC-A:\n"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.Barcode("012345678901", cons.UpcA); err != nil {
+	if err = printer.Barcode("012345678901", escpos.UpcA); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -379,7 +381,7 @@ func main() {
 	if err = printer.Text("CODE39:\n"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.Barcode("CODE39TEST", cons.Code39); err != nil {
+	if err = printer.Barcode("CODE39TEST", escpos.Code39); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
@@ -387,7 +389,7 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE CÓDIGO QR ===\n\n"); err != nil {
@@ -408,10 +410,10 @@ func main() {
 
 	// Obtener imagen del QR y convertirla
 	qrImage := qr.Image(256)
-	escposQR := command.NewEscposImage(qrImage, 128)
+	escposQR := escpos.NewEscposImage(qrImage, 128)
 
 	// Imprimir QR
-	if err = printer.BitImage(escposQR, imaging.ImgDefault); err != nil {
+	if err = printer.BitImage(escposQR, imaging2.ImgDefault); err != nil {
 		log.Printf("Error al imprimir QR: %v", err)
 	}
 
@@ -419,7 +421,7 @@ func main() {
 	if err = printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.SetJustification(cons.Center); err != nil {
+	if err = printer.SetJustification(escpos.Center); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err = printer.Text("=== PRUEBA DE IMAGEN ===\n\n"); err != nil {
@@ -458,7 +460,7 @@ func main() {
 			log.Printf("Imagen cargada: %s (formato %s)", logoPath, format)
 
 			// Imprimir imagen con dithering para mejor calidad
-			if err := printer.ImageWithDithering(imgLogo, imaging.ImgDefault, imaging.FloydStein, imaging.DefaultPrintSize); err != nil {
+			if err := printer.ImageWithDithering(imgLogo, imaging2.ImgDefault, imaging2.FloydStein, imaging2.DefaultPrintSize); err != nil {
 				log.Printf("Error al imprimir imagen: %v", err)
 			}
 		}
@@ -468,7 +470,7 @@ func main() {
 	if err = printer.Feed(4); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err = printer.Cut(cons.CUT_FULL, 0); err != nil {
+	if err = printer.Cut(escpos.CUT_FULL, 0); err != nil {
 		log.Printf("Error: %v", err)
 	}
 

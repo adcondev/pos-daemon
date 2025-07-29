@@ -1,7 +1,6 @@
-package command
+package escpos
 
 import (
-	"pos-daemon.adcon.dev/pkg/escpos/protocol"
 	"strings"
 )
 
@@ -9,7 +8,7 @@ import (
 // Maneja los saltos de línea '\n' convirtiéndolos a LF.
 func (p *ESCPrinter) Text(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
-	bytesToSend := strings.ReplaceAll(strings.ToUpper(str), "\n", string(protocol.LF))
+	bytesToSend := strings.ReplaceAll(strings.ToUpper(str), "\n", string(LF))
 	_, err := p.Connector.Write(ToCP858(bytesToSend))
 	return err
 }
@@ -17,7 +16,7 @@ func (p *ESCPrinter) Text(str string) error {
 // TextLn envía una cadena de texto a la impresora y añade un salto de línea al final.
 func (p *ESCPrinter) TextLn(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
-	bytesToSend := strings.ReplaceAll(strings.ToUpper(str)+"\n", "\n", string(protocol.LF))
+	bytesToSend := strings.ReplaceAll(strings.ToUpper(str)+"\n", "\n", string(LF))
 	_, err := p.Connector.Write(ToCP858(bytesToSend))
 	return err
 }
@@ -34,7 +33,7 @@ func (p *ESCPrinter) TextRaw(str string) error {
 // Los comandos de activación/desactivación de modo chino (FS & / FS .) se incluyen.
 func (p *ESCPrinter) TextChinese(str string) error {
 	// Activar modo de caracteres chinos (FS &)
-	cmd := []byte{protocol.FS, '&'}
+	cmd := []byte{FS, '&'}
 
 	// --- Placeholder: Conversión de UTF-8 a GBK ---
 	// En una implementación real, usarías un paquete como golang.org/x/text/encoding/chinese
@@ -50,7 +49,7 @@ func (p *ESCPrinter) TextChinese(str string) error {
 	cmd = append(cmd, []byte(str)...)
 
 	// Desactivar modo de caracteres chinos (FS .)
-	cmd = append(cmd, protocol.FS, '.')
+	cmd = append(cmd, FS, '.')
 
 	_, err := p.Connector.Write(cmd)
 	return err

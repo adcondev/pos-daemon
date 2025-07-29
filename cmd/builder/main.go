@@ -2,15 +2,12 @@ package main
 
 import (
 	"fmt"
-	"go.bug.st/serial"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"pos-daemon.adcon.dev/internal/models"
-	"pos-daemon.adcon.dev/pkg/escpos"
-	conn "pos-daemon.adcon.dev/pkg/escpos/connector"
-	"strings"
+	conn "pos-daemon.adcon.dev/pkg/posprinter/connector"
+	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 
 	srvc "pos-daemon.adcon.dev/internal/service"
 )
@@ -38,51 +35,13 @@ func main() {
 		log.SetFlags(0) // Sin detalles adicionales
 	}
 
-	// Create connector based on the printer configuration
-	var connector io.ReadWriteCloser
-
-	ports, err := serial.GetPortsList()
+	// Windows printer connection (fallback)
+	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
+	connector, err := conn.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
-		log.Fatalf("Error al listar los puertos: %v", err)
+		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
-
-	if len(ports) == 0 {
-		log.Println("No se encontraron puertos COM disponibles.")
-	}
-
-	fmt.Println("Estado de los puertos COM:")
-	for _, port := range ports {
-		if conn.IsPortInUse(port) {
-			fmt.Printf("%s está en uso.\n", port)
-		} else {
-			fmt.Printf("%s está disponible.\n", port)
-		}
-	}
-
-	if strings.HasPrefix(dataConfig.Printer, "COM") || strings.HasPrefix(dataConfig.Printer, "/dev/") || strings.HasPrefix(dataConfig.Printer, "/dev/tty") {
-		// Serial port connection
-		log.Printf("Intentando conectar a la impresora por puerto serial: %s", dataConfig.Printer)
-		serialConfig := conn.DefaultSerialConfig()
-
-		// Override default serial settings if provided in config
-		if dataConfig.SerialBaudRate > 0 {
-			serialConfig.BaudRate = dataConfig.SerialBaudRate
-		}
-
-		connector, err = conn.NewSerialConnector(dataConfig.Printer, serialConfig)
-		if err != nil {
-			log.Fatalf("Error fatal al crear el conector serial para '%s': %v", dataConfig.Printer, err)
-		}
-		log.Println("Conector serial creado exitosamente.")
-	} else {
-		// Windows printer connection (fallback)
-		log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
-		connector, err = conn.NewWindowsPrintConnector(dataConfig.Printer)
-		if err != nil {
-			log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
-		}
-		log.Println("Conector de Windows (API Spooler) creado exitosamente.")
-	}
+	log.Println("Conector de Windows (API Spooler) creado exitosamente.")
 
 	// IMPORTANTE: Asegurarse de cerrar el conector al finalizar.
 	defer func() {
@@ -132,7 +91,7 @@ func main() {
 	}
 
 	// Print the ticket
-	if err := constructor.PrintTicket(); err != nil {
+	if err = constructor.PrintTicket(); err != nil {
 		fmt.Printf("Error printing ticket: %v\n", err)
 		os.Exit(1)
 	}

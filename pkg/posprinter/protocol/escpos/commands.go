@@ -1,4 +1,4 @@
-package protocol
+package escpos
 
 // Constantes ESC/POS y parámetros.
 const (

@@ -1,4 +1,4 @@
-package protocol
+package escpos
 
 type (
 	Barcode         int
