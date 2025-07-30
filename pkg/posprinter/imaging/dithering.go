@@ -5,198 +5,199 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	_ "image/jpeg"
-	_ "image/png"
 )
 
-type (
-	DitherMode int
-)
+// DitherMode representa los diferentes algoritmos de dithering disponibles
+type DitherMode int
 
 const (
-	NoDither   DitherMode = 0 // Sin dithering
-	FloydStein DitherMode = 1 // Dithering Floyd-Steinberg
-	Ordered    DitherMode = 2 // Dithering ordenado (matriz 4x4)
-
-	// Threshold
-
-	DefaultThreshold = 128
+	DitherNone DitherMode = iota
+	DitherFloydSteinberg
+	DitherAtkinson
+	DitherOrdered
+	DitherHalftone
+	// TODO: Agregar más métodos según necesites
 )
 
-// ProcessImageWithDithering procesa una imagen con el dithering especificado
-// Devuelve una imagen en escala de grises o binaria según el dithering
-func ProcessImageWithDithering(img image.Image, ditherMethod DitherMode, size int) (image.Image, error) {
-	// Redimensionar a 256x256 si es necesario
-	img = ResizeImage(img, size)
+// DitherProcessor es una interfaz para procesar imágenes con dithering
+type DitherProcessor interface {
+	// Apply aplica el algoritmo de dithering a una imagen
+	// threshold es el umbral para conversión a B/N (0-255)
+	Apply(img image.Image, threshold uint8) image.Image
+}
 
-	// Convertir a escala de grises primero
-	grayImg := image.NewGray(img.Bounds())
-	draw.Draw(grayImg, grayImg.Bounds(), img, img.Bounds().Min, draw.Src)
+// === Implementaciones de algoritmos de dithering ===
 
-	// Aplicar dithering según el método seleccionado
-	switch ditherMethod {
-	case NoDither:
-		// No aplicar dithering, solo binarizar con un threshold
-		return ThresholdImage(grayImg, DefaultThreshold), nil
+// FloydSteinbergDithering implementa el algoritmo Floyd-Steinberg
+type FloydSteinbergDithering struct{}
 
-	case FloydStein:
-		return FloydSteinbergDither(grayImg, DefaultThreshold), nil
+func (f *FloydSteinbergDithering) Apply(src image.Image, threshold uint8) image.Image {
+	bounds := src.Bounds()
+	// Crear imagen en escala de grises para trabajar
+	gray := image.NewGray(bounds)
+	draw.Draw(gray, bounds, src, bounds.Min, draw.Src)
 
-	case Ordered:
-		return OrderedDither(grayImg, DefaultThreshold), nil
+	// Crear imagen de salida en blanco y negro
+	dst := image.NewGray(bounds)
 
+	// Aplicar Floyd-Steinberg
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			oldPixel := gray.GrayAt(x, y).Y
+			newPixel := uint8(0)
+			if oldPixel > threshold {
+				newPixel = 255
+			}
+
+			dst.SetGray(x, y, color.Gray{newPixel})
+
+			// Calcular error
+			err := int(oldPixel) - int(newPixel)
+
+			// Distribuir error a píxeles vecinos
+			distributeError := func(dx, dy int, factor float32) {
+				nx, ny := x+dx, y+dy
+				if nx >= bounds.Min.X && nx < bounds.Max.X &&
+					ny >= bounds.Min.Y && ny < bounds.Max.Y {
+					oldVal := gray.GrayAt(nx, ny).Y
+					newVal := int(oldVal) + int(float32(err)*factor)
+					if newVal < 0 {
+						newVal = 0
+					} else if newVal > 255 {
+						newVal = 255
+					}
+					gray.SetGray(nx, ny, color.Gray{uint8(newVal)})
+				}
+			}
+
+			// Matriz de Floyd-Steinberg
+			//     X   7/16
+			// 3/16 5/16 1/16
+			distributeError(1, 0, 7.0/16.0)  // derecha
+			distributeError(-1, 1, 3.0/16.0) // abajo-izquierda
+			distributeError(0, 1, 5.0/16.0)  // abajo
+			distributeError(1, 1, 1.0/16.0)  // abajo-derecha
+		}
+	}
+
+	return dst
+}
+
+// AtkinsonDithering implementa el algoritmo Atkinson
+type AtkinsonDithering struct{}
+
+func (a *AtkinsonDithering) Apply(src image.Image, threshold uint8) image.Image {
+	bounds := src.Bounds()
+	gray := image.NewGray(bounds)
+	draw.Draw(gray, bounds, src, bounds.Min, draw.Src)
+
+	dst := image.NewGray(bounds)
+
+	// Aplicar Atkinson
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			oldPixel := gray.GrayAt(x, y).Y
+			newPixel := uint8(0)
+			if oldPixel > threshold {
+				newPixel = 255
+			}
+
+			dst.SetGray(x, y, color.Gray{newPixel})
+
+			// Calcular error (Atkinson difunde solo 3/4 del error)
+			err := int(oldPixel) - int(newPixel)
+			diffusedError := err * 3 / 4
+
+			// Distribuir error
+			distributeError := func(dx, dy int) {
+				nx, ny := x+dx, y+dy
+				if nx >= bounds.Min.X && nx < bounds.Max.X &&
+					ny >= bounds.Min.Y && ny < bounds.Max.Y {
+					oldVal := gray.GrayAt(nx, ny).Y
+					// Cada vecino recibe 1/8 del error original
+					newVal := int(oldVal) + diffusedError/8
+					if newVal < 0 {
+						newVal = 0
+					} else if newVal > 255 {
+						newVal = 255
+					}
+					gray.SetGray(nx, ny, color.Gray{uint8(newVal)})
+				}
+			}
+
+			// Patrón de Atkinson
+			//     X   1   2
+			// 1   1   1
+			//     1
+			distributeError(1, 0)  // derecha
+			distributeError(2, 0)  // derecha x2
+			distributeError(-1, 1) // abajo-izquierda
+			distributeError(0, 1)  // abajo
+			distributeError(1, 1)  // abajo-derecha
+			distributeError(0, 2)  // abajo x2
+		}
+	}
+
+	return dst
+}
+
+// ThresholdDithering implementa umbralización simple (sin dithering real)
+type ThresholdDithering struct{}
+
+func (t *ThresholdDithering) Apply(src image.Image, threshold uint8) image.Image {
+	bounds := src.Bounds()
+	dst := image.NewGray(bounds)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			// Convertir a escala de grises
+			gray := color.GrayModel.Convert(src.At(x, y)).(color.Gray)
+
+			// Aplicar umbral
+			if gray.Y > threshold {
+				dst.SetGray(x, y, color.Gray{255})
+			} else {
+				dst.SetGray(x, y, color.Gray{0})
+			}
+		}
+	}
+
+	return dst
+}
+
+// GetDitherProcessor devuelve el procesador de dithering según el modo
+func GetDitherProcessor(mode DitherMode) (DitherProcessor, error) {
+	switch mode {
+	case DitherNone:
+		return &ThresholdDithering{}, nil
+	case DitherFloydSteinberg:
+		return &FloydSteinbergDithering{}, nil
+	case DitherAtkinson:
+		return &AtkinsonDithering{}, nil
 	default:
-		return nil, fmt.Errorf("método de dithering no soportado: %d", ditherMethod)
+		return nil, fmt.Errorf("unsupported dither mode: %d", mode)
 	}
 }
 
-// FloydSteinbergDither aplica el algoritmo de dithering de Floyd-Steinberg a una imagen en escala de grises
-func FloydSteinbergDither(img *image.Gray, threshold uint8) *image.Gray {
-	bounds := img.Bounds()
-	result := image.NewGray(bounds)
-
-	// Clonar la imagen original para no modificarla
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			result.SetGray(x, y, img.GrayAt(x, y))
-		}
+// ProcessImageWithDithering aplica dithering a una imagen
+// Esta es la función principal que usarán los protocolos
+func ProcessImageWithDithering(img image.Image, mode DitherMode, threshold uint8) (image.Image, error) {
+	if img == nil {
+		return nil, fmt.Errorf("image cannot be nil")
 	}
 
-	// Matriz para almacenar los valores en coma flotante durante el procesamiento
-	width := bounds.Dx()
-	height := bounds.Dy()
-	buffer := make([][]float64, height)
-	for y := 0; y < height; y++ {
-		buffer[y] = make([]float64, width)
-		for x := 0; x < width; x++ {
-			buffer[y][x] = float64(result.GrayAt(x+bounds.Min.X, y+bounds.Min.Y).Y)
-		}
+	processor, err := GetDitherProcessor(mode)
+	if err != nil {
+		return nil, err
 	}
 
-	// Aplicar el algoritmo de Floyd-Steinberg
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			oldPixel := buffer[y][x]
-			newPixel := float64(0) // Negro
-			if oldPixel > float64(threshold) {
-				newPixel = 255.0 // Blanco
-			}
-
-			// Establecer el nuevo valor del píxel
-			result.SetGray(x+bounds.Min.X, y+bounds.Min.Y, color.Gray{Y: uint8(newPixel)})
-
-			// Calcular el error
-			quantError := oldPixel - newPixel
-
-			// Distribuir el error a los píxeles vecinos
-			if x < width-1 {
-				buffer[y][x+1] += quantError * 7.0 / 16.0
-			}
-			if y < height-1 {
-				if x > 0 {
-					buffer[y+1][x-1] += quantError * 3.0 / 16.0
-				}
-				buffer[y+1][x] += quantError * 5.0 / 16.0
-				if x < width-1 {
-					buffer[y+1][x+1] += quantError * 1.0 / 16.0
-				}
-			}
-		}
-	}
-
-	return result
+	return processor.Apply(img, threshold), nil
 }
 
-// ThresholdImage convierte una imagen en escala de grises a binaria usando un umbral simple
-func ThresholdImage(img *image.Gray, threshold uint8) *image.Gray {
-	bounds := img.Bounds()
-	result := image.NewGray(bounds)
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			if img.GrayAt(x, y).Y > threshold {
-				result.SetGray(x, y, color.Gray{Y: 255})
-			} else {
-				result.SetGray(x, y, color.Gray{Y: 0})
-			}
-		}
-	}
-
-	return result
-}
-
-// OrderedDither aplica dithering ordenado usando una matriz 4x4
-func OrderedDither(img *image.Gray, baseThreshold uint8) *image.Gray {
-	// Matriz de umbral 4x4 para dithering ordenado
-	threshold := [4][4]uint8{
-		{0, 128, 32, 160},
-		{192, 64, 224, 96},
-		{48, 176, 16, 144},
-		{240, 112, 208, 80},
-	}
-
-	bounds := img.Bounds()
-	result := image.NewGray(bounds)
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			// Obtener el umbral de la matriz para esta posición
-			tx := (x - bounds.Min.X) % 4
-			ty := (y - bounds.Min.Y) % 4
-			t := threshold[ty][tx]
-
-			// Ajustar el umbral - convertir el valor de la matriz a un modificador
-			adjustedThreshold := int(baseThreshold) + int(t) - 128
-			if adjustedThreshold < 0 {
-				adjustedThreshold = 0
-			} else if adjustedThreshold > 255 {
-				adjustedThreshold = 255
-			}
-
-			// Crear una variable explícita para la conversión segura
-			//nolint:gosec // Seguro porque adjustedThreshold está limitado a 0-255
-			thresholdValue := uint8(adjustedThreshold)
-
-			// Aplicar umbral con el valor ya convertido
-			if img.GrayAt(x, y).Y > thresholdValue {
-				result.SetGray(x, y, color.Gray{Y: 255})
-			} else {
-				result.SetGray(x, y, color.Gray{Y: 0})
-			}
-		}
-	}
-
-	return result
-}
-
-// ResizeImage redimensiona una imagen a un tamaño específico
-// Implementación simplificada - para una implementación más sofisticada,
-// considera usar paquetes como github.com/nfnt/resize
-func ResizeImage(img image.Image, width int) image.Image {
-	// Obtener las dimensiones originales
-	bounds := img.Bounds()
-	originalWidth := bounds.Dx()
-	originalHeight := bounds.Dy()
-
-	// Calcular nueva altura manteniendo proporción
-	height := int(float64(width) * float64(originalHeight) / float64(originalWidth))
-
-	// Crear nueva imagen
-	result := image.NewRGBA(image.Rect(0, 0, width, height))
-
-	// Factores de escalado
-	scaleX := float64(originalWidth) / float64(width)
-	scaleY := float64(originalHeight) / float64(height)
-
-	// Escala con corrección de redondeo para vecino más cercano
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			// Agregamos 0.5 para un redondeo adecuado
-			srcX := bounds.Min.X + int(float64(x)*scaleX+0.5)
-			srcY := bounds.Min.Y + int(float64(y)*scaleY+0.5)
-			result.Set(x, y, img.At(srcX, srcY))
-		}
-	}
-
-	return result
-}
+// TODO: Agregar más algoritmos de dithering según necesites:
+// - Ordered dithering (Bayer matrix)
+// - Halftone dithering
+// - Jarvis-Judice-Ninke
+// - Stucki
+// - Burkes
+// - Sierra

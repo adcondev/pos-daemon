@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
 	"pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/internal/service"
 	conn "pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
-
-	srvc "pos-daemon.adcon.dev/internal/service"
 )
 
 func main() {
@@ -37,32 +37,42 @@ func main() {
 
 	// Windows printer connection (fallback)
 	log.Printf("Intentando conectar a la impresora de Windows: %s", dataConfig.Printer)
+	// Crear conector
 	connector, err := conn.NewWindowsPrintConnector(dataConfig.Printer)
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
-	log.Println("Conector de Windows (API Spooler) creado exitosamente.")
+	defer connector.Close()
 
-	// IMPORTANTE: Asegurarse de cerrar el conector al finalizar.
-	defer func() {
-		log.Println("Cerrando el conector de la impresora.")
-		if closeErr := connector.Close(); closeErr != nil {
-			log.Printf("Error al cerrar el conector: %v", closeErr)
-		}
-	}()
-
-	// --- 2. Crear una instancia de la clase ESCPrinter ---
-	log.Println("Creando instancia de ESCPrinter.")
-	printer, err := escpos.NewPrinter(connector, nil) // NewPrinter llama a Initialize() internamente
+	// === Opción 1: Usar el adaptador para compatibilidad ===
+	escposPrinter, err := escpos.NewPrinter(connector, nil)
 	if err != nil {
-		log.Fatalf("Error fatal al crear e inicializar la impresora: %v", err)
+		log.Fatalf("Error fatal al crear la impresora: %v", err)
 	}
-	log.Println("Instancia de ESCPrinter creada e inicializada.")
 
-	// --- 3. Usar los métodos de la clase ESCPrinter para enviar comandos ---
-	log.Println("Enviando comandos de impresión ESC/POS...")
-	// Create a new ticket constructor that outputs to stdout
-	constructor := srvc.NewTicketConstructor(os.Stdout, printer)
+	// Crear un adaptador que implemente PrinterInterface
+	printerAdapter := service.NewPrinterAdapter(nil, escposPrinter)
+
+	// === Opción 2: Usar la nueva arquitectura directamente ===
+	/*
+		// Crear protocolo ESC/POS
+		protocol := escpos.NewESCPOSProtocol()
+
+		// Crear impresora genérica
+		genericPrinter, err := posprinter.NewGenericPrinter(protocol, connector)
+		if err != nil {
+			log.Fatalf("Error al crear impresora genérica: %v", err)
+		}
+
+		// Crear adaptador ESC/POS para compatibilidad con tipos antiguos
+		escposAdapter := escpos.NewESCPrinterAdapter(genericPrinter)
+
+		// Crear adaptador para el ticket builder
+		printerAdapter := service.NewPrinterAdapter(genericPrinter, escposAdapter)
+	*/
+
+	// Crear ticket constructor con el adaptador
+	constructor := service.NewTicketConstructor(os.Stdout, printerAdapter)
 
 	// Load template data
 	templateData, err := os.ReadFile(filepath.Join("./internal/api/rest/", "new_ticket_template.json"))
@@ -90,9 +100,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Print the ticket
+	// Imprimir el ticket
 	if err = constructor.PrintTicket(); err != nil {
-		fmt.Printf("Error printing ticket: %v\n", err)
+		log.Printf("Error printing ticket: %v\n", err)
 		os.Exit(1)
 	}
 }

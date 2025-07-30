@@ -17,7 +17,7 @@ const (
 	FontA Font = iota
 	FontB
 	FontC
-	// Otros tipos genéricos...
+	// TODO: Agregar más fuentes si es necesario
 )
 
 // UnderlineMode define los modos de subrayado estándar
@@ -42,7 +42,7 @@ const (
 	BarcodeCodebar
 	BarcodeCode93
 	BarcodeCode128
-	// Otros tipos comunes...
+	// TODO: Agregar más tipos de códigos de barras según necesidad
 )
 
 // BarcodeTextPosition define posiciones estándar para texto en códigos de barras
@@ -71,4 +71,12 @@ const (
 	DensityDouble
 	DensityTriple
 	DensityQuadruple
+	// TODO: Verificar si necesitas más densidades
 )
+
+// TODO: Agregar más tipos genéricos según necesites
+// Por ejemplo:
+// - QRCodeSize
+// - PrintSpeed
+// - CharacterSet
+// etc.

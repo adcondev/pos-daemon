@@ -41,4 +41,13 @@ type TicketTemplateData struct {
 	CambiarCabecera    string `json:"cambiar_cabecera"`    // Texto personalizado de cabecera
 	CambiarReclamacion string `json:"cambiar_reclamacion"` // Texto para reclamaciones
 	CambiarPie         string `json:"cambiar_pie"`         // Texto personalizado de pie
+
+	// Configuración del logo
+	Logo struct {
+		Path       string `json:"path"`        // Ruta al archivo del logo
+		Width      int    `json:"width"`       // Ancho deseado en píxeles
+		Height     int    `json:"height"`      // Alto deseado en píxeles
+		DoubleSize bool   `json:"double_size"` // Si se imprime a doble tamaño
+		Alignment  string `json:"alignment"`   // left, center, right
+	} `json:"logo,omitempty"`
 }

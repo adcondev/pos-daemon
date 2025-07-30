@@ -2,41 +2,270 @@ package escpos
 
 import (
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
+	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
 )
 
-// TODO: Implementar los métodos de la interfaz Printer y Connector
 // ESCPOSProtocol implementa Protocol para ESC/POS
 type ESCPOSProtocol struct {
-	// ...configuración
+	// TODO: Mover aquí las propiedades que necesites del ESCPrinter actual
+	// Por ejemplo:
+	characterTable int
+	capabilities   map[string]bool
+	// NO incluir el conector aquí, eso va en la impresora
 }
 
-// TODO: Implementar los métodos de la interfaz Printer y Connector y adaptar los comandos de ESC/POS
+// NewESCPOSProtocol crea una nueva instancia del protocolo ESC/POS
+func NewESCPOSProtocol() protocol.Protocol {
+	return &ESCPOSProtocol{
+		characterTable: 0, // Tabla por defecto
+		capabilities: map[string]bool{
+			protocol.CapabilityQRNative:   true, // TODO: Esto debería venir de un profile
+			protocol.CapabilityCutter:     true,
+			protocol.CapabilityBarcodeB:   true,
+			protocol.CapabilityColorPrint: false,
+		},
+	}
+}
+
+// === Implementación de la interfaz Protocol ===
+
+// Initialize genera el comando de inicialización ESC/POS
+func (p *ESCPOSProtocol) Initialize() []byte {
+	// ESC @ - Reset printer
+	return []byte{ESC, '@'}
+}
+
+// Close genera comandos de cierre (si los hay)
+func (p *ESCPOSProtocol) Close() []byte {
+	// ESC/POS no tiene un comando específico de cierre
+	// pero podrías incluir un reset o feed final
+	return []byte{}
+}
+
 // SetJustification convierte el tipo genérico al específico de ESC/POS
 func (p *ESCPOSProtocol) SetJustification(justification command.Alignment) []byte {
-	// Convierte de comando.Alignment a escpos.Justify
-	var escposJustify Justify
+	// Mapear el tipo genérico al valor ESC/POS
+	var escposValue byte
 	switch justification {
 	case command.AlignLeft:
-		escposJustify = Left
+		escposValue = 0 // ESC/POS: 0 = left
 	case command.AlignCenter:
-		escposJustify = Center
+		escposValue = 1 // ESC/POS: 1 = center
 	case command.AlignRight:
-		escposJustify = Right
+		escposValue = 2 // ESC/POS: 2 = right
 	default:
-		escposJustify = Left // Default
+		escposValue = 0 // Default to left
 	}
 
-	// Genera el comando con el tipo específico de ESC/POS
-	return []byte{ESC, 'a', byte(escposJustify)}
+	// ESC a n
+	return []byte{ESC, 'a', escposValue}
 }
 
-// SetBarcodeTextPosition convierte el tipo genérico al específico de ESC/POS
+// SetFont mapea fuentes genéricas a ESC/POS
+func (p *ESCPOSProtocol) SetFont(font command.Font) []byte {
+	var fontValue byte
+	switch font {
+	case command.FontA:
+		fontValue = 0
+	case command.FontB:
+		fontValue = 1
+	case command.FontC:
+		fontValue = 2
+	default:
+		fontValue = 0
+	}
+
+	// ESC M n
+	return []byte{ESC, 'M', fontValue}
+}
+
+// SetEmphasis activa/desactiva negrita
+func (p *ESCPOSProtocol) SetEmphasis(on bool) []byte {
+	val := byte(0)
+	if on {
+		val = 1
+	}
+	// ESC E n
+	return []byte{ESC, 'E', val}
+}
+
+// SetDoubleStrike activa/desactiva doble golpe
+func (p *ESCPOSProtocol) SetDoubleStrike(on bool) []byte {
+	val := byte(0)
+	if on {
+		val = 1
+	}
+	// ESC G n
+	return []byte{ESC, 'G', val}
+}
+
+// SetUnderline configura el subrayado
+func (p *ESCPOSProtocol) SetUnderline(underline command.UnderlineMode) []byte {
+	var val byte
+	switch underline {
+	case command.UnderlineNone:
+		val = 0
+	case command.UnderlineSingle:
+		val = 1
+	case command.UnderlineDouble:
+		val = 2
+	default:
+		val = 0
+	}
+	// ESC - n
+	return []byte{ESC, '-', val}
+}
+
+// Text convierte texto a bytes con encoding apropiado
+func (p *ESCPOSProtocol) Text(str string) []byte {
+	// TODO: Aquí deberías usar el characterTable actual para encoding
+	// Por ahora, usamos tu función ToCP858
+	// IMPORTANTE: El protocolo no debe manejar los saltos de línea,
+	// eso lo hace la impresora de más alto nivel
+	return ToCP858(str)
+}
+
+// TextLn agrega un salto de línea al final
+func (p *ESCPOSProtocol) TextLn(str string) []byte {
+	text := p.Text(str)
+	// Agregar LF al final
+	return append(text, LF)
+}
+
+// TextRaw envía bytes sin procesar
+func (p *ESCPOSProtocol) TextRaw(str string) []byte {
+	return []byte(str)
+}
+
+// Cut genera comando de corte
+func (p *ESCPOSProtocol) Cut(mode command.CutMode, lines int) []byte {
+	// TODO: Implementar validación de lines
+
+	cmd := []byte{GS, 'V'}
+
+	switch mode {
+	case command.CutFull:
+		cmd = append(cmd, 0) // o 48 ('0') según el modelo
+	case command.CutPartial:
+		cmd = append(cmd, 1) // o 49 ('1') según el modelo
+	default:
+		cmd = append(cmd, 0)
+	}
+
+	// Si lines > 0, agregar feed antes del corte
+	if lines > 0 {
+		cmd = append(cmd, byte(lines))
+	}
+
+	return cmd
+}
+
+// Feed genera comando de alimentación de papel
+func (p *ESCPOSProtocol) Feed(lines int) []byte {
+	// TODO: Validar que lines esté en rango válido
+	if lines <= 0 {
+		return []byte{}
+	}
+
+	// ESC d n - Print and feed n lines
+	return []byte{ESC, 'd', byte(lines)}
+}
+
+// TODO: Implementar el resto de métodos de la interfaz
+// Por ahora, implementaciones stub para compilar:
+
+func (p *ESCPOSProtocol) SetTextSize(widthMultiplier, heightMultiplier int) []byte {
+	// TODO: Implementar usando GS ! n
+	// Hint: n = (widthMultiplier-1)<<4 | (heightMultiplier-1)
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) SetLineSpacing(height *int) []byte {
+	// TODO: Si height es nil, usar ESC 2 (default)
+	// Si no, usar ESC 3 n
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) SetPrintLeftMargin(margin int) []byte {
+	// TODO: Implementar usando GS L nL nH
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) SetPrintWidth(width int) []byte {
+	// TODO: Implementar usando GS W nL nH
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) SelectCharacterTable(table int) []byte {
+	// TODO: Implementar y actualizar p.characterTable
+	// Usar ESC t n o ESC GS t n según capabilities
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) GetCharacterTable() int {
+	return p.characterTable
+}
+
+func (p *ESCPOSProtocol) SetBarcodeHeight(height int) []byte {
+	// TODO: Implementar GS h n
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) SetBarcodeWidth(width int) []byte {
+	// TODO: Implementar GS w n
+	return []byte{}
+}
+
 func (p *ESCPOSProtocol) SetBarcodeTextPosition(position command.BarcodeTextPosition) []byte {
-	// Conversión similar
-	var escposPosition BarcodeTextPos
-	// ...conversión según corresponda
-
-	return []byte{GS, 'H', byte(escposPosition)}
+	// TODO: Mapear position a valores ESC/POS y usar GS H n
+	return []byte{}
 }
 
-// Otras conversiones...
+func (p *ESCPOSProtocol) Barcode(content string, barType command.BarcodeType) ([]byte, error) {
+	// TODO: Esta es la más compleja, necesitas:
+	// 1. Mapear barType genérico a tipo ESC/POS
+	// 2. Validar content según el tipo
+	// 3. Generar comando según p.capabilities["barcode_b"]
+	return []byte{}, nil
+}
+
+func (p *ESCPOSProtocol) FeedReverse(lines int) []byte {
+	// TODO: Implementar ESC e n
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) FeedForm() []byte {
+	// TODO: Implementar FF
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) Pulse(pin int, onMS int, offMS int) []byte {
+	// TODO: Implementar ESC p m t1 t2
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) Release() []byte {
+	// TODO: Implementar si es necesario
+	return []byte{}
+}
+
+func (p *ESCPOSProtocol) Name() string {
+	return "ESC/POS"
+}
+
+func (p *ESCPOSProtocol) HasCapability(cap string) bool {
+	return p.capabilities[cap]
+}
+
+// HasNativeImageSupport indica si este protocolo soporta imágenes nativas
+func (p *ESCPOSProtocol) HasNativeImageSupport() bool {
+	return true // ESC/POS soporta imágenes de forma nativa
+}
+
+// GetMaxImageWidth devuelve el ancho máximo de imagen que soporta la impresora
+func (p *ESCPOSProtocol) GetMaxImageWidth() int {
+	// Típicamente para impresoras térmicas de 80mm a 203dpi
+	return 576
+	// Para impresoras de 58mm podría ser alrededor de 384
+	// TODO: Esto debería venir del perfil de la impresora
+}
