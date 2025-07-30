@@ -23,7 +23,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error al crear el conector para '%s': %v", printerName, err)
 	}
-	defer connector.Close()
+	defer func(connector *conn.WindowsPrintConnector) {
+		err := connector.Close()
+		if err != nil {
+			log.Printf("Error cerrando conector de impresora: %v", err)
+		}
+	}(connector)
 
 	// === Crear impresora usando el adaptador ===
 	// Usar el adaptador ESC/POS que mantiene compatibilidad
@@ -31,7 +36,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error al crear e inicializar la impresora: %v", err)
 	}
-	defer printer.Close()
+	defer func(printer *escpos.ESCPrinterAdapter) {
+		err := printer.Close()
+		if err != nil {
+			log.Printf("Error cerrando impresora: %v", err)
+		}
+	}(printer)
 
 	// === Prueba básica de impresión ===
 	log.Println("Enviando comandos de prueba...")
@@ -76,12 +86,12 @@ func main() {
 		log.Printf("Error: %v", err)
 	}
 
-	if err := printer.TextLn("de la impresora refactorizada"); err != nil {
+	if err := printer.TextLn("de la impresora desacoplada respecto a conectores, impresora y protocolo"); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
 	// Feed y corte
-	if err := printer.Feed(3); err != nil {
+	if err := printer.Feed(1); err != nil {
 		log.Printf("Error al alimentar papel: %v", err)
 	}
 

@@ -42,7 +42,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error fatal al crear el conector de Windows para '%s': %v", dataConfig.Printer, err)
 	}
-	defer connector.Close()
+	defer func(connector *conn.WindowsPrintConnector) {
+		err := connector.Close()
+		if err != nil {
+			log.Printf("Error cerrando conector de impresora: %v", err)
+		}
+	}(connector)
 
 	// === Opción 1: Usar el adaptador para compatibilidad ===
 	escposPrinter, err := escpos.NewPrinter(connector, nil)

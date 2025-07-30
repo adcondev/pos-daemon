@@ -17,7 +17,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer func(conn *connector.WindowsPrintConnector) {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("Error cerrando conector: %v", err)
+		}
+	}(conn)
 
 	// Crear protocolo y impresora
 	proto := escpos.NewESCPOSProtocol()
@@ -25,7 +30,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer printer.Close()
+	defer func(printer *posprinter.GenericPrinter) {
+		err := printer.Close()
+		if err != nil {
+			log.Printf("Error cerrando impresora: %v", err)
+		}
+	}(printer)
 
 	// Cargar imagen
 	img := loadImage("logo.png")

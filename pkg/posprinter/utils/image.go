@@ -65,12 +65,13 @@ func (p *PrintImage) GetEffectiveImage() image.Image {
 	return p.Source
 }
 
+// TODO: Revisar linter
 // GetPixel obtiene el valor de un pixel como blanco (false) o negro (true)
 func (p *PrintImage) GetPixel(x, y int) bool {
 	// Si tenemos datos monocromáticos, usarlos
 	if p.MonochromeData != nil {
 		byteIndex := (y*p.Width + x) / 8
-		bitIndex := uint(7 - (x % 8))
+		bitIndex := 7 - uint(x%8) // #nosec G115
 		return p.MonochromeData[byteIndex]&(1<<bitIndex) != 0
 	}
 
@@ -101,20 +102,21 @@ func (p *PrintImage) ToMonochrome() []byte {
 	img := p.GetEffectiveImage()
 
 	// Convertir pixel por pixel
+	// TODO: Revisar linters
 	for y := 0; y < p.Height; y++ {
 		for x := 0; x < p.Width; x++ {
 			// Para imágenes ya procesadas con dithering
 			if grayImg, ok := img.(*image.Gray); ok {
 				if grayImg.GrayAt(x, y).Y < p.Threshold {
 					byteIndex := y*bytesPerRow + x/8
-					bitIndex := uint(7 - (x % 8))
+					bitIndex := 7 - uint(x%8) // #nosec G115
 					data[byteIndex] |= 1 << bitIndex
 				}
 			} else {
 				// Para imágenes a color
 				if p.GetPixel(x, y) {
 					byteIndex := y*bytesPerRow + x/8
-					bitIndex := uint(7 - (x % 8))
+					bitIndex := 7 - uint(x%8) // #nosec G115
 					data[byteIndex] |= 1 << bitIndex
 				}
 			}

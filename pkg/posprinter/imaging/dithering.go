@@ -31,6 +31,7 @@ type DitherProcessor interface {
 // FloydSteinbergDithering implementa el algoritmo Floyd-Steinberg
 type FloydSteinbergDithering struct{}
 
+// TODO: Revisar linter
 func (f *FloydSteinbergDithering) Apply(src image.Image, threshold uint8) image.Image {
 	bounds := src.Bounds()
 	// Crear imagen en escala de grises para trabajar
@@ -66,7 +67,7 @@ func (f *FloydSteinbergDithering) Apply(src image.Image, threshold uint8) image.
 					} else if newVal > 255 {
 						newVal = 255
 					}
-					gray.SetGray(nx, ny, color.Gray{uint8(newVal)})
+					gray.SetGray(nx, ny, color.Gray{uint8(newVal)}) //nolint:gosec
 				}
 			}
 
@@ -86,6 +87,7 @@ func (f *FloydSteinbergDithering) Apply(src image.Image, threshold uint8) image.
 // AtkinsonDithering implementa el algoritmo Atkinson
 type AtkinsonDithering struct{}
 
+// TODO: Revisar linter
 func (a *AtkinsonDithering) Apply(src image.Image, threshold uint8) image.Image {
 	bounds := src.Bounds()
 	gray := image.NewGray(bounds)
@@ -121,7 +123,7 @@ func (a *AtkinsonDithering) Apply(src image.Image, threshold uint8) image.Image 
 					} else if newVal > 255 {
 						newVal = 255
 					}
-					gray.SetGray(nx, ny, color.Gray{uint8(newVal)})
+					gray.SetGray(nx, ny, color.Gray{uint8(newVal)}) //nolint:gosec
 				}
 			}
 

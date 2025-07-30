@@ -142,7 +142,10 @@ func (p *PrinterAdapter) Cut(mode int, lines int) error {
 		cutMode = command.CutFull
 	}
 	if lines > 0 {
-		p.printer.Feed(lines)
+		err := p.printer.Feed(lines)
+		if err != nil {
+			return err
+		}
 	}
 	return p.printer.Cut(cutMode)
 }
@@ -173,6 +176,7 @@ func (p *PrinterAdapter) PrintImageWithDithering(img image.Image, density comman
 }
 
 // Métodos de código de barras
+
 func (p *PrinterAdapter) SetBarcodeHeight(height int) error {
 	if p.escposAdapter != nil {
 		return p.escposAdapter.SetBarcodeHeight(height)

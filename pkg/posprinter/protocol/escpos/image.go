@@ -12,9 +12,7 @@ type ESCImage struct {
 	printImage *utils.PrintImage
 
 	// Cache de datos procesados
-	rasterData     []byte
-	columnDataHigh [][]byte
-	columnDataLow  [][]byte
+	rasterData []byte
 }
 
 // newESCImageFromPrintImage crea una ESCImage desde PrintImage
@@ -67,77 +65,7 @@ func (e *ESCImage) toRasterFormat(density command.Density) ([]byte, error) {
 	return e.rasterData, nil
 }
 
-// toColumnFormat convierte la imagen al formato de columna
-func (e *ESCImage) toColumnFormat(highDensity bool) ([][]byte, error) {
-	// Verificar cache
-	if highDensity && e.columnDataHigh != nil {
-		return e.columnDataHigh, nil
-	}
-	if !highDensity && e.columnDataLow != nil {
-		return e.columnDataLow, nil
-	}
-
-	// Calcular parámetros
-	dotsPerColumn := 24
-	if !highDensity {
-		dotsPerColumn = 8
-	}
-
-	rowCount := (e.printImage.Height + dotsPerColumn - 1) / dotsPerColumn
-	result := make([][]byte, rowCount)
-
-	// Procesar cada fila
-	for row := 0; row < rowCount; row++ {
-		startY := row * dotsPerColumn
-		endY := startY + dotsPerColumn
-		if endY > e.printImage.Height {
-			endY = e.printImage.Height
-		}
-
-		var rowData []byte
-		if highDensity {
-			rowData = make([]byte, e.printImage.Width*3) // 3 bytes por columna
-		} else {
-			rowData = make([]byte, e.printImage.Width) // 1 byte por columna
-		}
-
-		// Procesar cada columna
-		for x := 0; x < e.printImage.Width; x++ {
-			if highDensity {
-				// 24 píxeles = 3 bytes
-				for i := 0; i < 3; i++ {
-					for b := 0; b < 8; b++ {
-						y := startY + (i * 8) + b
-						if y < endY && e.printImage.GetPixel(x, y) {
-							rowData[x*3+i] |= 1 << (7 - b)
-						}
-					}
-				}
-			} else {
-				// 8 píxeles = 1 byte
-				for b := 0; b < 8; b++ {
-					y := startY + b
-					if y < endY && e.printImage.GetPixel(x, y) {
-						rowData[x] |= 1 << (7 - b)
-					}
-				}
-			}
-		}
-
-		result[row] = rowData
-	}
-
-	// Guardar en cache
-	if highDensity {
-		e.columnDataHigh = result
-	} else {
-		e.columnDataLow = result
-	}
-
-	return result, nil
-}
-
-// PrintImage implementa el método para el protocolo ESC/POS
+// PrintImage implementa el méthodo para el protocolo ESC/POS
 func (p *ESCPOSProtocol) PrintImage(img *utils.PrintImage, density command.Density) ([]byte, error) {
 	// Crear ESCImage
 	escImg, err := newESCImageFromPrintImage(img)

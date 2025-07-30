@@ -3,7 +3,10 @@ package posprinter
 import (
 	"fmt"
 	"image"
+	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
@@ -217,21 +220,37 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 
 // Implementar PrintImageFromFile en GenericPrinter
 func (p *GenericPrinter) PrintImageFromFile(filename string, density command.Density) error {
-	// Abrir archivo
-	file, err := os.Open(filename)
+	file, err := safeOpen(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open image file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Printf("printer: error al cerrar imagen: %s", cerr)
+		}
+	}()
 
-	// Decodificar imagen
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return fmt.Errorf("failed to decode image: %w", err)
 	}
-
-	// Imprimir imagen
 	return p.PrintImage(img, density)
+}
+
+// safeOpen valida que filename no escape del directorio de trabajo
+func safeOpen(filename string) (*os.File, error) {
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		return nil, err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasPrefix(absPath, cwd+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("invalid image path: %s", filename)
+	}
+	return os.Open(absPath) //nolint:gosec
 }
 
 // TODO: Implementar el resto de métodos que necesites
