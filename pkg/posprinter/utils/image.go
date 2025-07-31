@@ -1,8 +1,12 @@
 package utils
 
 import (
+	"golang.org/x/image/draw"
 	"image"
 	"image/color"
+	"image/jpeg"
+	"log"
+	"os"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 )
@@ -29,15 +33,14 @@ type PrintImage struct {
 }
 
 // NewPrintImage crea una nueva imagen para impresión
-func NewPrintImage(img image.Image) *PrintImage {
+func NewPrintImage(img image.Image, dither imaging.DitherMode) *PrintImage {
 	bounds := img.Bounds()
 	return &PrintImage{
 		Source:     img,
 		Width:      bounds.Dx(),
 		Height:     bounds.Dy(),
-		DPI:        203,
 		Threshold:  128,
-		DitherMode: imaging.DitherNone,
+		DitherMode: dither,
 	}
 }
 
@@ -125,4 +128,47 @@ func (p *PrintImage) ToMonochrome() []byte {
 
 	p.MonochromeData = data
 	return data
+}
+
+// ResizeImageToWidth redimensiona una imagen para ajustarla al ancho especificado
+func ResizeImageToWidth(img image.Image, maxWidth int) image.Image {
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	// Si la imagen es menor o igual al ancho máximo, no hacer nada
+	if width <= maxWidth {
+		return img
+	}
+
+	// Calcular nueva altura proporcional
+	newHeight := int(float64(height) * (float64(maxWidth) / float64(width)))
+
+	// Crear nueva imagen redimensionada
+	newImg := image.NewRGBA(image.Rect(0, 0, maxWidth, newHeight))
+
+	// Usar algoritmo de escalado de alta calidad
+	draw.BiLinear.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
+
+	return newImg
+}
+
+func LoadImage(filename string) image.Image {
+	file, err := SafeOpen(filename)
+	if err != nil {
+		log.Printf("Error al abrir imagen: %v", err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("Error al cerrar imagen: %v", err)
+		}
+	}(file)
+
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		log.Printf("Error al decodificar imagen: %v", err)
+	}
+
+	return img
 }

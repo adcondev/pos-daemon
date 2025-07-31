@@ -139,7 +139,7 @@ func (p *PrinterAdapter) Cut(mode int, lines int) error {
 	if mode == escpos.CUT_PARTIAL {
 		cutMode = command.CutPartial
 	} else {
-		cutMode = command.CutFull
+		cutMode = command.CutFeed
 	}
 	if lines > 0 {
 		err := p.printer.Feed(lines)
@@ -147,7 +147,7 @@ func (p *PrinterAdapter) Cut(mode int, lines int) error {
 			return err
 		}
 	}
-	return p.printer.Cut(cutMode)
+	return p.printer.Cut(cutMode, lines)
 }
 
 func (p *PrinterAdapter) Initialize() error {

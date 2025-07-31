@@ -59,7 +59,7 @@ const (
 type CutMode int
 
 const (
-	CutFull CutMode = iota
+	CutFeed CutMode = iota
 	CutPartial
 )
 

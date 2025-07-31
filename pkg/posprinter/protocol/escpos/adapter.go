@@ -101,7 +101,7 @@ func (p *ESCPrinterAdapter) Cut(mode int, lines int) error {
 	if mode == CUT_PARTIAL {
 		cutMode = command.CutPartial
 	} else {
-		cutMode = command.CutFull
+		cutMode = command.CutFeed
 	}
 
 	// Si lines > 0, alimentar papel antes del corte
@@ -111,7 +111,7 @@ func (p *ESCPrinterAdapter) Cut(mode int, lines int) error {
 		}
 	}
 
-	return p.printer.Cut(cutMode)
+	return p.printer.Cut(cutMode, 0)
 }
 
 // Feed mantiene compatibilidad

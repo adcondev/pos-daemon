@@ -1,8 +1,9 @@
 package main
 
 import (
-	"image"
 	"log"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
@@ -13,7 +14,8 @@ import (
 
 func main() {
 	// === Crear conector ===
-	conn, err := connector.NewWindowsPrintConnector("Mi Impresora")
+	// conn, err := connector.NewWindowsPrintConnector("58mm GOOJPRT PT-210")
+	conn, err := connector.NewWindowsPrintConnector("80mm EC-PM-80250") // Cambia el nombre según tu impresora
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,11 +50,53 @@ func useESCPOS(conn connector.Connector) {
 	}(printer)
 
 	// Cargar imagen
-	img := loadTestImage()
+	img := utils.LoadImage("./img/perro.jpeg")
 
+	err = printer.Feed(3)
+	if err != nil {
+		return
+	}
 	// Imprimir con densidad normal
-	if err := printer.PrintImage(img, command.DensitySingle); err != nil {
+	if err = printer.PrintImage(img, command.DensitySingle); err != nil {
 		log.Printf("Error imprimiendo imagen: %v", err)
+	}
+
+	// === Opción 2: Imprimir con Floyd-Steinberg ===
+	log.Println("Imprimiendo con Floyd-Steinberg...")
+	opts := posprinter.PrintImageOptions{
+		Density:    command.DensitySingle,
+		DitherMode: imaging.DitherFloydSteinberg,
+		Threshold:  128,
+		Width:      256,
+	}
+
+	// if err := printer.PrintImageWithOptions(img, opts); err != nil {
+	// 	log.Printf("Error: %v", err)
+	// }
+
+	// === Opción 3: Imprimir con Atkinson ===
+	log.Println("Imprimiendo con Atkinson...")
+	opts.DitherMode = imaging.DitherAtkinson
+	if err = printer.PrintImageWithOptions(img, opts); err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	err = printer.Feed(1)
+	if err != nil {
+		return
+	}
+	err = printer.Text("Fin del test de imágenes")
+	if err != nil {
+		return
+	}
+	err = printer.Feed(3)
+	if err != nil {
+		return
+	}
+
+	err = printer.Cut(command.CutFeed, 3)
+	if err != nil {
+		return
 	}
 }
 
@@ -76,9 +120,3 @@ func useESCPOS(conn connector.Connector) {
 	}
 */
 // }
-
-func loadTestImage() image.Image {
-	// TODO: Cargar una imagen real
-	// Por ahora, crear una imagen de prueba
-	return image.NewGray(image.Rect(0, 0, 100, 100))
-}

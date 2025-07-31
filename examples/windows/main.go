@@ -15,7 +15,8 @@ import (
 
 func main() {
 	// === Configuración ===
-	printerName := "58mm GOOJPRT PT-210" // TODO: Cargar de config
+	// printerName := "58mm GOOJPRT PT-210"
+	printerName := "80mm EC-PM-80250"
 
 	// === Crear conector ===
 	log.Printf("Intentando conectar a la impresora: %s", printerName)

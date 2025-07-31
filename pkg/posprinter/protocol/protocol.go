@@ -39,7 +39,6 @@ type Protocol interface {
 	Barcode(content string, barType command.BarcodeType) ([]byte, error)
 
 	// === Imágenes ===
-	// TODO: Decidir si la imagen debe venir pre-procesada o procesarla aquí
 	// PrintImage recibe una imagen genérica y la convierte a comandos del protocolo
 	PrintImage(img *utils.PrintImage, density command.Density) ([]byte, error)
 
@@ -76,9 +75,9 @@ type ProtocolFactory func() Protocol
 
 // TODO: Definir capabilities estándar que todos los protocolos pueden reportar
 const (
-	CapabilityQRNative    = "qr_native"
-	CapabilityCutter      = "cutter"
-	CapabilityColorPrint  = "color"
-	CapabilityBarcodeB    = "barcode_b"
+	CapabilityQRNative   = "qr_native"
+	CapabilityCutter     = "cutter"
+	CapabilityColorPrint = "color"
+	CapabilityBarcodeB   = "barcode_b"
 	// Agregar más según necesites
 )

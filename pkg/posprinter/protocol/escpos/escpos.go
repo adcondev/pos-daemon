@@ -11,6 +11,8 @@ type ESCPOSProtocol struct {
 	// Por ejemplo:
 	characterTable int
 	capabilities   map[string]bool
+	paperWidth     int // Ancho de papel en mm
+	dpi            int // Dots per inch (DPI) de la impresora
 	// NO incluir el conector aquí, eso va en la impresora
 }
 
@@ -24,6 +26,8 @@ func NewESCPOSProtocol() protocol.Protocol {
 			protocol.CapabilityBarcodeB:   true,
 			protocol.CapabilityColorPrint: false,
 		},
+		paperWidth: 58,  // Ancho de papel por defecto (80mm)
+		dpi:        203, // DPI por defecto (203 es común en impresoras
 	}
 }
 
@@ -144,17 +148,12 @@ func (p *ESCPOSProtocol) Cut(mode command.CutMode, lines int) []byte {
 	cmd := []byte{GS, 'V'}
 
 	switch mode {
-	case command.CutFull:
-		cmd = append(cmd, 0) // o 48 ('0') según el modelo
+	case command.CutFeed:
+		cmd = append(cmd, byte(66), byte(lines)) // o 48 ('0') según el modelo
 	case command.CutPartial:
-		cmd = append(cmd, 1) // o 49 ('1') según el modelo
+		cmd = append(cmd, byte(49)) // o 49 ('1') según el modelo
 	default:
 		cmd = append(cmd, 0)
-	}
-
-	// Si lines > 0, agregar feed antes del corte
-	if lines > 0 {
-		cmd = append(cmd, byte(lines))
 	}
 
 	return cmd
@@ -264,8 +263,16 @@ func (p *ESCPOSProtocol) HasNativeImageSupport() bool {
 
 // GetMaxImageWidth devuelve el ancho máximo de imagen que soporta la impresora
 func (p *ESCPOSProtocol) GetMaxImageWidth() int {
-	// Típicamente para impresoras térmicas de 80mm a 203dpi
-	return 576
-	// Para impresoras de 58mm podría ser alrededor de 384
-	// TODO: Esto debería venir del perfil de la impresora
+	// Cálculo basado en el ancho del papel y resolución
+	// Formula: (ancho_papel_mm / 25.4) * dpi
+	if p.paperWidth > 0 && p.dpi > 0 {
+		return int((float64(p.paperWidth) / 25.4) * float64(p.dpi))
+	}
+
+	// Valores predeterminados si no hay configuración
+	if p.paperWidth >= 80 {
+		return 576 // Para papel de 80mm a 203dpi
+	}
+
+	return 384 // Para papel de 58mm (estándar más pequeño)
 }

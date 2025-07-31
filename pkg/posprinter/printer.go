@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"image"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
@@ -33,7 +30,7 @@ type Printer interface {
 	TextLn(str string) error
 
 	// === Control de papel ===
-	Cut(mode command.CutMode) error
+	Cut(mode command.CutMode, lines int) error
 	Feed(lines int) error
 
 	// === Impresión de imágenes ===
@@ -146,9 +143,9 @@ func (p *GenericPrinter) TextLn(str string) error {
 }
 
 // Cut corta el papel
-func (p *GenericPrinter) Cut(mode command.CutMode) error {
+func (p *GenericPrinter) Cut(mode command.CutMode, lines int) error {
 	// TODO: Verificar si la impresora tiene cutter con HasCapability
-	cmd := p.Protocol.Cut(mode, 0) // 0 lines feed antes del corte
+	cmd := p.Protocol.Cut(mode, lines) // 0 lines feed antes del corte
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -165,6 +162,7 @@ type PrintImageOptions struct {
 	Density    command.Density
 	DitherMode imaging.DitherMode
 	Threshold  uint8
+	Width      int
 }
 
 // DefaultPrintImageOptions devuelve opciones por defecto
@@ -173,6 +171,7 @@ func DefaultPrintImageOptions() PrintImageOptions {
 		Density:    command.DensitySingle,
 		DitherMode: imaging.DitherNone,
 		Threshold:  128,
+		Width:      256,
 	}
 }
 
@@ -191,7 +190,8 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	}
 
 	// Crear PrintImage
-	printImg := utils.NewPrintImage(img)
+	resizedImg := utils.ResizeImageToWidth(img, opts.Width)
+	printImg := utils.NewPrintImage(resizedImg, opts.DitherMode)
 	printImg.Threshold = opts.Threshold
 
 	// Aplicar dithering si se especificó
@@ -204,7 +204,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	// Verificar ancho máximo
 	maxWidth := p.Protocol.GetMaxImageWidth()
 	if printImg.Width > maxWidth {
-		return fmt.Errorf("image width %d exceeds maximum %d", printImg.Width, maxWidth)
+		log.Printf("image width %d exceeds maximum %d, resizing", printImg.Width, maxWidth)
 	}
 
 	// Generar comandos
@@ -220,7 +220,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 
 // Implementar PrintImageFromFile en GenericPrinter
 func (p *GenericPrinter) PrintImageFromFile(filename string, density command.Density) error {
-	file, err := safeOpen(filename)
+	file, err := utils.SafeOpen(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open image file: %w", err)
 	}
@@ -235,22 +235,6 @@ func (p *GenericPrinter) PrintImageFromFile(filename string, density command.Den
 		return fmt.Errorf("failed to decode image: %w", err)
 	}
 	return p.PrintImage(img, density)
-}
-
-// safeOpen valida que filename no escape del directorio de trabajo
-func safeOpen(filename string) (*os.File, error) {
-	absPath, err := filepath.Abs(filename)
-	if err != nil {
-		return nil, err
-	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	if !strings.HasPrefix(absPath, cwd+string(os.PathSeparator)) {
-		return nil, fmt.Errorf("invalid image path: %s", filename)
-	}
-	return os.Open(absPath) //nolint:gosec
 }
 
 // TODO: Implementar el resto de métodos que necesites
