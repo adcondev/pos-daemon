@@ -79,6 +79,6 @@ const (
 
 const (
 	// Modo de corte de papel
-	CUT_FULL    int = 49 // 'A'
-	CUT_PARTIAL int = 66 // 'B'
+	Cut     int = 49 // 'A'
+	CutFeed int = 66 // 'B'
 )

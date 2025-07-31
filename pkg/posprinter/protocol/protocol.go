@@ -72,12 +72,3 @@ type Protocol interface {
 
 // ProtocolFactory es una función que crea una instancia de un protocolo
 type ProtocolFactory func() Protocol
-
-// TODO: Definir capabilities estándar que todos los protocolos pueden reportar
-const (
-	CapabilityQRNative   = "qr_native"
-	CapabilityCutter     = "cutter"
-	CapabilityColorPrint = "color"
-	CapabilityBarcodeB   = "barcode_b"
-	// Agregar más según necesites
-)

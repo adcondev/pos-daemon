@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
@@ -35,10 +36,14 @@ func main() {
 
 func useESCPOS(conn connector.Connector) {
 	// Crear protocolo ESC/POS
-	protocol := escpos.NewESCPOSProtocol()
+	proto := escpos.NewESCPOSProtocol()
+
+	// === Crear Perfil de impresora ===
+	// Puedes definir un perfil si necesitas configuraciones específicas
+	prof := profile.CreateProfile80mm()
 
 	// Crear impresora
-	printer, err := posprinter.NewGenericPrinter(protocol, conn)
+	printer, err := posprinter.NewGenericPrinter(proto, conn, prof)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,14 +55,17 @@ func useESCPOS(conn connector.Connector) {
 	}(printer)
 
 	// Cargar imagen
-	img := utils.LoadImage("./img/perro.jpeg")
+	img, err := utils.LoadImage("./img/perro.jpeg")
+	if err != nil {
+		log.Fatalf("Error al cargar imagen: %v", err)
+	}
 
 	err = printer.Feed(3)
 	if err != nil {
 		return
 	}
 	// Imprimir con densidad normal
-	if err = printer.PrintImage(img, command.DensitySingle); err != nil {
+	if err = printer.PrintImage(img); err != nil {
 		log.Printf("Error imprimiendo imagen: %v", err)
 	}
 

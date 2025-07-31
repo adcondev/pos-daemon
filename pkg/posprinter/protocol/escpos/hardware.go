@@ -32,7 +32,7 @@ func (p *ESCPrinter) Cut(mode int, lines int) error {
 	// El comando estándar es GS V m [n], donde m es 0,1,48,49 (full/partial)
 	// o m es 65,66 ('A'/'B') con un parámetro n adicional para líneas de avance.
 	// Replicamos el comportamiento de PHP usando 'A' o 'B' y el parámetro lines.
-	if err := ValidateInteger(mode, CUT_FULL, CUT_PARTIAL, "Cut", "modo"); err != nil {
+	if err := ValidateInteger(mode, Cut, CutFeed, "Cut", "modo"); err != nil {
 		return fmt.Errorf("Cut: %w", err)
 	} // 65 ('A') o 66 ('B')
 	if err := ValidateInteger(lines, 0, 255, "Cut", "líneas"); err != nil {

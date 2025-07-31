@@ -29,7 +29,7 @@ type PrinterInterface interface {
 	Initialize() error
 
 	// Métodos de imagen
-	PrintImage(img image.Image, density command.Density) error
+	PrintImage(img image.Image) error
 	PrintImageWithDithering(img image.Image, density command.Density, dither imaging.DitherMode) error
 
 	// Métodos de código de barras y QR
@@ -136,11 +136,15 @@ func (p *PrinterAdapter) Cut(mode int, lines int) error {
 	}
 	// Usar printer directamente
 	var cutMode command.CutMode
-	if mode == escpos.CUT_PARTIAL {
-		cutMode = command.CutPartial
-	} else {
+	switch mode {
+	case escpos.Cut:
+		cutMode = command.Cut
+	case escpos.CutFeed:
 		cutMode = command.CutFeed
+	default:
+		return fmt.Errorf("modo de corte no soportado: %d", mode)
 	}
+
 	if lines > 0 {
 		err := p.printer.Feed(lines)
 		if err != nil {
@@ -154,8 +158,8 @@ func (p *PrinterAdapter) Initialize() error {
 	return p.printer.Initialize()
 }
 
-func (p *PrinterAdapter) PrintImage(img image.Image, density command.Density) error {
-	return p.printer.PrintImage(img, density)
+func (p *PrinterAdapter) PrintImage(img image.Image) error {
+	return p.printer.PrintImage(img)
 }
 
 func (p *PrinterAdapter) PrintImageWithDithering(img image.Image, density command.Density, dither imaging.DitherMode) error {
@@ -172,7 +176,7 @@ func (p *PrinterAdapter) PrintImageWithDithering(img image.Image, density comman
 	}
 
 	// Fallback: imprimir sin dithering
-	return p.printer.PrintImage(img, density)
+	return p.printer.PrintImage(img)
 }
 
 // Métodos de código de barras

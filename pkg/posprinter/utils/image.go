@@ -130,22 +130,32 @@ func (p *PrintImage) ToMonochrome() []byte {
 	return data
 }
 
-// ResizeImageToWidth redimensiona una imagen para ajustarla al ancho especificado
-func ResizeImageToWidth(img image.Image, maxWidth int) image.Image {
+// ResizeToWidth redimensiona una imagen para ajustarla al ancho especificado
+func ResizeToWidth(img image.Image, newWidth, maxWidth int) image.Image {
+	if newWidth <= 0 {
+		log.Println("Ancho máximo debe ser mayor que 0, devolviendo imagen original")
+		return img
+	}
+
+	if newWidth > maxWidth {
+		log.Printf("Ancho máximo %d excedido, redimensionando a %d", newWidth, maxWidth)
+		newWidth = maxWidth
+	}
+
 	bounds := img.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
 
 	// Si la imagen es menor o igual al ancho máximo, no hacer nada
-	if width <= maxWidth {
+	if width <= newWidth {
 		return img
 	}
 
 	// Calcular nueva altura proporcional
-	newHeight := int(float64(height) * (float64(maxWidth) / float64(width)))
+	newHeight := int(float64(height) * (float64(newWidth) / float64(width)))
 
 	// Crear nueva imagen redimensionada
-	newImg := image.NewRGBA(image.Rect(0, 0, maxWidth, newHeight))
+	newImg := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
 
 	// Usar algoritmo de escalado de alta calidad
 	draw.BiLinear.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
@@ -153,10 +163,11 @@ func ResizeImageToWidth(img image.Image, maxWidth int) image.Image {
 	return newImg
 }
 
-func LoadImage(filename string) image.Image {
+func LoadImage(filename string) (image.Image, error) {
 	file, err := SafeOpen(filename)
 	if err != nil {
 		log.Printf("Error al abrir imagen: %v", err)
+		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -170,5 +181,5 @@ func LoadImage(filename string) image.Image {
 		log.Printf("Error al decodificar imagen: %v", err)
 	}
 
-	return img
+	return img, nil
 }

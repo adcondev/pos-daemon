@@ -25,12 +25,6 @@ func newESCImageFromPrintImage(img *utils.PrintImage) (*ESCImage, error) {
 		return nil, fmt.Errorf("invalid image dimensions: %dx%d", img.Width, img.Height)
 	}
 
-	// Validar ancho máximo
-	const maxWidth = 576 // Típico para 80mm
-	if img.Width > maxWidth {
-		return nil, fmt.Errorf("image width %d exceeds maximum %d", img.Width, maxWidth)
-	}
-
 	return &ESCImage{
 		printImage: img,
 	}, nil
@@ -52,7 +46,7 @@ func (e *ESCImage) GetWidthBytes() int {
 }
 
 // toRasterFormat convierte la imagen al formato raster de ESC/POS
-func (e *ESCImage) toRasterFormat(density command.Density) ([]byte, error) {
+func (e *ESCImage) toRasterFormat() ([]byte, error) {
 	// Si ya tenemos los datos en cache, devolverlos
 	if e.rasterData != nil {
 		return e.rasterData, nil
@@ -74,7 +68,7 @@ func (p *ESCPOSProtocol) PrintImage(img *utils.PrintImage, density command.Densi
 	}
 
 	// Obtener datos raster
-	rasterData, err := escImg.toRasterFormat(density)
+	rasterData, err := escImg.toRasterFormat()
 	if err != nil {
 		return nil, err
 	}

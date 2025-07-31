@@ -8,6 +8,7 @@ import (
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
@@ -34,8 +35,8 @@ type Printer interface {
 	Feed(lines int) error
 
 	// === Impresión de imágenes ===
-	PrintImage(img image.Image, density command.Density) error
-	PrintImageFromFile(filename string, density command.Density) error
+	PrintImage(img image.Image) error
+	PrintImageFromFile(filename string) error
 
 	// TODO: Agregar más métodos según necesites
 }
@@ -44,6 +45,8 @@ type Printer interface {
 type GenericPrinter struct {
 	Protocol  protocol.Protocol
 	Connector connector.Connector
+	Profile   *profile.Profile
+
 	// TODO: Agregar más campos si necesitas:
 	// - Estado actual (font, alignment, etc.)
 	// - Buffer de comandos
@@ -51,17 +54,21 @@ type GenericPrinter struct {
 }
 
 // NewGenericPrinter crea una nueva impresora genérica
-func NewGenericPrinter(proto protocol.Protocol, conn connector.Connector) (*GenericPrinter, error) {
+func NewGenericPrinter(proto protocol.Protocol, conn connector.Connector, prof *profile.Profile) (*GenericPrinter, error) {
 	if proto == nil {
-		return nil, fmt.Errorf("protocol cannot be nil")
+		return nil, fmt.Errorf("el protocolo no puede ser nil")
 	}
 	if conn == nil {
-		return nil, fmt.Errorf("connector cannot be nil")
+		return nil, fmt.Errorf("el conector no puede ser nil")
+	}
+	if prof == nil {
+		return nil, fmt.Errorf("el perfil no puede ser nil")
 	}
 
 	printer := &GenericPrinter{
 		Protocol:  proto,
 		Connector: conn,
+		Profile:   prof,
 	}
 
 	// Inicializar la impresora
@@ -70,6 +77,16 @@ func NewGenericPrinter(proto protocol.Protocol, conn connector.Connector) (*Gene
 	}
 
 	return printer, nil
+}
+
+// GetProfile devuelve el perfil de la impresora
+func (p *GenericPrinter) GetProfile() *profile.Profile {
+	return p.Profile
+}
+
+// SetProfile establece un nuevo perfil
+func (p *GenericPrinter) SetProfile(newProfile *profile.Profile) {
+	p.Profile = newProfile
 }
 
 // === Implementación de la interfaz Printer ===
@@ -176,9 +193,8 @@ func DefaultPrintImageOptions() PrintImageOptions {
 }
 
 // PrintImage imprime una imagen con opciones por defecto
-func (p *GenericPrinter) PrintImage(img image.Image, density command.Density) error {
+func (p *GenericPrinter) PrintImage(img image.Image) error {
 	opts := DefaultPrintImageOptions()
-	opts.Density = density
 	return p.PrintImageWithOptions(img, opts)
 }
 
@@ -190,7 +206,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	}
 
 	// Crear PrintImage
-	resizedImg := utils.ResizeImageToWidth(img, opts.Width)
+	resizedImg := utils.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
 	printImg := utils.NewPrintImage(resizedImg, opts.DitherMode)
 	printImg.Threshold = opts.Threshold
 
@@ -199,12 +215,6 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 		if err := printImg.ApplyDithering(opts.DitherMode); err != nil {
 			return fmt.Errorf("failed to apply dithering: %w", err)
 		}
-	}
-
-	// Verificar ancho máximo
-	maxWidth := p.Protocol.GetMaxImageWidth()
-	if printImg.Width > maxWidth {
-		log.Printf("image width %d exceeds maximum %d, resizing", printImg.Width, maxWidth)
 	}
 
 	// Generar comandos
@@ -219,7 +229,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 }
 
 // Implementar PrintImageFromFile en GenericPrinter
-func (p *GenericPrinter) PrintImageFromFile(filename string, density command.Density) error {
+func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 	file, err := utils.SafeOpen(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open image file: %w", err)
@@ -234,7 +244,7 @@ func (p *GenericPrinter) PrintImageFromFile(filename string, density command.Den
 	if err != nil {
 		return fmt.Errorf("failed to decode image: %w", err)
 	}
-	return p.PrintImage(img, density)
+	return p.PrintImage(img)
 }
 
 // TODO: Implementar el resto de métodos que necesites

@@ -60,7 +60,7 @@ type CutMode int
 
 const (
 	CutFeed CutMode = iota
-	CutPartial
+	Cut
 )
 
 // Density define densidades de impresión estándar para imágenes

@@ -2,6 +2,7 @@ package escpos
 
 import (
 	"fmt"
+	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
@@ -20,12 +21,12 @@ type ESCPrinterAdapter struct {
 }
 
 // NewPrinter crea un adaptador compatible con la API anterior
-func NewPrinter(conn connector.Connector, profile *CapabilityProfile) (*ESCPrinterAdapter, error) {
+func NewPrinter(conn connector.Connector, prof *profile.Profile) (*ESCPrinterAdapter, error) {
 	// Crear protocolo ESC/POS
 	proto := NewESCPOSProtocol()
 
 	// Crear impresora genérica
-	genericPrinter, err := posprinter.NewGenericPrinter(proto, conn)
+	genericPrinter, err := posprinter.NewGenericPrinter(proto, conn, prof)
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +99,13 @@ func (p *ESCPrinterAdapter) TextLn(str string) error {
 func (p *ESCPrinterAdapter) Cut(mode int, lines int) error {
 	// Ignorar lines por ahora, usar mode para determinar tipo de corte
 	var cutMode command.CutMode
-	if mode == CUT_PARTIAL {
-		cutMode = command.CutPartial
-	} else {
+	switch mode {
+	case Cut:
+		cutMode = command.Cut
+	case CutFeed:
 		cutMode = command.CutFeed
+	default:
+		return fmt.Errorf("invalid cut mode: %d", mode)
 	}
 
 	// Si lines > 0, alimentar papel antes del corte

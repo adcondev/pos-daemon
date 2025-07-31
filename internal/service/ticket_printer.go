@@ -78,7 +78,7 @@ func (tc *TicketConstructor) PrintTicket() error {
 	}
 
 	// Cortar papel
-	return tc.printer.Cut(escpos.CUT_FULL, 3)
+	return tc.printer.Cut(escpos.CutFeed, 3)
 }
 
 // printLogo imprime el logo si existe
@@ -322,7 +322,7 @@ func (tc *TicketConstructor) printFooter() error {
 			log.Printf("Error generating QR: %v", err)
 		} else {
 			qrImage := qr.Image(256)
-			if err := tc.printer.PrintImage(qrImage, command.DensitySingle); err != nil {
+			if err := tc.printer.PrintImage(qrImage); err != nil {
 				log.Printf("Error printing QR: %v", err)
 			}
 		}

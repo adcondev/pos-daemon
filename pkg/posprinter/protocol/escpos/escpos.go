@@ -18,17 +18,7 @@ type ESCPOSProtocol struct {
 
 // NewESCPOSProtocol crea una nueva instancia del protocolo ESC/POS
 func NewESCPOSProtocol() protocol.Protocol {
-	return &ESCPOSProtocol{
-		characterTable: 0, // Tabla por defecto
-		capabilities: map[string]bool{
-			protocol.CapabilityQRNative:   true, // TODO: Esto debería venir de un profile
-			protocol.CapabilityCutter:     true,
-			protocol.CapabilityBarcodeB:   true,
-			protocol.CapabilityColorPrint: false,
-		},
-		paperWidth: 58,  // Ancho de papel por defecto (80mm)
-		dpi:        203, // DPI por defecto (203 es común en impresoras
-	}
+	return &ESCPOSProtocol{}
 }
 
 // === Implementación de la interfaz Protocol ===
@@ -150,7 +140,7 @@ func (p *ESCPOSProtocol) Cut(mode command.CutMode, lines int) []byte {
 	switch mode {
 	case command.CutFeed:
 		cmd = append(cmd, byte(66), byte(lines)) // o 48 ('0') según el modelo
-	case command.CutPartial:
+	case command.Cut:
 		cmd = append(cmd, byte(49)) // o 49 ('1') según el modelo
 	default:
 		cmd = append(cmd, 0)
