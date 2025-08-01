@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// Imprimir título
-	if err := printer.TextLn("PRUEBA DE IMPRESION"); err != nil {
+	if err := printer.TextLn("PRUEBA RAPIDA DE IMPRESION"); err != nil {
 		log.Printf("Error al imprimir título: %v", err)
 	}
 
@@ -110,10 +110,13 @@ func main() {
 	if err := printer.TextLn("- Conectores independientes"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.TextLn("- Procesamiento de imágenes mejorado"); err != nil {
+	if err := printer.TextLn("- Perfiles intercambiables"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.TextLn("- Soporte para múltiples perfiles de impresora"); err != nil {
+	if err := printer.TextLn("- Plantillas de ticket"); err != nil {
+		log.Printf("Error: %v", err)
+	}
+	if err := printer.TextLn("- Procesamiento de imágenes mejorado"); err != nil {
 		log.Printf("Error: %v", err)
 	}
 

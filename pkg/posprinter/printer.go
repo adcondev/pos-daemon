@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"log"
+	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
@@ -145,17 +146,66 @@ func (p *GenericPrinter) SetUnderline(underline command.UnderlineMode) error {
 	return err
 }
 
-// Text imprime texto
+// SetCharacterSet cambia el juego de caracteres activo
+func (p *GenericPrinter) SetCharacterSet(charsetCode int) error {
+	// Verificar que el charset esté soportado por el perfil
+	supported := false
+	for _, cs := range p.GetSupportedCharsets() {
+		if cs == charsetCode {
+			supported = true
+			break
+		}
+	}
+
+	if !supported {
+		return fmt.Errorf("el character set %d no está soportado en el perfil de la impresora", charsetCode)
+	}
+
+	// Enviar comando al protocolo
+	cmd := p.Protocol.SelectCharacterTable(charsetCode)
+	if _, err := p.Connector.Write(cmd); err != nil {
+		return err
+	}
+
+	// Actualizar el charset activo en el perfil
+	p.Profile.ActiveCharSet = charsetCode
+	return nil
+}
+
+// Text imprime texto con codificación apropiada
 func (p *GenericPrinter) Text(str string) error {
-	cmd := p.Protocol.Text(str)
-	_, err := p.Connector.Write(cmd)
+	// Codificar usando el charset activo del perfil
+	encoded, err := encoding.EncodeString(str, p.Profile.ActiveCharSet)
+	if err != nil {
+		// Fallback: intentar con el charset por defecto
+		log.Printf("Error codificando con charset %d, volviendo a default: %v",
+			p.Profile.ActiveCharSet, err)
+		encoded, err = encoding.EncodeString(str, p.Profile.DefaultCharSet)
+		if err != nil {
+			return fmt.Errorf("fallo al codificar texto: %w", err)
+		}
+	}
+
+	// Enviar al protocolo como bytes raw
+	cmd := p.Protocol.Text(string(encoded))
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
 // TextLn imprime texto con salto de línea
 func (p *GenericPrinter) TextLn(str string) error {
-	cmd := p.Protocol.TextLn(str)
-	_, err := p.Connector.Write(cmd)
+	// Similar a Text pero agregando LF
+	encoded, err := encoding.EncodeString(str, p.Profile.ActiveCharSet)
+	if err != nil {
+		encoded, err = encoding.EncodeString(str, p.Profile.DefaultCharSet)
+		if err != nil {
+			return fmt.Errorf("failed to encode text: %w", err)
+		}
+	}
+
+	// El protocolo agrega el LF
+	cmd := p.Protocol.TextLn(string(encoded))
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
@@ -245,6 +295,11 @@ func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 		return fmt.Errorf("failed to decode image: %w", err)
 	}
 	return p.PrintImage(img)
+}
+
+func (p *GenericPrinter) GetSupportedCharsets() []int {
+	// Retorna los juegos de caracteres soportados por el perfil
+	return p.Profile.CharacterSets
 }
 
 // TODO: Implementar el resto de métodos que necesites

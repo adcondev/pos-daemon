@@ -39,10 +39,10 @@ func (p *ESCPrinter) GetCharacterTable() int {
 	return p.CharacterTable
 }
 
-// *** FUNCIÓN PARA CODIFICAR A CP858 ***
-func ToCP858(s string) []byte {
+// *** FUNCIÓN PARA CODIFICAR ToCP858 ***
+func ToCP437(s string) []byte {
 	// Obtener el codificador para CP858
-	encoder := charmap.CodePage858.NewEncoder()
+	encoder := charmap.CodePage437.NewEncoder()
 	// Convertir la string (UTF-8) a bytes codificados en CP858
 	encoded, err := encoder.Bytes([]byte(s))
 	if err != nil {
@@ -51,7 +51,7 @@ func ToCP858(s string) []byte {
 		// Aquí, por simplicidad, devolvemos la string original (UTF-8),
 		// aunque esto no solucionaría el problema del acento si falla la codificación.
 		// Una mejor práctica sería reemplazar el carácter desconocido.
-		fmt.Printf("Advertencia: No se pudo codificar string a CP858: %v (original: %q)\n", err, s)
+		fmt.Printf("advertencia: No se pudo codificar string a CP437: %v (original: %q)\n", err, s)
 		return []byte(s) // Fallback (probablemente no imprimirá bien el carácter problemático)
 	}
 	return encoded

@@ -1,8 +1,10 @@
 package escpos
 
 import (
+	"log"
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
+	"strings"
 )
 
 // ESCPOSProtocol implementa Protocol para ESC/POS
@@ -112,11 +114,8 @@ func (p *ESCPOSProtocol) SetUnderline(underline command.UnderlineMode) []byte {
 
 // Text convierte texto a bytes con encoding apropiado
 func (p *ESCPOSProtocol) Text(str string) []byte {
-	// TODO: Aquí deberías usar el characterTable actual para encoding
-	// Por ahora, usamos tu función ToCP858
-	// IMPORTANTE: El protocolo no debe manejar los saltos de línea,
-	// eso lo hace la impresora de más alto nivel
-	return ToCP858(str)
+	cmd := strings.ReplaceAll(str, "\n", string(LF))
+	return []byte(cmd)
 }
 
 // TextLn agrega un salto de línea al final
@@ -186,9 +185,13 @@ func (p *ESCPOSProtocol) SetPrintWidth(width int) []byte {
 }
 
 func (p *ESCPOSProtocol) SelectCharacterTable(table int) []byte {
-	// TODO: Implementar y actualizar p.characterTable
-	// Usar ESC t n o ESC GS t n según capabilities
-	return []byte{}
+	// Validar que table esté en un rango válido
+	if (table < 0 || table > 21) || (table > 10 && table < 16) {
+		log.Printf("advertencia: tabla de caracteres %d fuera de rango, usando 0 por defecto", table)
+		table = 0 // Default a 0 si está fuera de rango
+	}
+	// ESC t n - Select character code table
+	return []byte{ESC, 't', byte(table)}
 }
 
 func (p *ESCPOSProtocol) GetCharacterTable() int {

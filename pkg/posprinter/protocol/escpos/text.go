@@ -9,7 +9,7 @@ import (
 func (p *ESCPrinter) Text(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
 	bytesToSend := strings.ReplaceAll(strings.ToUpper(str), "\n", string(LF))
-	_, err := p.Connector.Write(ToCP858(bytesToSend))
+	_, err := p.Connector.Write(ToCP437(bytesToSend))
 	return err
 }
 
@@ -17,7 +17,7 @@ func (p *ESCPrinter) Text(str string) error {
 func (p *ESCPrinter) TextLn(str string) error {
 	// Reemplazar los saltos de línea de Go/PHP ('\n') con el carácter LF ESC/POS (0x0a)
 	bytesToSend := strings.ReplaceAll(strings.ToUpper(str)+"\n", "\n", string(LF))
-	_, err := p.Connector.Write(ToCP858(bytesToSend))
+	_, err := p.Connector.Write(ToCP437(bytesToSend))
 	return err
 }
 

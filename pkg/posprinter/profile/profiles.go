@@ -24,6 +24,7 @@ type Profile struct {
 	// Juegos de caracteres
 	CharacterSets  []int // Códigos de página soportados
 	DefaultCharSet int   // Código de página por defecto
+	ActiveCharSet  int   // Código de página activo (para cambiar dinámicamente)
 
 	// Configuración avanzada (opcional)
 	FeedLinesAfterCut int // Líneas de avance después de cortar
@@ -47,6 +48,26 @@ func (p *Profile) GetCharWidth(font string) int {
 	return p.DotsPerLine / p.Fonts[font]
 }
 
+func CreateProfPT_210() *Profile {
+	p := CreateProfile58mm()
+	p.Model = "58mm GOOJPRT PT-210"
+	p.CharacterSets = []int{
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	}
+	p.DefaultCharSet = 19 // CP858 para español
+	return p
+}
+
+func CreateProfGP_58N() *Profile {
+	p := CreateProfile58mm()
+	p.Model = "58mm GP-58N"
+	p.CharacterSets = []int{
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	}
+	p.DefaultCharSet = 19 // CP858 para español
+	return p
+}
+
 // CreateProfile58mm crea un perfil para impresora térmica de 58mm común
 func CreateProfile58mm() *Profile {
 	return &Profile{
@@ -65,11 +86,24 @@ func CreateProfile58mm() *Profile {
 		SupportsDrawer:   false,
 		SupportsColor:    false,
 
-		CharacterSets:  []int{0, 2, 3, 4}, //
-		DefaultCharSet: 0,                 //
+		CharacterSets: []int{
+			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+		}, // Más juegos de caracteres
+		DefaultCharSet: 19, // CP858
+		ActiveCharSet:  19, // CP858
 
 		ExtendedFeatures: make(map[string]interface{}),
 	}
+}
+
+func CreateProfEC_PM_80250() *Profile {
+	p := CreateProfile80mm()
+	p.Model = "80mm EC-PM-80250"
+	p.CharacterSets = []int{
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	}
+	p.DefaultCharSet = 19 // CP858 para español
+	return p
 }
 
 // CreateProfile80mm crea un perfil para impresora térmica de 80mm común
@@ -90,8 +124,11 @@ func CreateProfile80mm() *Profile {
 		SupportsDrawer:   true,
 		SupportsColor:    false,
 
-		CharacterSets:  []int{0, 2, 3, 4, 5, 16, 17}, // Más juegos de caracteres
-		DefaultCharSet: 0,                            // CP437 US
+		CharacterSets: []int{
+			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+		}, // Más juegos de caracteres
+		DefaultCharSet: 19, // CP858
+		ActiveCharSet:  19, // CP858
 
 		FeedLinesAfterCut: 5,
 		ImageThreshold:    128,
