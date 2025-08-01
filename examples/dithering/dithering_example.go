@@ -14,7 +14,13 @@ import (
 func main() {
 	// === Crear conector ===
 	// Seleccionar la impresora según tu configuración
-	printerName := "80mm EC-PM-80250"
+	// printerName := "80mm EC-PM-80250"
+	printerName := "58mm GP-58N"
+
+	// === Crear Perfil de impresora ===
+	// Puedes definir un perfil si necesitas configuraciones específicas
+	// prof := profile.CreateProfile80mm()
+	prof := profile.CreateProfile58mm() // Usar perfil de 58mm
 
 	conn, err := connector.NewWindowsPrintConnector(printerName)
 	if err != nil {
@@ -30,10 +36,6 @@ func main() {
 	// === Crear protocolo ===
 	// Aquí es donde seleccionas qué protocolo usar (ESC/POS, ZPL, etc.)
 	proto := escpos.NewESCPOSProtocol()
-
-	// === Crear Perfil de impresora ===
-	// Puedes definir un perfil si necesitas configuraciones específicas
-	prof := profile.CreateProfile80mm()
 
 	// === Crear impresora genérica ===
 	printer, err := posprinter.NewGenericPrinter(proto, conn, prof)
@@ -123,10 +125,10 @@ func main() {
 	if err := printer.TextLn("Fin del test de imágenes"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.Feed(2); err != nil {
+	if err := printer.Feed(3); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.Cut(command.CutFeed, 1); err != nil {
+	if err := printer.Cut(command.CutFeed, 3); err != nil {
 		log.Printf("Error: %v", err)
 	}
 }

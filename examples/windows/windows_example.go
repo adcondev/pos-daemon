@@ -11,7 +11,8 @@ import (
 
 func main() {
 	// === Configuración ===
-	printerName := "80mm EC-PM-80250"
+	// printerName := "80mm EC-PM-80250"
+	printerName := "58mm GP-58N" // Cambia esto al nombre de tu impresora
 
 	// === Crear conector ===
 	log.Printf("Intentando conectar a la impresora: %s", printerName)
@@ -19,7 +20,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error al crear el conector: %v", err)
 	}
-	defer conn.Close()
+	defer func(conn *connector.WindowsPrintConnector) {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("Error al cerrar el conector: %v", err)
+		}
+	}(conn)
 
 	// === Crear protocolo ===
 	// Aquí es donde eliges el protocolo (ESC/POS, ZPL, etc.)
@@ -34,7 +40,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error al crear la impresora: %v", err)
 	}
-	defer printer.Close()
+	defer func(printer *posprinter.GenericPrinter) {
+		err := printer.Close()
+		if err != nil {
+			log.Printf("Error al cerrar la impresora: %v", err)
+		}
+	}(printer)
 
 	// === Prueba básica de impresión ===
 	log.Println("Enviando comandos de prueba...")
@@ -107,12 +118,12 @@ func main() {
 	}
 
 	// Feed y corte
-	if err := printer.Feed(2); err != nil {
+	if err := printer.Feed(3); err != nil {
 		log.Printf("Error al alimentar papel: %v", err)
 	}
 
 	// Usar CutFull del paquete command (no del paquete escpos)
-	if err := printer.Cut(command.CutFeed, 1); err != nil {
+	if err := printer.Cut(command.CutFeed, 3); err != nil {
 		log.Printf("Error al cortar: %v", err)
 	}
 
