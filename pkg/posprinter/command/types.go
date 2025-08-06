@@ -74,6 +74,31 @@ const (
 	// TODO: Verificar si necesitas más densidades
 )
 
+type QRModel byte
+
+const (
+	Model1 QRModel = iota // Modelo 1 (estándar)
+	Model2                // Modelo 2 (recomendado y estándar)
+)
+
+type QRErrorCorrection byte
+
+const (
+	ECLow     QRErrorCorrection = iota // 7% de corrección
+	ECMedium                           // 15% de corrección
+	ECHigh                             // 25% de corrección
+	ECHighest                          // 30% de corrección
+)
+
+type QRModuleSize byte
+
+const (
+	MinType QRModuleSize = 1
+	MaxType QRModuleSize = 16
+)
+
+)
+
 // TODO: Agregar más tipos genéricos según necesites
 // Por ejemplo:
 // - QRCodeSize

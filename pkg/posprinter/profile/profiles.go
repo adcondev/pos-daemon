@@ -55,6 +55,7 @@ func CreateProfPT_210() *Profile {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
 	}
 	p.DefaultCharSet = 19 // CP858 para español
+	p.SupportsQR = true  // Soporta QR nativo
 	return p
 }
 
@@ -81,7 +82,7 @@ func CreateProfile58mm() *Profile {
 
 		SupportsGraphics: true,
 		SupportsBarcode:  true,
-		SupportsQR:       true, // Muchas impresoras baratas no soportan QR nativo
+		SupportsQR:       false, // Muchas impresoras baratas no soportan QR nativo
 		SupportsCutter:   false,
 		SupportsDrawer:   false,
 		SupportsColor:    false,

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"image"
 	"log"
+
+	"github.com/skip2/go-qrcode"
 	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
@@ -302,4 +304,53 @@ func (p *GenericPrinter) GetSupportedCharsets() []int {
 	return p.Profile.CharacterSets
 }
 
-// TODO: Implementar el resto de métodos que necesites
+func (p *GenericPrinter) CancelKanjiMode() error {
+	// Enviar comando para cancelar modo Kanji
+	cmd := p.Protocol.CancelKanjiMode()
+	_, err := p.Connector.Write(cmd)
+	return err
+}
+
+// FIXME: Revisar los hardcodeos de ecLevel, tamaño y componentType. Usar constantes definidas de interfaz y traducción a protocolo.
+// TODO: Que tanto revisar que tanto varia el comando entre protocolos. Asegurar compatibilidad.
+
+// PrintQR imprime un código QR con datos, versión y nivel de corrección de errores
+func (p *GenericPrinter) PrintQR(
+	data string,
+	model command.QRModel,
+	ecLevel command.QRErrorCorrection,
+	moduleSize command.QRModuleSize,
+	size int,
+) error {
+	// Verificar soporte
+	if !p.Profile.SupportsQR && p.Protocol.HasNativeImageSupport() {
+		log.Printf("El perfil no soporta QR nativo, usando imagen como fallback")
+		// Fallback a imagen
+		qrCode, err := qrcode.New(data, qrcode.RecoveryLevel(ecLevel))
+		if err != nil {
+			return fmt.Errorf("error al generar QR desde imagen: %w", err)
+		}
+		if size <= 0 {
+			return fmt.Errorf("tamaño inválido para QR: %d", size)
+		}
+		qrImage := qrCode.Image(size)
+		return p.PrintImage(qrImage)
+	}
+
+	// Usar el comando nativo
+	cmdLines, err := p.Protocol.PrintQR(data, model, moduleSize, ecLevel)
+	if err != nil {
+		return fmt.Errorf("error al generar QR: %w", err)
+	}
+
+	for _, cmd := range cmdLines {
+		_, err = p.Connector.Write(cmd)
+		if err != nil {
+			return fmt.Errorf("error al enviar QR a la impresora: %w", err)
+		}
+	}
+
+	return err
+}
+
+// Implementar el resto de métodos que necesites

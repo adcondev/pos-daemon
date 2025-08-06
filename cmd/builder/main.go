@@ -53,9 +53,6 @@ func main() {
 		}
 	}(conn)
 
-	// 2. Crear protocolo ESC/POS
-	protocol := escpos.NewESCPOSProtocol()
-
 	// 3. Crear perfil de impresora
 	// Detectar tipo de impresora por nombre o usar configuración
 	prof := &profile.Profile{}
@@ -66,6 +63,9 @@ func main() {
 		prof = profile.CreateProfile80mm() // Por defecto 80mm
 		log.Println("Usando perfil para impresora de 80mm")
 	}
+
+	// 2. Crear protocolo ESC/POS
+	protocol := escpos.NewESCPOSProtocol()
 
 	// Personalizar el perfil según necesidad
 	prof.Model = dataConfig.Printer

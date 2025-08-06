@@ -9,10 +9,12 @@ import (
 // Esta interfaz devuelve comandos en bytes que el conector enviará a la impresora
 type Protocol interface {
 	// === Comandos básicos ===
+
 	Initialize() []byte
 	Close() []byte
 
 	// === Manipulación de texto ===
+
 	SetJustification(justification command.Alignment) []byte
 	SetFont(font command.Font) []byte
 	SetEmphasis(on bool) []byte
@@ -28,17 +30,24 @@ type Protocol interface {
 	GetCharacterTable() int
 
 	// === Comandos de texto ===
+
 	Text(str string) []byte
 	TextLn(str string) []byte
 	TextRaw(str string) []byte
 
 	// === Códigos de barras ===
+
 	SetBarcodeHeight(height int) []byte
 	SetBarcodeWidth(width int) []byte
 	SetBarcodeTextPosition(position command.BarcodeTextPosition) []byte
 	Barcode(content string, barType command.BarcodeType) ([]byte, error)
 
+	// === Impresión de códigos QR ===
+
+	PrintQR(string, command.QRModel, command.QRModuleSize, command.QRErrorCorrection) ([][]byte, error)
+
 	// === Imágenes ===
+
 	// PrintImage recibe una imagen genérica y la convierte a comandos del protocolo
 	PrintImage(img *utils.PrintImage, density command.Density) ([]byte, error)
 
@@ -50,6 +59,7 @@ type Protocol interface {
 	GetMaxImageWidth() int
 
 	// === Control de papel ===
+
 	Cut(mode command.CutMode, lines int) []byte
 	Feed(lines int) []byte
 	FeedReverse(lines int) []byte
@@ -60,6 +70,7 @@ type Protocol interface {
 	Release() []byte
 
 	// === Información del protocolo ===
+
 	Name() string
 	HasCapability(cap string) bool
 
