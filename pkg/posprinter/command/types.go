@@ -17,7 +17,6 @@ const (
 	FontA Font = iota
 	FontB
 	FontC
-	// TODO: Agregar más fuentes si es necesario
 )
 
 // UnderlineMode define los modos de subrayado estándar
@@ -42,7 +41,6 @@ const (
 	BarcodeCodebar
 	BarcodeCode93
 	BarcodeCode128
-	// TODO: Agregar más tipos de códigos de barras según necesidad
 )
 
 // BarcodeTextPosition define posiciones estándar para texto en códigos de barras
@@ -71,7 +69,6 @@ const (
 	DensityDouble
 	DensityTriple
 	DensityQuadruple
-	// TODO: Verificar si necesitas más densidades
 )
 
 type QRModel byte
@@ -97,6 +94,26 @@ const (
 	MaxType QRModuleSize = 16
 )
 
+type CharacterSet int
+
+const (
+	CP437      CharacterSet = iota // CP437 U.S.A. / Standard Europe
+	Katakana                       // Katakana (JIS X 0201)
+	CP850                          // CP850 Multilingual
+	CP860                          // CP860 Portuguese
+	CP863                          // CP863 Canadian French
+	CP865                          // CP865 Nordic
+	WestEurope                     // WestEurope (ISO-8859-1)
+	Greek                          // Greek (ISO-8859-7)
+	Hebrew                         // Hebrew (ISO-8859-8)
+	CP755                          // CP755 East Europe (not directly supported)
+	Iran                           // Iran (CP720 Arabic)
+	WCP1252                        // WCP1252 Windows-1252
+	CP866                          // CP866 Cyrillic #2
+	CP852                          // CP852 Latin2
+	CP858                          // CP858 Multilingual + Euro
+	IranII                         // IranII (CP864)
+	Latvian                        // Latvian (Windows-1257)
 )
 
 // TODO: Agregar más tipos genéricos según necesites
