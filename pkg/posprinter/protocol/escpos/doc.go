@@ -1,8 +1,12 @@
-// Package escpos proporciona utilidades para interactuar con impresoras térmicas
-// compatibles con el estándar ESC/POS, incluyendo generación de comandos,
-// secuencias de control y configuraciones de impresión.
-//
-// Este paquete está basado en el manual EC-80XXX Programmer Manual V6.1 y expone
-// funciones para comandos comunes como impresión, salto de línea, tabulaciones,
-// alineación, corte de papel y más.
+/*
+Package escpos proporciona herramientas para interactuar con impresoras térmicas compatibles con ESC/POS.
+
+Este paquete ofrece:
+
+  - Implementación del protocolo ESC/POS para la generación de comandos.
+  - Funciones para inicializar, configurar y gestionar la impresión de texto e imágenes.
+  - Métodos para manejar comandos de corte, alimentación, y formateo de datos.
+  - Utilidades para procesar imágenes, convirtiéndolas en datos raster compatibles.
+  - Conjunto de funciones de bajo nivel para emitir secuencias de comandos y consultar el estado de la impresora.
+*/
 package escpos

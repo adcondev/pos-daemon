@@ -3,20 +3,21 @@ package escpos
 import (
 	"fmt"
 
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
+	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
 // ESCImage ahora es más simple, solo guarda referencia a PrintImage
 type ESCImage struct {
-	printImage *utils.PrintImage
+	printImage *image.PrintImage
 
 	// Cache de datos procesados
 	rasterData []byte
 }
 
 // newESCImageFromPrintImage crea una ESCImage desde PrintImage
-func newESCImageFromPrintImage(img *utils.PrintImage) (*ESCImage, error) {
+func newESCImageFromPrintImage(img *image.PrintImage) (*ESCImage, error) {
 	if img == nil {
 		return nil, fmt.Errorf("print image cannot be nil")
 	}
@@ -60,7 +61,7 @@ func (e *ESCImage) toRasterFormat() ([]byte, error) {
 }
 
 // PrintImage implementa el méthodo para el protocolo ESC/POS
-func (p *ESCPOSProtocol) PrintImage(img *utils.PrintImage, density command.Density) ([]byte, error) {
+func (p *ESCPOSProtocol) PrintImage(img *image.PrintImage, density types.Density) ([]byte, error) {
 	// Crear ESCImage
 	escImg, err := newESCImageFromPrintImage(img)
 	if err != nil {
@@ -76,9 +77,9 @@ func (p *ESCPOSProtocol) PrintImage(img *utils.PrintImage, density command.Densi
 	// Mapear densidad a modo ESC/POS
 	var mode byte
 	switch density {
-	case command.DensitySingle:
+	case types.DensitySingle:
 		mode = 0
-	case command.DensityDouble:
+	case types.DensityDouble:
 		mode = 1
 	default:
 		mode = 0
@@ -88,17 +89,17 @@ func (p *ESCPOSProtocol) PrintImage(img *utils.PrintImage, density command.Densi
 	cmd := []byte{GS, 'v', '0', mode}
 
 	// Agregar dimensiones
-	widthBytes, err := utils.IntLowHigh(escImg.GetWidthBytes(), 2)
+	wL, wH, err := utils.LengthLowHigh(escImg.GetWidthBytes())
 	if err != nil {
 		return nil, err
 	}
-	heightBytes, err := utils.IntLowHigh(escImg.GetHeight(), 2)
+	hL, hH, err := utils.LengthLowHigh(escImg.GetHeight())
 	if err != nil {
 		return nil, err
 	}
 
-	cmd = append(cmd, widthBytes...)
-	cmd = append(cmd, heightBytes...)
+	cmd = append(cmd, wL, wH) // Ancho en bytes
+	cmd = append(cmd, hL, hH) // Alto en píxeles
 	cmd = append(cmd, rasterData...)
 
 	return cmd, nil

@@ -5,9 +5,9 @@ import (
 	"log"
 	"strings"
 
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
@@ -68,15 +68,15 @@ func (p *ESCPOSProtocol) Close() []byte {
 }
 
 // SetJustification convierte el tipo genérico al específico de ESC/POS
-func (p *ESCPOSProtocol) SetJustification(justification command.Alignment) []byte {
+func (p *ESCPOSProtocol) SetJustification(justification types.Alignment) []byte {
 	// Mapear el tipo genérico al valor ESC/POS
 	var escposValue byte
 	switch justification {
-	case command.AlignLeft:
+	case types.AlignLeft:
 		escposValue = 0 // ESC/POS: 0 = left
-	case command.AlignCenter:
+	case types.AlignCenter:
 		escposValue = 1 // ESC/POS: 1 = center
-	case command.AlignRight:
+	case types.AlignRight:
 		escposValue = 2 // ESC/POS: 2 = right
 	default:
 		escposValue = 0 // Default to left
@@ -87,14 +87,14 @@ func (p *ESCPOSProtocol) SetJustification(justification command.Alignment) []byt
 }
 
 // SetFont mapea fuentes genéricas a ESC/POS
-func (p *ESCPOSProtocol) SetFont(font command.Font) []byte {
+func (p *ESCPOSProtocol) SetFont(font types.Font) []byte {
 	var fontValue byte
 	switch font {
-	case command.FontA:
+	case types.FontA:
 		fontValue = 0
-	case command.FontB:
+	case types.FontB:
 		fontValue = 1
-	case command.FontC:
+	case types.FontC:
 		fontValue = 2
 	default:
 		fontValue = 0
@@ -125,14 +125,14 @@ func (p *ESCPOSProtocol) SetDoubleStrike(on bool) []byte {
 }
 
 // SetUnderline configura el subrayado
-func (p *ESCPOSProtocol) SetUnderline(underline command.UnderlineMode) []byte {
+func (p *ESCPOSProtocol) SetUnderline(underline types.UnderlineMode) []byte {
 	var val byte
 	switch underline {
-	case command.UnderlineNone:
+	case types.UnderlineNone:
 		val = 0
-	case command.UnderlineSingle:
+	case types.UnderlineSingle:
 		val = 1
-	case command.UnderlineDouble:
+	case types.UnderlineDouble:
 		val = 2
 	default:
 		val = 0
@@ -159,17 +159,23 @@ func (p *ESCPOSProtocol) TextRaw(str string) []byte {
 	return []byte(str)
 }
 
+const (
+	// Modo de corte de papel
+	Cut     byte = 49 // 'A'
+	CutFeed byte = 66 // 'B'
+)
+
 // Cut genera comando de corte
-func (p *ESCPOSProtocol) Cut(mode command.CutMode, lines int) []byte {
+func (p *ESCPOSProtocol) Cut(mode types.CutMode, lines int) []byte {
 	// TODO: Implementar validación de lines
 
 	cmd := []byte{GS, 'V'}
 
 	switch mode {
-	case command.CutFeed:
-		cmd = append(cmd, byte(CutFeed), byte(lines)) // o 48 ('0') según el modelo
-	case command.Cut:
-		cmd = append(cmd, byte(Cut)) // o 49 ('1') según el modelo
+	case types.CutFeed:
+		cmd = append(cmd, CutFeed, byte(lines)) // o 48 ('0') según el modelo
+	case types.Cut:
+		cmd = append(cmd, Cut) // o 49 ('1') según el modelo
 	default:
 		cmd = append(cmd, 0)
 	}
@@ -213,7 +219,7 @@ func (p *ESCPOSProtocol) SetPrintWidth(width int) []byte {
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SelectCharacterTable(table command.CharacterSet) []byte {
+func (p *ESCPOSProtocol) SelectCharacterTable(table types.CharacterSet) []byte {
 	charTable := CodePage(encoding.Registry[table].EscPos)
 	// Validar que table esté en un rango válido
 	if !charTable.IsValid() {
@@ -237,12 +243,12 @@ func (p *ESCPOSProtocol) SetBarcodeWidth(width int) []byte {
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetBarcodeTextPosition(position command.BarcodeTextPosition) []byte {
+func (p *ESCPOSProtocol) SetBarcodeTextPosition(position types.BarcodeTextPosition) []byte {
 	// TODO: Mapear position a valores ESC/POS y usar GS H n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) Barcode(content string, barType command.BarcodeType) ([]byte, error) {
+func (p *ESCPOSProtocol) Barcode(content string, barType types.BarcodeType) ([]byte, error) {
 	// TODO: Esta es la más compleja, necesitas:
 	// 1. Mapear barType genérico a tipo ESC/POS
 	// 2. Validar content según el tipo
@@ -321,12 +327,12 @@ func (p *ESCPOSProtocol) SelectKanjiMode() []byte {
 // PrintQR implementa el comando ESC Z para imprimir códigos QR
 func (p *ESCPOSProtocol) PrintQR(
 	data string,
-	model command.QRModel,
-	moduleSize command.QRModuleSize,
-	ecLevel command.QRErrorCorrection,
+	model types.QRModel,
+	moduleSize types.QRModuleSize,
+	ecLevel types.QRErrorCorrection,
 ) ([][]byte, error) {
 	// Validación de modelo
-	if model < command.Model1 || model > command.Model2 {
+	if model < types.Model1 || model > types.Model2 {
 		return nil, fmt.Errorf("modelo de QR inválida(0-1): %d", model)
 	}
 
@@ -368,14 +374,14 @@ func (p *ESCPOSProtocol) PrintQR(
 	return cmdLines, nil
 }
 
-var modelMap = map[command.QRModel]byte{
-	command.Model1: '1', // Modelo 1
-	command.Model2: '2', // Modelo 2
+var modelMap = map[types.QRModel]byte{
+	types.Model1: '1', // Modelo 1
+	types.Model2: '2', // Modelo 2
 }
 
-func (p *ESCPOSProtocol) SelectQRModel(model command.QRModel) ([]byte, error) {
+func (p *ESCPOSProtocol) SelectQRModel(model types.QRModel) ([]byte, error) {
 	// Validación de modelo
-	if model < command.Model1 || model > command.Model2 {
+	if model < types.Model1 || model > types.Model2 {
 		return nil, fmt.Errorf("modelo de QR inválida(0-1): %d", model)
 	}
 
@@ -394,9 +400,9 @@ func (p *ESCPOSProtocol) SelectQRModel(model command.QRModel) ([]byte, error) {
 	return cmd, nil
 }
 
-func (p *ESCPOSProtocol) SelectQRSize(moduleSize command.QRModuleSize) ([]byte, error) {
+func (p *ESCPOSProtocol) SelectQRSize(moduleSize types.QRModuleSize) ([]byte, error) {
 	// Validar tamaño del módulo
-	if moduleSize < command.MinType || moduleSize > command.MaxType {
+	if moduleSize < types.MinType || moduleSize > types.MaxType {
 		return nil, fmt.Errorf("tamaño de módulo QR inválido(1-16): %d", moduleSize)
 	}
 
@@ -415,14 +421,14 @@ func (p *ESCPOSProtocol) SelectQRSize(moduleSize command.QRModuleSize) ([]byte, 
 }
 
 // Mapear los niveles de corrección de errores en QR a sus valores ESCPOS
-var ecMap = map[command.QRErrorCorrection]byte{
-	command.ECLow:     '0', // 7% de corrección
-	command.ECMedium:  '1', // 15% de corrección
-	command.ECHigh:    '2', // 25% de corrección
-	command.ECHighest: '3', // 30% de corrección
+var ecMap = map[types.QRErrorCorrection]byte{
+	types.ECLow:     '0', // 7% de corrección
+	types.ECMedium:  '1', // 15% de corrección
+	types.ECHigh:    '2', // 25% de corrección
+	types.ECHighest: '3', // 30% de corrección
 }
 
-func (p *ESCPOSProtocol) SelectQRErrorCorrection(level command.QRErrorCorrection) ([]byte, error) {
+func (p *ESCPOSProtocol) SelectQRErrorCorrection(level types.QRErrorCorrection) ([]byte, error) {
 	// Validar nivel de corrección
 	ec, ok := ecMap[level]
 	if !ok {
