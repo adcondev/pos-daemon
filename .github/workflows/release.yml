@@ -1,0 +1,107 @@
+name: Automated Semantic Release
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches:
+      - master
+
+# Define permisos específicos requeridos
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    # Solo ejecutar cuando el PR se fusiona, no cuando se cierra sin fusión
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    name: Process New Release
+    
+    steps:
+      # Paso 1: Generar un nombre único para la rama temporal
+      - name: Generate unique branch name
+        id: branch-name
+        run: echo "branch_name=release-$(date +%s)-${{ github.run_id }}" >> $GITHUB_OUTPUT
+      
+      # Paso 2: Crear rama temporal
+      - name: Create temporary branch for release
+        uses: peterjgrainger/action-create-branch@v2.4.0
+        id: create-branch
+        with:
+          branch: ${{ steps.branch-name.outputs.branch_name }}
+          sha: "${{ github.event.pull_request.head.sha }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 3: Checkout del código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Importante para tener historia completa para changelog
+
+      # Paso 4: Cambiar a la rama temporal
+      - name: Switch to release branch
+        run: |
+          git fetch --all
+          git checkout --track origin/${{ steps.branch-name.outputs.branch_name }}
+        continue-on-error: false
+
+      # Paso 5: Generar changelog y actualizar versión
+      - name: Generate changelog and bump version
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-file: "./package.json,./package-lock.json"
+          git-branch: ${{ steps.branch-name.outputs.branch_name }}
+          skip-on-empty: false
+          skip-git-pull: true
+          output-file: "CHANGELOG.md"
+
+      # Paso 6: Crear PR con información de versión
+      - name: Create Release PR
+        id: create-pr
+        run: |
+          gh pr create \
+            --base master \
+            --head ${{ steps.branch-name.outputs.branch_name }} \
+            --title "chore(release): prepare release ${{ steps.changelog.outputs.tag }}" \
+            --body "This PR updates version information and changelog for release ${{ steps.changelog.outputs.tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 7: Fusionar PR de release
+      - name: Merge Release PR
+        id: merge-pr
+        run: |
+          PR_NUMBER=$(gh pr list --head ${{ steps.branch-name.outputs.branch_name }} --json number -q ".[0].number")
+          if [ ! -z "$PR_NUMBER" ]; then
+            gh pr merge $PR_NUMBER --merge --delete-branch
+            echo "Merged PR #$PR_NUMBER"
+          else
+            echo "No PR found to merge"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 8: Crear GitHub Release
+      - name: Create GitHub Release
+        if: steps.changelog.outputs.skipped == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          name: Release ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 9: Notificar resultado
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Release ${{ steps.changelog.outputs.tag }} successfully created!"
+          echo "Changelog: ${{ steps.changelog.outputs.clean_changelog }}"
