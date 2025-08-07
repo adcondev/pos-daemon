@@ -153,7 +153,7 @@ func (p *GenericPrinter) SetUnderline(underline command.UnderlineMode) error {
 }
 
 // SetCharacterSet cambia el juego de caracteres activo
-func (p *GenericPrinter) SetCharacterSet(charsetCode int) error {
+func (p *GenericPrinter) SetCharacterSet(charsetCode command.CharacterSet) error {
 	// Verificar que el charset esté soportado por el perfil
 	supported := false
 	for _, cs := range p.GetSupportedCharsets() {
@@ -175,6 +175,7 @@ func (p *GenericPrinter) SetCharacterSet(charsetCode int) error {
 
 	// Actualizar el charset activo en el perfil
 	p.Profile.ActiveCharSet = charsetCode
+
 	return nil
 }
 
@@ -303,7 +304,7 @@ func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 	return p.PrintImage(img)
 }
 
-func (p *GenericPrinter) GetSupportedCharsets() []int {
+func (p *GenericPrinter) GetSupportedCharsets() []command.CharacterSet {
 	// Retorna los juegos de caracteres soportados por el perfil
 	return p.Profile.CharacterSets
 }

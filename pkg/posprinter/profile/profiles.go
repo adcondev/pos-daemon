@@ -1,5 +1,7 @@
 package profile
 
+import "pos-daemon.adcon.dev/pkg/posprinter/command"
+
 // Profile define todas las características físicas y capacidades de una impresora
 type Profile struct {
 	// Información básica
@@ -12,6 +14,7 @@ type Profile struct {
 	PaperHeight float64 // en mm (0 para rollo continuo)
 	DPI         int     // Dots Per Inch (ej. 203, 300)
 	DotsPerLine int     // Puntos por línea (ej. 384, 576)
+	PrintWidth  int     // Ancho de impresión en mm (ej. 48)
 
 	// Capacidades
 	SupportsGraphics bool // Soporta gráficos (imágenes)
@@ -21,10 +24,13 @@ type Profile struct {
 	SupportsDrawer   bool // Soporta cajón de dinero
 	SupportsColor    bool // Soporta impresión a color
 
+	QRMaxVersion byte // Máxima versión soportada
+
 	// Juegos de caracteres
-	CharacterSets  []int // Códigos de página soportados
-	DefaultCharSet int   // Código de página por defecto
-	ActiveCharSet  int   // Código de página activo (para cambiar dinámicamente)
+	CharacterSets    []command.CharacterSet // Códigos de página soportados
+	DefaultCharSet   command.CharacterSet   // Código de página por defecto0
+	ActiveCharSet    command.CharacterSet   // Código de página actualmente activo
+	DefaultKanjiMode bool                   // Modo Kanji por defecto (true/false)
 
 	// Configuración avanzada (opcional)
 	FeedLinesAfterCut int // Líneas de avance después de cortar
@@ -48,13 +54,34 @@ func (p *Profile) GetCharWidth(font string) int {
 	return p.DotsPerLine / p.Fonts[font]
 }
 
-func CreateProfPT_210() *Profile {
+// CreatePt210 crea un perfil para impresora térmica de 58mm PT-58N
+func CreatePt210() *Profile {
 	p := CreateProfile58mm()
-	p.Model = "58mm GOOJPRT PT-210"
-	p.CharacterSets = []int{
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	p.Model = "58mm PT-210"
+	p.Vendor = "GOOJPRT"
+	p.DefaultKanjiMode = true // Esta impresora inicia con Kanji activo
+	p.CharacterSets = []command.CharacterSet{
+		command.CP437,
+		command.Katakana,
+		command.CP850,
+		command.CP860,
+		command.CP863,
+		command.CP865,
+		command.WestEurope,
+		command.Greek,
+		command.Hebrew,
+		// command.CP755, // No soportado directamente
+		command.Iran,
+		command.WCP1252,
+		command.CP866,
+		command.CP852,
+		command.CP858,
+		command.IranII,
+		command.Latvian,
 	}
-	p.DefaultCharSet = 19 // CP858 para español
+
+	p.DefaultCharSet = 0 // CP858 para español
+	p.QRMaxVersion = 19  // Máxima versión QR soportada
 	p.SupportsQR = true  // Soporta QR nativo
 	return p
 }
@@ -62,9 +89,26 @@ func CreateProfPT_210() *Profile {
 func CreateProfGP_58N() *Profile {
 	p := CreateProfile58mm()
 	p.Model = "58mm GP-58N"
-	p.CharacterSets = []int{
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	p.CharacterSets = []command.CharacterSet{
+		command.CP437,
+		command.Katakana,
+		command.CP850,
+		command.CP860,
+		command.CP863,
+		command.CP865,
+		command.WestEurope,
+		command.Greek,
+		command.Hebrew,
+		// command.CP755, // No soportado directamente
+		command.Iran,
+		command.WCP1252,
+		command.CP866,
+		command.CP852,
+		command.CP858,
+		command.IranII,
+		command.Latvian,
 	}
+
 	p.DefaultCharSet = 19 // CP858 para español
 	return p
 }
@@ -79,6 +123,7 @@ func CreateProfile58mm() *Profile {
 		PaperWidth:  58,
 		DPI:         203,
 		DotsPerLine: 384, // Típico para 58mm a 203 DPI
+		PrintWidth:  48,  // Ancho de impresión efectivo
 
 		SupportsGraphics: true,
 		SupportsBarcode:  true,
@@ -87,11 +132,31 @@ func CreateProfile58mm() *Profile {
 		SupportsDrawer:   false,
 		SupportsColor:    false,
 
-		CharacterSets: []int{
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+		CharacterSets: []command.CharacterSet{
+			command.CP437,
+			command.Katakana,
+			command.CP850,
+			command.CP860,
+			command.CP863,
+			command.CP865,
+			command.WestEurope,
+			command.Greek,
+			command.Hebrew,
+			// command.CP755, // No soportado directamente
+			command.Iran,
+			command.WCP1252,
+			command.CP866,
+			command.CP852,
+			command.CP858,
+			command.IranII,
+			command.Latvian,
 		}, // Más juegos de caracteres
 		DefaultCharSet: 19, // CP858
-		ActiveCharSet:  19, // CP858
+
+		Fonts: map[string]int{
+			"FontA": 12, // Ancho de 12 puntos
+			"FontB": 9,  // Ancho de 9 puntos
+		},
 
 		ExtendedFeatures: make(map[string]interface{}),
 	}
@@ -100,10 +165,27 @@ func CreateProfile58mm() *Profile {
 func CreateProfEC_PM_80250() *Profile {
 	p := CreateProfile80mm()
 	p.Model = "80mm EC-PM-80250"
-	p.CharacterSets = []int{
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
+	p.CharacterSets = []command.CharacterSet{
+		command.CP437,
+		command.Katakana,
+		command.CP850,
+		command.CP860,
+		command.CP863,
+		command.CP865,
+		command.WestEurope,
+		command.Greek,
+		command.Hebrew,
+		// command.CP755, // No soportado directamente
+		command.Iran,
+		command.WCP1252,
+		command.CP866,
+		command.CP852,
+		command.CP858,
+		command.IranII,
+		command.Latvian,
 	}
-	p.DefaultCharSet = 19 // CP858 para español
+
+	p.DefaultCharSet = command.CP437 // CP858 para español
 	return p
 }
 
@@ -125,11 +207,28 @@ func CreateProfile80mm() *Profile {
 		SupportsDrawer:   true,
 		SupportsColor:    false,
 
-		CharacterSets: []int{
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21,
-		}, // Más juegos de caracteres
-		DefaultCharSet: 19, // CP858
-		ActiveCharSet:  19, // CP858
+		CharacterSets: []command.CharacterSet{
+			command.CP437,
+			command.Katakana,
+			command.CP850,
+			command.CP860,
+			command.CP863,
+			command.CP865,
+			command.WestEurope,
+			command.Greek,
+			command.Hebrew,
+			// command.CP755, // No soportado directamente
+			command.Iran,
+			command.WCP1252,
+			command.CP866,
+			command.CP852,
+			command.CP858,
+			command.IranII,
+			command.Latvian,
+		},
+
+		// Más juegos de caracteres
+		DefaultCharSet: command.CP437, // CP858
 
 		FeedLinesAfterCut: 5,
 		ImageThreshold:    128,

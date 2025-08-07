@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
@@ -15,30 +16,48 @@ func main() {
 	// Configuración de impresoras para probar
 	printers := []struct {
 		Name     string
-		CharSets []int // Charsets reportados por el fabricante
+		CharSets []command.CharacterSet // Charsets reportados por el fabricante
 	}{
 		{
 			Name:     "80mm EC-PM-80250 x",
-			CharSets: []int{16},
+			CharSets: []command.CharacterSet{command.WCP1252, command.CP858},
 		},
 		{
-			Name:     "58mm GOOJPRT PT-210",
-			CharSets: []int{8, 9, 10, 17, 18, 20, 21},
+			Name: "58mm PT-210",
+			CharSets: []command.CharacterSet{
+				command.CP437,
+				command.Katakana,
+				command.CP850,
+				command.CP860,
+				command.CP863,
+				command.CP865,
+				command.WestEurope,
+				command.Greek,
+				command.Hebrew,
+				// command.CP755, // No soportado directamente
+				command.Iran,
+				command.WCP1252,
+				command.CP866,
+				command.CP852,
+				command.CP858,
+				command.IranII,
+				command.Latvian,
+			},
 		},
 		{
 			Name:     "58mm GP-58N x",
-			CharSets: []int{},
+			CharSets: []command.CharacterSet{command.WCP1252, command.CP858},
 		},
 		// Agregar tu tercera impresora aquí
 	}
 
-	// Texto de prueba con caracteres especiales en español
+	// Texto de prueba con caracteres especiales en español para tickets de venta
 	testTexts := []string{
 		"Acentos: áéíóú ÁÉÍÓÚ",
 		"Eñe: ñ Ñ",
 		"Diéresis: ü Ü",
-		"Símbolos: ¡¿ € $ ¢ £ ¥",
-		"Especiales: ª º",
+		"Moneda: $ ¢",
+		"Símbolos: ¡ ¿",
 	}
 
 	// Probar cada impresora
@@ -87,6 +106,7 @@ func main() {
 			log.Printf("Error activando negrita: %v", err)
 			continue
 		}
+
 		err = p.TextLn(fmt.Sprintf("TEST CODIFICACIÓN - %s", printer.Name))
 		if err != nil {
 			log.Printf("Error imprimiendo encabezado: %v", err)
@@ -131,6 +151,12 @@ func main() {
 				continue
 			}
 
+			// Cancelar modo Kanji
+			if err := p.CancelKanjiMode(); err != nil {
+				log.Printf("Error cancelando modo Kanji: %v", err)
+				continue
+			}
+
 			// Cambiar al charset
 			if err := p.SetCharacterSet(charset); err != nil {
 				err := p.TextLn(fmt.Sprintf("Error: %v", err))
@@ -160,12 +186,12 @@ func main() {
 
 		// Cortar
 
-		if err := p.Feed(2); err != nil {
+		if err := p.Feed(1); err != nil {
 			log.Printf("Error alimentando papel: %v", err)
 			continue
 		}
 
-		if err := p.Cut(command.CutFeed, 2); err != nil {
+		if err := p.Cut(command.CutFeed, 1); err != nil {
 			log.Printf("Error cortando papel: %v", err)
 			continue
 		}

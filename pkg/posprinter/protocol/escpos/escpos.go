@@ -1,21 +1,49 @@
 package escpos
 
 import (
+	"fmt"
 	"log"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
-	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
 	"strings"
+
+	"pos-daemon.adcon.dev/pkg/posprinter/command"
+	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
+	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
+	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
+
+type CodePage byte
+
+const (
+	// Tabla de códigos comunes en ESC/POS
+	CP437      CodePage = iota // CP437 U.S.A. / Standard Europe
+	Katakana                   // Katakana (JIS X 0201)
+	CP850                      // CP850 Multilingual
+	CP860                      // CP860 Portuguese
+	CP863                      // CP863 Canadian French
+	CP865                      // CP865 Nordic
+	WestEurope                 // WestEurope (ISO-8859-1)
+	Greek                      // Greek (ISO-8859-7)
+	Hebrew                     // Hebrew (ISO-8859-8)
+	CP755                      // CP755 East Europe (not directly supported)
+	Iran                       // Iran (CP720 Arabic)
+)
+
+const (
+	WCP1252 CodePage = iota + 16 // WCP1252 Windows-1252
+	CP866                        // CP866 Cyrillic #2
+	CP852                        // CP852 Latin2
+	CP858                        // CP858 Multilingual + Euro
+	IranII                       // IranII (CP864)
+	Latvian                      // Latvian (Windows-1257)
+)
+
+func (cp CodePage) IsValid() bool {
+	return cp <= Latvian || (cp >= WCP1252 && cp <= Latvian)
+}
 
 // ESCPOSProtocol implementa Protocol para ESC/POS
 type ESCPOSProtocol struct {
 	// TODO: Mover aquí las propiedades que necesites del ESCPrinter actual
-	// Por ejemplo:
-	characterTable int
-	capabilities   map[string]bool
-	paperWidth     int // Ancho de papel en mm
-	dpi            int // Dots per inch (DPI) de la impresora
-	// NO incluir el conector aquí, eso va en la impresora
 }
 
 // NewESCPOSProtocol crea una nueva instancia del protocolo ESC/POS
@@ -139,9 +167,9 @@ func (p *ESCPOSProtocol) Cut(mode command.CutMode, lines int) []byte {
 
 	switch mode {
 	case command.CutFeed:
-		cmd = append(cmd, byte(66), byte(lines)) // o 48 ('0') según el modelo
+		cmd = append(cmd, byte(CutFeed), byte(lines)) // o 48 ('0') según el modelo
 	case command.Cut:
-		cmd = append(cmd, byte(49)) // o 49 ('1') según el modelo
+		cmd = append(cmd, byte(Cut)) // o 49 ('1') según el modelo
 	default:
 		cmd = append(cmd, 0)
 	}
@@ -185,18 +213,18 @@ func (p *ESCPOSProtocol) SetPrintWidth(width int) []byte {
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SelectCharacterTable(table int) []byte {
+func (p *ESCPOSProtocol) SelectCharacterTable(table command.CharacterSet) []byte {
+	charTable := CodePage(encoding.Registry[table].EscPos)
 	// Validar que table esté en un rango válido
-	if (table < 0 || table > 21) || (table > 10 && table < 16) {
+	if !charTable.IsValid() {
+		// Log de advertencia si está fuera de rango
 		log.Printf("advertencia: tabla de caracteres %d fuera de rango, usando 0 por defecto", table)
-		table = 0 // Default a 0 si está fuera de rango
+		charTable = 0 // Default a 0 si está fuera de rango
 	}
 	// ESC t n - Select character code table
-	return []byte{ESC, 't', byte(table)}
-}
+	cmd := []byte{ESC, 't', byte(charTable)}
 
-func (p *ESCPOSProtocol) GetCharacterTable() int {
-	return p.characterTable
+	return cmd
 }
 
 func (p *ESCPOSProtocol) SetBarcodeHeight(height int) []byte {
@@ -246,26 +274,50 @@ func (p *ESCPOSProtocol) Name() string {
 	return "ESC/POS"
 }
 
-func (p *ESCPOSProtocol) HasCapability(cap string) bool {
-	return p.capabilities[cap]
-}
-
 // HasNativeImageSupport indica si este protocolo soporta imágenes nativas
 func (p *ESCPOSProtocol) HasNativeImageSupport() bool {
 	return true // ESC/POS soporta imágenes de forma nativa
 }
 
 // GetMaxImageWidth devuelve el ancho máximo de imagen que soporta la impresora
-func (p *ESCPOSProtocol) GetMaxImageWidth() int {
+func (p *ESCPOSProtocol) GetMaxImageWidth(paperWidth, dpi int) int {
 	// Cálculo basado en el ancho del papel y resolución
 	// Formula: (ancho_papel_mm / 25.4) * dpi
-	if p.paperWidth > 0 && p.dpi > 0 {
-		return int((float64(p.paperWidth) / 25.4) * float64(p.dpi))
+	if paperWidth > 0 && dpi > 0 {
+		return int((float64(paperWidth) / 25.4) * float64(dpi))
 	}
 
 	// Valores predeterminados si no hay configuración
-	if p.paperWidth >= 80 {
+	if paperWidth >= 80 {
 		return 576 // Para papel de 80mm a 203dpi
+	} else {
+		return 384 // Para papel de 58mm a 203dpi
+	}
+}
+
+// CancelKanjiMode cancela el modo de caracteres Kanji.
+//
+// Formato:
+//
+//	ASCII: FS .
+//	Hex:   1C 2E
+//	Decimal: 28 46
+//
+// Descripción:
+//
+//	Deshabilita el modo de caracteres Kanji en la impresora.
+//
+// Referencia:
+//
+//	FS &, FS C
+func (p *ESCPOSProtocol) CancelKanjiMode() []byte {
+	return []byte{FS, '.'}
+}
+
+func (p *ESCPOSProtocol) SelectKanjiMode() []byte {
+	return []byte{FS, '&'}
+}
+
 // PrintQR implementa el comando ESC Z para imprimir códigos QR
 func (p *ESCPOSProtocol) PrintQR(
 	data string,

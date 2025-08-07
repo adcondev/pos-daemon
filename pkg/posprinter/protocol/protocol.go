@@ -26,8 +26,9 @@ type Protocol interface {
 	SetPrintWidth(width int) []byte
 
 	// === Manejo de Character Tables/Code Pages ===
-	SelectCharacterTable(table int) []byte
-	GetCharacterTable() int
+
+	SelectCharacterTable(table command.CharacterSet) []byte
+	CancelKanjiMode() []byte
 
 	// === Comandos de texto ===
 
@@ -56,7 +57,7 @@ type Protocol interface {
 	HasNativeImageSupport() bool
 
 	// GetMaxImageWidth devuelve el ancho máximo de imagen soportado
-	GetMaxImageWidth() int
+	GetMaxImageWidth(paperWidth int, dpi int) int
 
 	// === Control de papel ===
 
@@ -72,7 +73,6 @@ type Protocol interface {
 	// === Información del protocolo ===
 
 	Name() string
-	HasCapability(cap string) bool
 
 	// TODO: Agregar más métodos según necesites:
 	// - PrintQRCode(data string, size int) ([]byte, error)
