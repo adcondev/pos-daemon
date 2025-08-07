@@ -1,8 +1,8 @@
 package protocol
 
 import (
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
-	"pos-daemon.adcon.dev/pkg/posprinter/utils"
+	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 // Protocol define una interfaz para cualquier protocolo de impresión.
@@ -15,11 +15,11 @@ type Protocol interface {
 
 	// === Manipulación de texto ===
 
-	SetJustification(justification command.Alignment) []byte
-	SetFont(font command.Font) []byte
+	SetJustification(justification types.Alignment) []byte
+	SetFont(font types.Font) []byte
 	SetEmphasis(on bool) []byte
 	SetDoubleStrike(on bool) []byte
-	SetUnderline(underline command.UnderlineMode) []byte
+	SetUnderline(underline types.UnderlineMode) []byte
 	SetTextSize(widthMultiplier int, heightMultiplier int) []byte
 	SetLineSpacing(height *int) []byte
 	SetPrintLeftMargin(margin int) []byte
@@ -27,7 +27,7 @@ type Protocol interface {
 
 	// === Manejo de Character Tables/Code Pages ===
 
-	SelectCharacterTable(table command.CharacterSet) []byte
+	SelectCharacterTable(table types.CharacterSet) []byte
 	CancelKanjiMode() []byte
 
 	// === Comandos de texto ===
@@ -40,17 +40,17 @@ type Protocol interface {
 
 	SetBarcodeHeight(height int) []byte
 	SetBarcodeWidth(width int) []byte
-	SetBarcodeTextPosition(position command.BarcodeTextPosition) []byte
-	Barcode(content string, barType command.BarcodeType) ([]byte, error)
+	SetBarcodeTextPosition(position types.BarcodeTextPosition) []byte
+	Barcode(content string, barType types.BarcodeType) ([]byte, error)
 
 	// === Impresión de códigos QR ===
 
-	PrintQR(string, command.QRModel, command.QRModuleSize, command.QRErrorCorrection) ([][]byte, error)
+	PrintQR(string, types.QRModel, types.QRModuleSize, types.QRErrorCorrection) ([][]byte, error)
 
 	// === Imágenes ===
 
 	// PrintImage recibe una imagen genérica y la convierte a comandos del protocolo
-	PrintImage(img *utils.PrintImage, density command.Density) ([]byte, error)
+	PrintImage(img *image.PrintImage, density types.Density) ([]byte, error)
 
 	// HasNativeImageSupport indica si el protocolo soporta imágenes nativas
 	// (algunos protocolos solo soportan ciertos formatos)
@@ -61,7 +61,7 @@ type Protocol interface {
 
 	// === Control de papel ===
 
-	Cut(mode command.CutMode, lines int) []byte
+	Cut(mode types.CutMode, lines int) []byte
 	Feed(lines int) []byte
 	FeedReverse(lines int) []byte
 	FeedForm() []byte
