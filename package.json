@@ -1,0 +1,12 @@
+{
+  "name": "pos-daemon",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Protocol-agnostic POS printer daemon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdConDev/pos-daemon.git"
+  },
+  "author": "AdConDev",
+  "license": "MIT"
+}
