@@ -33,6 +33,10 @@ type Printer interface {
 	Text(str string) error
 	TextLn(str string) error
 
+	// Code Page y Character Sets
+	CancelKanjiMode() error
+	SetCharacterSet(charsetCode int) error
+
 	// === Control de papel ===
 	Cut(mode command.CutMode, lines int) error
 	Feed(lines int) error
