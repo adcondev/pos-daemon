@@ -3,16 +3,16 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/skip2/go-qrcode"
 	"io"
 	"log"
-	tckt "pos-daemon.adcon.dev/internal/models"
-	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
-	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 	"strconv"
 	"strings"
+
+	"github.com/skip2/go-qrcode"
+	tckt "pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/pkg/posprinter"
+	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 // TODO: Hacer reconfigurable los tamaños de acuerdo al ticket
@@ -64,12 +64,12 @@ func (tc *TicketConstructor) PrintTicket() error {
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(command.AlignCenter); err != nil {
+	if err := tc.printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 
 	// Tipo de fuente
-	if err := tc.printer.SetFont(command.FontA); err != nil {
+	if err := tc.printer.SetFont(types.FontA); err != nil {
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
@@ -104,7 +104,7 @@ func (tc *TicketConstructor) PrintTicket() error {
 	}
 
 	// Cortar papel
-	if err := tc.printer.Cut(command.CutFeed, 3); err != nil {
+	if err := tc.printer.Cut(types.CutFeed, 3); err != nil {
 		log.Printf("Error al cortar papel: %v", err)
 	}
 
@@ -134,7 +134,7 @@ func (tc *TicketConstructor) printHeader() {
 	// Print logo placeholder if configured
 	if tmpl.VerLogotipo {
 		logoPath := "./img/perro.jpeg"
-		img, err := utils.LoadImage(logoPath)
+		img, err := image.LoadImage(logoPath)
 		if err != nil {
 			log.Printf("ticket_printer: error cargando imagen del logo: %v", err)
 		} else {
@@ -144,8 +144,8 @@ func (tc *TicketConstructor) printHeader() {
 
 			// Imprimir la imagen con dithering usando las nuevas opciones
 			opts := posprinter.PrintImageOptions{
-				Density:    command.DensitySingle,
-				DitherMode: imaging.DitherFloydSteinberg,
+				Density:    types.DensitySingle,
+				DitherMode: image.DitherFloydSteinberg,
 				Threshold:  128,
 				Width:      tmpl.LogoWidth * 2,
 			}
@@ -187,7 +187,7 @@ func (tc *TicketConstructor) printHeader() {
 		// Si es mas grande fijar al doble de tamaño - en GenericPrinter esto tendría que implementarse
 		// a través del protocolo, omitimos por ahora
 		if tmpl.RazonSocialSize > 10 {
-			if err := tc.printer.SetFont(command.FontB); err != nil {
+			if err := tc.printer.SetFont(types.FontB); err != nil {
 				log.Printf("Error al establecer fuente: %v", err)
 			}
 			// GenericPrinter no tiene SetTextSize directamente - podría ser necesario agregar
@@ -200,7 +200,7 @@ func (tc *TicketConstructor) printHeader() {
 
 		// Restaurar el tamaño de texto si se cambió
 		if tmpl.RazonSocialSize > 10 {
-			if err := tc.printer.SetFont(command.FontA); err != nil {
+			if err := tc.printer.SetFont(types.FontA); err != nil {
 				log.Printf("Error al establecer fuente: %v", err)
 			}
 		}
@@ -380,7 +380,7 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(command.AlignRight); err != nil {
+	if err := tc.printer.SetJustification(types.AlignRight); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err := tc.printer.SetEmphasis(true); err != nil {
@@ -460,7 +460,7 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	}
 
 	// Configurar justificación y estilo
-	if err := tc.printer.SetJustification(command.AlignRight); err != nil {
+	if err := tc.printer.SetJustification(types.AlignRight); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 
@@ -590,7 +590,7 @@ func (tc *TicketConstructor) printPaymentInfo() {
 func (tc *TicketConstructor) printFooter() {
 	tmpl := tc.template.Data
 
-	if err := tc.printer.SetJustification(command.AlignCenter); err != nil {
+	if err := tc.printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 
@@ -600,13 +600,13 @@ func (tc *TicketConstructor) printFooter() {
 
 	// Texto grande para "PAGADO"
 	// Nota: GenericPrinter no tiene SetTextSize, usamos énfasis y fuentes para simular
-	if err := tc.printer.SetFont(command.FontB); err != nil { // Fuente más grande
+	if err := tc.printer.SetFont(types.FontB); err != nil { // Fuente más grande
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 	if err := tc.printer.TextLn("PAGADO"); err != nil {
 		log.Printf("Error al imprimir: %v", err)
 	}
-	if err := tc.printer.SetFont(command.FontA); err != nil { // Restaurar fuente normal
+	if err := tc.printer.SetFont(types.FontA); err != nil { // Restaurar fuente normal
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
@@ -657,7 +657,7 @@ func (tc *TicketConstructor) printFooter() {
 }
 
 func (tc *TicketConstructor) printQr() {
-	if err := tc.printer.SetJustification(command.AlignCenter); err != nil {
+	if err := tc.printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 	if err := tc.printer.TextLn(tc.ticket.Data.AutofacturaLink); err != nil {
