@@ -53,6 +53,8 @@ go.work.sum
 
 !*.yml
 
+!.versionrc.js
+
 # !Makefile
 
 # ...even if they are in subdirectories

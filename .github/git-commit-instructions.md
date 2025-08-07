@@ -47,6 +47,7 @@ Scope MUST be a noun describing a section of the codebase surrounded by parenthe
 - `(models)`
 - `(service)`
 - `(utils)`
+- `(github)`
 
 ## Description
 

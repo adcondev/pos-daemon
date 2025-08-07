@@ -26,7 +26,8 @@ module.exports = {
         "api",
         "models",
         "service",
-        "utils"
+        "utils",
+        "github"
     ],
     noteKeywords: [
         "BREAKING CHANGE",
