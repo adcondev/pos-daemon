@@ -1,4 +1,4 @@
-package command
+package types
 
 // Alignment define las alineaciones de texto estándar
 type Alignment int

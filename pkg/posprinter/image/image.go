@@ -1,14 +1,14 @@
-package utils
+package image
 
 import (
 	"golang.org/x/image/draw"
+	"pos-daemon.adcon.dev/pkg/posprinter/utils"
+
 	"image"
 	"image/color"
 	"image/jpeg"
 	"log"
 	"os"
-
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 )
 
 // PrintImage representa una imagen preparada para impresión
@@ -29,11 +29,11 @@ type PrintImage struct {
 
 	// Imagen procesada con dithering (si se aplicó)
 	ProcessedImage image.Image
-	DitherMode     imaging.DitherMode
+	DitherMode     DitherMode
 }
 
 // NewPrintImage crea una nueva imagen para impresión
-func NewPrintImage(img image.Image, dither imaging.DitherMode) *PrintImage {
+func NewPrintImage(img image.Image, dither DitherMode) *PrintImage {
 	bounds := img.Bounds()
 	return &PrintImage{
 		Source:     img,
@@ -45,8 +45,8 @@ func NewPrintImage(img image.Image, dither imaging.DitherMode) *PrintImage {
 }
 
 // ApplyDithering aplica un algoritmo de dithering a la imagen
-func (p *PrintImage) ApplyDithering(mode imaging.DitherMode) error {
-	processed, err := imaging.ProcessImageWithDithering(p.Source, mode, p.Threshold)
+func (p *PrintImage) ApplyDithering(mode DitherMode) error {
+	processed, err := ProcessImageWithDithering(p.Source, mode, p.Threshold)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func ResizeToWidth(img image.Image, newWidth, maxWidth int) image.Image {
 }
 
 func LoadImage(filename string) (image.Image, error) {
-	file, err := SafeOpen(filename)
+	file, err := utils.SafeOpen(filename)
 	if err != nil {
 		log.Printf("Error al abrir imagen: %v", err)
 		return nil, err
