@@ -50,7 +50,7 @@ jobs:
       # Paso 5: Generar changelog y actualizar versión
       - name: Generate changelog and bump version
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version-file: "./package.json,./package-lock.json"
