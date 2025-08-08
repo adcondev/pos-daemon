@@ -2,14 +2,13 @@ package main
 
 import (
 	"log"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
-	"pos-daemon.adcon.dev/pkg/posprinter/profile"
-	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
+	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 	// En el futuro: "pos-daemon.adcon.dev/pkg/posprinter/protocol/zpl"
 )
 
@@ -55,7 +54,7 @@ func useESCPOS(conn connector.Connector) {
 	}(printer)
 
 	// Cargar imagen
-	img, err := utils.LoadImage("./img/perro.jpeg")
+	img, err := image.LoadImage("./img/perro.jpeg")
 	if err != nil {
 		log.Fatalf("Error al cargar imagen: %v", err)
 	}
@@ -72,8 +71,8 @@ func useESCPOS(conn connector.Connector) {
 	// === Opción 2: Imprimir con Floyd-Steinberg ===
 	log.Println("Imprimiendo con Floyd-Steinberg...")
 	opts := posprinter.PrintImageOptions{
-		Density:    command.DensitySingle,
-		DitherMode: imaging.DitherFloydSteinberg,
+		Density:    types.DensitySingle,
+		DitherMode: image.DitherFloydSteinberg,
 		Threshold:  128,
 		Width:      256,
 	}
@@ -84,7 +83,7 @@ func useESCPOS(conn connector.Connector) {
 
 	// === Opción 3: Imprimir con Atkinson ===
 	log.Println("Imprimiendo con Atkinson...")
-	opts.DitherMode = imaging.DitherAtkinson
+	opts.DitherMode = image.DitherAtkinson
 	if err = printer.PrintImageWithOptions(img, opts); err != nil {
 		log.Printf("Error: %v", err)
 	}
@@ -102,7 +101,7 @@ func useESCPOS(conn connector.Connector) {
 		return
 	}
 
-	err = printer.Cut(command.CutFeed, 3)
+	err = printer.Cut(types.CutFeed, 3)
 	if err != nil {
 		return
 	}
@@ -123,7 +122,7 @@ func useESCPOS(conn connector.Connector) {
 
 	// ZPL procesará la imagen de manera diferente internamente,
 	// pero la API es la misma
-	if err := printer.PrintImage(img, command.DensitySingle); err != nil {
+	if err := printer.PrintImage(img, types.DensitySingle); err != nil {
 		log.Printf("Error: %v", err)
 	}
 */

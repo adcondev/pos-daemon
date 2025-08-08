@@ -4,10 +4,10 @@ import (
 	"log"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 func main() {
@@ -50,10 +50,10 @@ func main() {
 	}(printer)
 
 	// === Imprimir título ===
-	if err := printer.SetFont(command.FontA); err != nil {
+	if err := printer.SetFont(types.FontA); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.SetJustification(command.AlignCenter); err != nil {
+	if err := printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err := printer.SetEmphasis(true); err != nil {
@@ -71,8 +71,8 @@ func main() {
 	// === Imprimir QR Code ===
 	if err := printer.PrintQR(
 		"https://github.com/AdConDev/pos-daemon", // Contenido del QR Code
-		command.Model2,                           // Modelo de QR Code (Model1, Model2)
-		command.ECHigh,                           // Nivel de corrección de errores (Low, Medium, High, Highest)
+		types.Model2,                             // Modelo de QR Code (Model1, Model2)
+		types.ECHigh,                             // Nivel de corrección de errores (Low, Medium, High, Highest)
 		8,                                        // Tamaño del módulo (1-16)
 		256,                                      // Tamaño del QR Code (en pixeles, si el protocolo no soporta QR nativo)
 	); err != nil {
@@ -81,7 +81,7 @@ func main() {
 	if err := printer.Feed(1); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.Cut(command.CutFeed, 1); err != nil {
+	if err := printer.Cut(types.CutFeed, 1); err != nil {
 		log.Printf("Error al cortar: %v", err)
 	}
 	log.Println("Impresión de QR completada exitosamente.")

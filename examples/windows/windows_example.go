@@ -2,11 +2,12 @@ package main
 
 import (
 	"log"
+
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 func main() {
@@ -55,8 +56,8 @@ func main() {
 		log.Printf("Error al inicializar: %v", err)
 	}
 
-	// Texto centrado (usando tipos del paquete command)
-	if err := printer.SetJustification(command.AlignCenter); err != nil {
+	// Texto centrado (usando tipos del paquete types)
+	if err := printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error al centrar: %v", err)
 	}
 
@@ -81,7 +82,7 @@ func main() {
 	}
 
 	// Alinear a la izquierda
-	if err := printer.SetJustification(command.AlignLeft); err != nil {
+	if err := printer.SetJustification(types.AlignLeft); err != nil {
 		log.Printf("Error al alinear izquierda: %v", err)
 	}
 
@@ -125,8 +126,8 @@ func main() {
 		log.Printf("Error al alimentar papel: %v", err)
 	}
 
-	// Usar CutFull del paquete command (no del paquete escpos)
-	if err := printer.Cut(command.CutFeed, 3); err != nil {
+	// Usar CutFull del paquete types (no del paquete escpos)
+	if err := printer.Cut(types.CutFeed, 3); err != nil {
 		log.Printf("Error al cortar: %v", err)
 	}
 

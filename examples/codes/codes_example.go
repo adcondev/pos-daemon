@@ -5,48 +5,48 @@ import (
 	"log"
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 func main() {
 	// Configuración de impresoras para probar
 	printers := []struct {
 		Name     string
-		CharSets []command.CharacterSet // Charsets reportados por el fabricante
+		CharSets []types.CharacterSet // Charsets reportados por el fabricante
 	}{
 		{
 			Name:     "80mm EC-PM-80250 x",
-			CharSets: []command.CharacterSet{command.WCP1252, command.CP858},
+			CharSets: []types.CharacterSet{types.WCP1252, types.CP858},
 		},
 		{
 			Name: "58mm PT-210",
-			CharSets: []command.CharacterSet{
-				command.CP437,
-				command.Katakana,
-				command.CP850,
-				command.CP860,
-				command.CP863,
-				command.CP865,
-				command.WestEurope,
-				command.Greek,
-				command.Hebrew,
-				// command.CP755, // No soportado directamente
-				command.Iran,
-				command.WCP1252,
-				command.CP866,
-				command.CP852,
-				command.CP858,
-				command.IranII,
-				command.Latvian,
+			CharSets: []types.CharacterSet{
+				types.CP437,
+				types.Katakana,
+				types.CP850,
+				types.CP860,
+				types.CP863,
+				types.CP865,
+				types.WestEurope,
+				types.Greek,
+				types.Hebrew,
+				// types.CP755, // No soportado directamente
+				types.Iran,
+				types.WCP1252,
+				types.CP866,
+				types.CP852,
+				types.CP858,
+				types.IranII,
+				types.Latvian,
 			},
 		},
 		{
 			Name:     "58mm GP-58N x",
-			CharSets: []command.CharacterSet{command.WCP1252, command.CP858},
+			CharSets: []types.CharacterSet{types.WCP1252, types.CP858},
 		},
 		// Agregar tu tercera impresora aquí
 	}
@@ -97,7 +97,7 @@ func main() {
 		}(p)
 
 		// Imprimir encabezado
-		if err := p.SetJustification(command.AlignCenter); err != nil {
+		if err := p.SetJustification(types.AlignCenter); err != nil {
 			log.Printf("Error estableciendo alineación centrada: %v", err)
 			continue
 		}
@@ -130,7 +130,7 @@ func main() {
 				continue
 			}
 
-			err := p.SetJustification(command.AlignLeft)
+			err := p.SetJustification(types.AlignLeft)
 			if err != nil {
 				log.Printf("Error estableciendo alineación izquierda: %v", err)
 				continue
@@ -191,7 +191,7 @@ func main() {
 			continue
 		}
 
-		if err := p.Cut(command.CutFeed, 1); err != nil {
+		if err := p.Cut(types.CutFeed, 1); err != nil {
 			log.Printf("Error cortando papel: %v", err)
 			continue
 		}

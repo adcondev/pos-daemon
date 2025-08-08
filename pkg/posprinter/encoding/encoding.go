@@ -4,10 +4,10 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
-// CharacterSet representa un conjunto de caracteres con su codificación
+// CharacterSetData representa un conjunto de caracteres con su codificación
 type CharacterSetData struct {
 	EscPos   int               // Código numérico del charset (ej: 0, 2, 3)
 	Name     string            // Nombre descriptivo (ej: "CP437", "CP850")
@@ -16,46 +16,47 @@ type CharacterSetData struct {
 }
 
 // TODO: Generalizar encodings para los diferentes protocolos de impresoras
+
 // Registry contiene todos los character sets disponibles.
 // Numeración "típica" (pero no garantizada universalmente)
-var Registry = map[command.CharacterSet]*CharacterSetData{
-	command.CP437: {
+var Registry = map[types.CharacterSet]*CharacterSetData{
+	types.CP437: {
 		EscPos:   0,
 		Name:     "CP437",
 		Desc:     "Inglés/EE. UU. y símbolos gráficos DOS",
 		Encoding: charmap.CodePage437,
 	},
-	command.Katakana: {
+	types.Katakana: {
 		EscPos:   1,
 		Name:     "Katakana",
 		Desc:     "Japonés",
 		Encoding: japanese.ISO2022JP, // CP932 es común para Katakana
 	},
-	command.CP850: {
+	types.CP850: {
 		EscPos:   2,
 		Name:     "CP850",
 		Desc:     "Europa Occidental (Latin-1)",
 		Encoding: charmap.CodePage850,
 	},
-	command.CP860: {
+	types.CP860: {
 		EscPos:   3,
 		Name:     "CP860",
 		Desc:     "Portugués (Portugal)",
 		Encoding: charmap.CodePage860,
 	},
-	command.CP863: {
+	types.CP863: {
 		EscPos:   4,
 		Name:     "CP863",
 		Desc:     "Francés canadiense",
 		Encoding: charmap.CodePage863,
 	},
-	command.CP865: {
+	types.CP865: {
 		EscPos:   5,
 		Name:     "CP865",
 		Desc:     "Nórdico (escandinavo)",
 		Encoding: charmap.CodePage865,
 	},
-	command.WestEurope: {
+	types.WestEurope: {
 		EscPos:   6,
 		Name:     "ISO8859-1",
 		Desc:     "Europa Central y del Este",
@@ -90,7 +91,7 @@ var Registry = map[command.CharacterSet]*CharacterSetData{
 }
 
 // GetEncoder devuelve un encoder para el charset especificado
-func GetEncoder(charsetCode command.CharacterSet) *encoding.Encoder {
+func GetEncoder(charsetCode types.CharacterSet) *encoding.Encoder {
 	if cs, ok := Registry[charsetCode]; ok {
 		return cs.Encoding.NewEncoder()
 	}
@@ -99,7 +100,7 @@ func GetEncoder(charsetCode command.CharacterSet) *encoding.Encoder {
 }
 
 // EncodeString codifica un string usando el charset especificado
-func EncodeString(str string, charsetCode command.CharacterSet) ([]byte, error) {
+func EncodeString(str string, charsetCode types.CharacterSet) ([]byte, error) {
 	encoder := GetEncoder(charsetCode)
 	return encoder.Bytes([]byte(str))
 }

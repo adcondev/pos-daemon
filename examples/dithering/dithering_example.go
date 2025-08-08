@@ -2,13 +2,13 @@ package main
 
 import (
 	"log"
+
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
+	"pos-daemon.adcon.dev/pkg/posprinter/image"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
-	"pos-daemon.adcon.dev/pkg/posprinter/utils"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 func main() {
@@ -55,13 +55,13 @@ func main() {
 	}
 
 	// === Cargar imagen ===
-	img, err := utils.LoadImage("./img/perro.jpeg")
+	img, err := image.LoadImage("./img/perro.jpeg")
 	if err != nil {
 		log.Fatalf("Error al cargar imagen: %v", err)
 	}
 
 	// === Imprimir título ===
-	if err := printer.SetJustification(command.AlignCenter); err != nil {
+	if err := printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err := printer.SetEmphasis(true); err != nil {
@@ -89,8 +89,8 @@ func main() {
 	}
 
 	opts := posprinter.PrintImageOptions{
-		Density:    command.DensitySingle,
-		DitherMode: imaging.DitherFloydSteinberg,
+		Density:    types.DensitySingle,
+		DitherMode: image.DitherFloydSteinberg,
 		Threshold:  128,
 		Width:      256, // 0 = usar ancho original de imagen. La imagen podría salir más ancha que el papel
 	}
@@ -113,7 +113,7 @@ func main() {
 	if err := printer.TextLn("Imagen con Atkinson:"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	opts.DitherMode = imaging.DitherAtkinson
+	opts.DitherMode = image.DitherAtkinson
 	if err := printer.PrintImageWithOptions(img, opts); err != nil {
 		log.Printf("Error: %v", err)
 	}
@@ -128,7 +128,7 @@ func main() {
 	if err := printer.Feed(3); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.Cut(command.CutFeed, 3); err != nil {
+	if err := printer.Cut(types.CutFeed, 3); err != nil {
 		log.Printf("Error: %v", err)
 	}
 }

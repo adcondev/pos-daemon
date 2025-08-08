@@ -7,12 +7,12 @@ import (
 
 	"github.com/skip2/go-qrcode"
 	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
+	image2 "pos-daemon.adcon.dev/pkg/posprinter/image"
 
-	"pos-daemon.adcon.dev/pkg/posprinter/command"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol"
+	"pos-daemon.adcon.dev/pkg/posprinter/types"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
@@ -23,11 +23,11 @@ type Printer interface {
 	Close() error
 
 	// === Formato de texto ===
-	SetJustification(alignment command.Alignment) error
-	SetFont(font command.Font) error
+	SetJustification(alignment types.Alignment) error
+	SetFont(font types.Font) error
 	SetEmphasis(on bool) error
 	SetDoubleStrike(on bool) error
-	SetUnderline(underline command.UnderlineMode) error
+	SetUnderline(underline types.UnderlineMode) error
 
 	// === Impresión de texto ===
 	Text(str string) error
@@ -38,7 +38,7 @@ type Printer interface {
 	SetCharacterSet(charsetCode int) error
 
 	// === Control de papel ===
-	Cut(mode command.CutMode, lines int) error
+	Cut(mode types.CutMode, lines int) error
 	Feed(lines int) error
 
 	// === Impresión de imágenes ===
@@ -117,7 +117,7 @@ func (p *GenericPrinter) Close() error {
 }
 
 // SetJustification establece la alineación del texto
-func (p *GenericPrinter) SetJustification(alignment command.Alignment) error {
+func (p *GenericPrinter) SetJustification(alignment types.Alignment) error {
 	cmd := p.Protocol.SetJustification(alignment)
 	_, err := p.Connector.Write(cmd)
 	// TODO: Si no hay error, guardar el estado actual
@@ -125,7 +125,7 @@ func (p *GenericPrinter) SetJustification(alignment command.Alignment) error {
 }
 
 // SetFont establece la fuente
-func (p *GenericPrinter) SetFont(font command.Font) error {
+func (p *GenericPrinter) SetFont(font types.Font) error {
 	cmd := p.Protocol.SetFont(font)
 	_, err := p.Connector.Write(cmd)
 	return err
@@ -146,14 +146,14 @@ func (p *GenericPrinter) SetDoubleStrike(on bool) error {
 }
 
 // SetUnderline configura el subrayado
-func (p *GenericPrinter) SetUnderline(underline command.UnderlineMode) error {
+func (p *GenericPrinter) SetUnderline(underline types.UnderlineMode) error {
 	cmd := p.Protocol.SetUnderline(underline)
 	_, err := p.Connector.Write(cmd)
 	return err
 }
 
 // SetCharacterSet cambia el juego de caracteres activo
-func (p *GenericPrinter) SetCharacterSet(charsetCode command.CharacterSet) error {
+func (p *GenericPrinter) SetCharacterSet(charsetCode types.CharacterSet) error {
 	// Verificar que el charset esté soportado por el perfil
 	supported := false
 	for _, cs := range p.GetSupportedCharsets() {
@@ -217,7 +217,7 @@ func (p *GenericPrinter) TextLn(str string) error {
 }
 
 // Cut corta el papel
-func (p *GenericPrinter) Cut(mode command.CutMode, lines int) error {
+func (p *GenericPrinter) Cut(mode types.CutMode, lines int) error {
 	// TODO: Verificar si la impresora tiene cutter con HasCapability
 	cmd := p.Protocol.Cut(mode, lines) // 0 lines feed antes del corte
 	_, err := p.Connector.Write(cmd)
@@ -233,8 +233,8 @@ func (p *GenericPrinter) Feed(lines int) error {
 
 // PrintImageOptions contiene opciones para imprimir imágenes
 type PrintImageOptions struct {
-	Density    command.Density
-	DitherMode imaging.DitherMode
+	Density    types.Density
+	DitherMode image2.DitherMode
 	Threshold  uint8
 	Width      int
 }
@@ -242,8 +242,8 @@ type PrintImageOptions struct {
 // DefaultPrintImageOptions devuelve opciones por defecto
 func DefaultPrintImageOptions() PrintImageOptions {
 	return PrintImageOptions{
-		Density:    command.DensitySingle,
-		DitherMode: imaging.DitherNone,
+		Density:    types.DensitySingle,
+		DitherMode: image2.DitherNone,
 		Threshold:  128,
 		Width:      256,
 	}
@@ -263,12 +263,12 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	}
 
 	// Crear PrintImage
-	resizedImg := utils.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
-	printImg := utils.NewPrintImage(resizedImg, opts.DitherMode)
+	resizedImg := image2.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
+	printImg := image2.NewPrintImage(resizedImg, opts.DitherMode)
 	printImg.Threshold = opts.Threshold
 
 	// Aplicar dithering si se especificó
-	if opts.DitherMode != imaging.DitherNone {
+	if opts.DitherMode != image2.DitherNone {
 		if err := printImg.ApplyDithering(opts.DitherMode); err != nil {
 			return fmt.Errorf("failed to apply dithering: %w", err)
 		}
@@ -304,7 +304,7 @@ func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 	return p.PrintImage(img)
 }
 
-func (p *GenericPrinter) GetSupportedCharsets() []command.CharacterSet {
+func (p *GenericPrinter) GetSupportedCharsets() []types.CharacterSet {
 	// Retorna los juegos de caracteres soportados por el perfil
 	return p.Profile.CharacterSets
 }
@@ -322,9 +322,9 @@ func (p *GenericPrinter) CancelKanjiMode() error {
 // PrintQR imprime un código QR con datos, versión y nivel de corrección de errores
 func (p *GenericPrinter) PrintQR(
 	data string,
-	model command.QRModel,
-	ecLevel command.QRErrorCorrection,
-	moduleSize command.QRModuleSize,
+	model types.QRModel,
+	ecLevel types.QRErrorCorrection,
+	moduleSize types.QRModuleSize,
 	size int,
 ) error {
 	// Verificar soporte
