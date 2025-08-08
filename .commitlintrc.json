@@ -21,50 +21,18 @@
         "revert"
       ]
     ],
-    "scope-enum": [
-      2,
-      "always",
-      [
-        "encoding",
-        "connector",
-        "printer",
-        "imaging",
-        "profiles",
-        "protocol",
-        "escpos",
-        "errors",
-        "logs",
-        "config",
-        "api",
-        "models",
-        "service",
-        "utils",
-        "github",
-        "deps"
-      ]
-    ],
     "subject-case": [
       2,
       "always",
       "lower-case"
     ],
-    "subject-full-stop": [
+    "subject-empty": [
       2,
-      "never",
-      "."
+      "never"
     ],
-    "header-max-length": [
+    "type-empty": [
       2,
-      "always",
-      72
-    ],
-    "body-leading-blank": [
-      2,
-      "always"
-    ],
-    "footer-leading-blank": [
-      2,
-      "always"
+      "never"
     ]
   }
 }

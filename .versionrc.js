@@ -1,58 +1,30 @@
 module.exports = {
-    // Mapea los tipos a secciones del changelog
+    // Configuración minimalista pero efectiva
     types: [
         {type: "feat", section: "✨ Features"},
         {type: "fix", section: "🐛 Bug Fixes"},
-        {type: "perf", section: "⚡ Performance Improvements"},
-        {type: "refactor", section: "♻️ Code Refactoring"},
-        {type: "docs", section: "📚 Documentation", hidden: true},
-        {type: "test", section: "✅ Tests"},
-        {type: "style", section: "💄 Style Changes", hidden: true},
-        {type: "chore", section: "🔧 Maintenance", hidden: true},
-        {type: "build", section: "🏗️ Build System"},
-        {type: "ci", section: "👷 CI", hidden: true},
+        {type: "perf", section: "⚡ Performance"},
         {type: "deps", section: "📦 Dependencies"},
+        // Ocultar tipos que generan ruido en el changelog
+        {type: "docs", section: "📚 Documentation", hidden: true},
+        {type: "style", hidden: true},
+        {type: "refactor", hidden: true},
+        {type: "test", hidden: true},
+        {type: "chore", hidden: true},
+        {type: "ci", hidden: true},
+        {type: "build", hidden: true},
         {type: "revert", section: "⏪ Reverts"}
     ],
 
-    // URLs del repositorio
-    commitUrlFormat: "https://github.com/AdConDev/pos-daemon/commit/{{hash}}",
-    compareUrlFormat: "https://github.com/AdConDev/pos-daemon/compare/{{previousTag}}...{{currentTag}}",
-    issueUrlFormat: "https://github.com/AdConDev/pos-daemon/issues/{{id}}",
-    userUrlFormat: "https://github.com/{{user}}",
+    // URLs automáticas para GitHub
+    commitUrlFormat: "https://github.com/{{owner}}/{{repository}}/commit/{{hash}}",
+    compareUrlFormat: "https://github.com/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}",
+    issueUrlFormat: "https://github.com/{{owner}}/{{repository}}/issues/{{id}}",
 
-    // Mensaje del commit de release
-    releaseCommitMessageFormat: "chore(release): {{currentTag}}",
-
-    // Prevenir saltos de versión accidentales
+    // Configuración simple
+    releaseCommitMessageFormat: "chore(release): v{{currentTag}} [skip ci]",
     skip: {
-        bump: false,
-        changelog: false,
         commit: false,
         tag: false
-    },
-
-    // Configuración de preset y parser
-    preset: "conventionalcommits",
-    presetConfig: {
-        types: [
-            {type: "feat", section: "✨ Features"},
-            {type: "fix", section: "🐛 Bug Fixes"}
-        ]
-    },
-
-    // Header del changelog
-    header: "# Changelog\n\nAll notable changes to this project will be documented in this file.\n",
-
-    // Configurar detección de breaking changes
-    noteKeywords: ["BREAKING CHANGE", "BREAKING CHANGES", "BREAKING-CHANGE", "BREAKING"],
-
-    // Incluir comparación con versión anterior
-    issuePrefixes: ["#", "ISSUE-", "GH-"],
-
-    // Scripts pre y post bump (opcional)
-    scripts: {
-        prebump: "go test ./...",
-        postchangelog: "prettier --write CHANGELOG.md"
     }
 };

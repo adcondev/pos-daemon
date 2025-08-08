@@ -1,0 +1,51 @@
+name: Developer Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create setup instructions
+        run: |
+          cat > SETUP.md << 'EOF'
+          # 🚀 Setup Rápido
+          
+          ## Para desarrollo local:
+          1. Clona el repo
+          2. Instala Go 1.24
+          3. Ejecuta: `go mod download`
+          4. Para probar: `go test ./...`
+          5. Para linting: `golangci-lint run`
+          
+          ## Flujo de trabajo:
+          
+          ### Si trabajas solo:
+          - Haz commits con conventional commits
+          - Push a main directamente
+          - El release se genera automáticamente
+          
+          ### Si trabajan 2 personas:
+          - Crea branch: `git checkout -b feat/nueva-feature`
+          - Haz commits convencionales
+          - Push y crea PR
+          - El otro revisa y aprueba
+          - Al mergear, release automático
+          
+          ## Tipos de commit:
+          - `feat:` Nueva funcionalidad (genera minor release)
+          - `fix:` Corrección de bug (genera patch release)
+          - `feat!:` o `BREAKING CHANGE:` (genera major release)
+          - `chore:`, `docs:`, `style:` (no generan release)
+          
+          EOF
+
+      - name: Commit setup guide
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add SETUP.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: add setup guide [skip ci]" && git push)

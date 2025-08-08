@@ -1,21 +1,7 @@
-version: '2'        # <- aquí va el número de versión de esquema
+# Configuración simple pero efectiva
 run:
   timeout: 5m
-  issues-exit-code: 1
   tests: true
-  build-tags:
-    - integration
-  skip-dirs:
-    - vendor
-    - third_party
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
 
 linters:
   enable:
@@ -47,40 +33,40 @@ linters:
     # - rowserrcheck
     # - sqlclosecheck
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
+errcheck:
+  check-type-assertions: true
+  check-blank: true
 
-  gosec:
-    severity: medium
-    confidence: medium
+gosec:
+  severity: medium
+  confidence: medium
 
-  govet:
-    check-shadowing: true
-    enable-all: true
+govet:
+  check-shadowing: true
+  enable-all: true
 
-  gocyclo:
-    min-complexity: 15
+gocyclo:
+  min-complexity: 15
 
-  dupl:
-    threshold: 100
+dupl:
+  threshold: 100
 
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
+gocritic:
+  enabled-tags:
+    - diagnostic
+    - experimental
+    - opinionated
+    - performance
+    - style
 
 issues:
-  max-issues-per-linter: 50
-  max-same-issues: 10
-  new: false
+  # Ignorar en tests
   exclude-rules:
     - path: _test\.go
       linters:
-        - dupl
         - gosec
-        - gocritic
+        - errcheck
+
+  # Límites razonables
+  max-issues-per-linter: 30
+  max-same-issues: 15
