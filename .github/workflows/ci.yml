@@ -1,0 +1,181 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+
+env:
+  GO_VERSION: '1.24' # Usar versión LTS válida de Go
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # Job 1: Validación de commits
+  validate-commits:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            deps
+            revert
+          scopes: |
+            encoding
+            connector
+            printer
+            imaging
+            profiles
+            protocol
+            escpos
+            errors
+            logs
+            config
+            api
+            models
+            service
+            utils
+            github
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json
+
+  # Job 2: Tests y Build
+  test:
+    name: Test & Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        go: [ '1.21', '1.24' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests with coverage
+        run: |
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go tool cover -html=coverage.txt -o coverage.html
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.22'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Upload build artifacts
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}-go${{ matrix.go }}
+          path: |
+            pos-daemon*
+            !*.go
+            !*.mod
+            !*.sum
+
+  # Job 3: Linting
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --timeout=5m --config=.golangci.yml
+
+      - name: Go Report Card
+        run: |
+          go install github.com/gojp/goreportcard/cmd/goreportcard-cli@latest
+          goreportcard-cli -v
+
+  # Job 4: Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: '-fmt sarif -out results.sarif ./...'
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 5: Validación de dependencias
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate

@@ -1,0 +1,35 @@
+# Add labels based on file patterns
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
+
+github:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: '**/*_test.go'
+
+encoding:
+  - changed-files:
+      - any-glob-to-any-file: '**/encoding/**'
+
+connector:
+  - changed-files:
+      - any-glob-to-any-file: '**/connector/**'
+
+printer:
+  - changed-files:
+      - any-glob-to-any-file: '**/printer/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'go.mod'
+          - 'go.sum'
+          - 'package.json'
+          - 'package-lock.json'

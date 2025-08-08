@@ -1,107 +1,119 @@
-name: Automated Semantic Release
+name: Release
 
 on:
-  pull_request:
-    types: [ closed ]
+  push:
     branches:
       - master
+      - main
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
-# Define permisos específicos requeridos
 permissions:
   contents: write
+  packages: write
+  issues: write
   pull-requests: write
 
 jobs:
   release:
-    # Solo ejecutar cuando el PR se fusiona, no cuando se cierra sin fusión
-    if: github.event.pull_request.merged == true
+    name: Create Release
     runs-on: ubuntu-latest
-    name: Process New Release
-    
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip release]'))
+
     steps:
-      # Paso 1: Generar un nombre único para la rama temporal
-      - name: Generate unique branch name
-        id: branch-name
-        run: echo "branch_name=release-$(date +%s)-${{ github.run_id }}" >> $GITHUB_OUTPUT
-      
-      # Paso 2: Crear rama temporal
-      - name: Create temporary branch for release
-        uses: peterjgrainger/action-create-branch@v2.4.0
-        id: create-branch
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          branch: ${{ steps.branch-name.outputs.branch_name }}
-          sha: "${{ github.event.pull_request.head.sha }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Paso 3: Checkout del código
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0 # Importante para tener historia completa para changelog
+          node-version: '20'
+          cache: 'npm'
 
-      # Paso 4: Cambiar a la rama temporal
-      - name: Switch to release branch
+      - name: Install dependencies
         run: |
-          git fetch --all
-          git checkout --track origin/${{ steps.branch-name.outputs.branch_name }}
-        continue-on-error: false
+          npm install -g standard-version
+          npm install -g @commitlint/cli @commitlint/config-conventional
 
-      # Paso 5: Generar changelog y actualizar versión
-      - name: Generate changelog and bump version
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version-file: "./package.json,./package-lock.json"
-          git-branch: ${{ steps.branch-name.outputs.branch_name }}
-          skip-on-empty: false
-          skip-git-pull: true
-          output-file: "CHANGELOG.md"
+          go-version: '1.24'
+          cache: true
 
-      # Paso 6: Crear PR con información de versión
-      - name: Create Release PR
-        id: create-pr
+      - name: Configure Git
         run: |
-          gh pr create \
-            --base master \
-            --head ${{ steps.branch-name.outputs.branch_name }} \
-            --title "chore(release): prepare release ${{ steps.changelog.outputs.tag }}" \
-            --body "This PR updates version information and changelog for release ${{ steps.changelog.outputs.tag }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Paso 7: Fusionar PR de release
-      - name: Merge Release PR
-        id: merge-pr
+      - name: Determine version bump
+        id: version
         run: |
-          PR_NUMBER=$(gh pr list --head ${{ steps.branch-name.outputs.branch_name }} --json number -q ".[0].number")
-          if [ ! -z "$PR_NUMBER" ]; then
-            gh pr merge $PR_NUMBER --merge --delete-branch
-            echo "Merged PR #$PR_NUMBER"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "bump=${{ inputs.release-type }}" >> $GITHUB_OUTPUT
           else
-            echo "No PR found to merge"
-            exit 1
+            # Analizar commits para determinar el bump automático
+            if git log -1 --pretty=%B | grep -q "BREAKING CHANGE"; then
+              echo "bump=major" >> $GITHUB_OUTPUT
+            elif git log -1 --pretty=%B | grep -q "^feat"; then
+              echo "bump=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump=patch" >> $GITHUB_OUTPUT
+            fi
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Paso 8: Crear GitHub Release
+      - name: Bump version and create changelog
+        id: changelog
+        run: |
+          standard-version --release-as ${{ steps.version.outputs.bump }} --skip.commit --skip.tag
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Run tests before release
+        run: go test -v ./...
+
+      - name: Build binaries
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o dist/pos-daemon-linux-amd64 .
+          GOOS=windows GOARCH=amd64 go build -o dist/pos-daemon-windows-amd64.exe .
+          GOOS=darwin GOARCH=amd64 go build -o dist/pos-daemon-darwin-amd64 .
+
+      - name: Commit and push changes
+        run: |
+          git add .
+          git commit -m "chore(release): ${{ steps.changelog.outputs.tag }}"
+          git tag ${{ steps.changelog.outputs.tag }}
+          git push origin master --follow-tags
+
       - name: Create GitHub Release
-        if: steps.changelog.outputs.skipped == 'false'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.changelog.outputs.tag }}
           name: Release ${{ steps.changelog.outputs.tag }}
-          body: ${{ steps.changelog.outputs.clean_changelog }}
+          body_path: CHANGELOG.md
           draft: false
           prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Paso 9: Notificar resultado
-      - name: Notify on success
-        if: success()
+      - name: Update Go Module Proxy
         run: |
-          echo "✅ Release ${{ steps.changelog.outputs.tag }} successfully created!"
-          echo "Changelog: ${{ steps.changelog.outputs.clean_changelog }}"
+          GOPROXY=proxy.golang.org go list -m pos-daemon.adcon.dev@${{ steps.changelog.outputs.tag }}

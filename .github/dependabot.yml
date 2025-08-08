@@ -1,24 +1,51 @@
 version: 2
 updates:
-  # Mantener dependencias Go actualizadas
+  # Go dependencies
   - package-ecosystem: "gomod"
     directory: "/"
-    target-branch: "dev" # Cambiar a la rama deseada
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+      - "go"
       - "automerge"
     commit-message:
       prefix: "deps"
+      prefix-development: "deps(dev)"
       include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    reviewers:
+      - "AdConDev"
+    assignees:
+      - "AdConDev"
+    milestone: 1
+    ignore:
+      # Ignore patch updates for certain packages
+      - dependency-name: "golang.org/x/*"
+        update-types: [ "version-update:semver-patch" ]
+    groups:
+      golang-x:
+        patterns:
+          - "golang.org/x/*"
 
-  # Mantener las Github Actions actualizadas
+  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "dev" # Cambiar a la rama deseada
     schedule:
       interval: "monthly"
+      day: "monday"
     open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    reviewers:
+      - "AdConDev"
