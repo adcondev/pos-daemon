@@ -8,9 +8,11 @@
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Refactor (non-breaking change which improves the codebase without changing functionality)
+- [ ] Github Configuration and Scripts (non-breaking change which improves the CI/CD configuration or scripts)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
+- [ ] Documentation update (non-breaking change which improves the documentation)
+- [ ] Other (please describe):
 
 ## How Has This Been Tested?
 
