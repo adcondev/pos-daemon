@@ -37,7 +37,7 @@ jobs:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Validate linked issues
-        uses: hattan/verify-linked-issue-action@v1
+        uses: hattan/verify-linked-issue-action@v1.1.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
