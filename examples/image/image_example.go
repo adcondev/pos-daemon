@@ -5,7 +5,7 @@ import (
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
@@ -14,8 +14,8 @@ import (
 
 func main() {
 	// === Crear conector ===
-	// conn, err := connector.NewWindowsPrintConnector("58mm GOOJPRT PT-210")
-	conn, err := connector.NewWindowsPrintConnector("80mm EC-PM-80250") // Cambia el nombre según tu impresora
+	conn, err := connector.NewWindowsPrintConnector("58mm PT-210")
+	// conn, err := connector.NewWindowsPrintConnector("80mm EC-PM-80250") // Cambia el nombre según tu impresora
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func useESCPOS(conn connector.Connector) {
 	}(printer)
 
 	// Cargar imagen
-	img, err := image.LoadImage("./img/perro.jpeg")
+	img, err := imaging.LoadImage("./img/perro.jpeg")
 	if err != nil {
 		log.Fatalf("Error al cargar imagen: %v", err)
 	}
@@ -72,7 +72,7 @@ func useESCPOS(conn connector.Connector) {
 	log.Println("Imprimiendo con Floyd-Steinberg...")
 	opts := posprinter.PrintImageOptions{
 		Density:    types.DensitySingle,
-		DitherMode: image.DitherFloydSteinberg,
+		DitherMode: imaging.DitherFloydSteinberg,
 		Threshold:  128,
 		Width:      256,
 	}
@@ -83,7 +83,7 @@ func useESCPOS(conn connector.Connector) {
 
 	// === Opción 3: Imprimir con Atkinson ===
 	log.Println("Imprimiendo con Atkinson...")
-	opts.DitherMode = image.DitherAtkinson
+	opts.DitherMode = imaging.DitherAtkinson
 	if err = printer.PrintImageWithOptions(img, opts); err != nil {
 		log.Printf("Error: %v", err)
 	}

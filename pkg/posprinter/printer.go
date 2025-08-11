@@ -7,7 +7,7 @@ import (
 
 	"github.com/skip2/go-qrcode"
 	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
-	image2 "pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
@@ -164,7 +164,7 @@ func (p *GenericPrinter) SetCharacterSet(charsetCode types.CharacterSet) error {
 	}
 
 	if !supported {
-		return fmt.Errorf("el character set %d no está soportado en el perfil de la impresora", charsetCode)
+		return fmt.Errorf("el cáracter set %d no está soportado en el perfil de la impresora", charsetCode)
 	}
 
 	// Enviar comando al protocolo
@@ -206,7 +206,10 @@ func (p *GenericPrinter) TextLn(str string) error {
 	if err != nil {
 		encoded, err = encoding.EncodeString(str, p.Profile.DefaultCharSet)
 		if err != nil {
-			return fmt.Errorf("failed to encode text: %w", err)
+			log.Printf("failed to encode text: %v", err)
+			cmd := p.Protocol.TextLn(" err ")
+			_, err = p.Connector.Write(cmd)
+			return err
 		}
 	}
 
@@ -234,7 +237,7 @@ func (p *GenericPrinter) Feed(lines int) error {
 // PrintImageOptions contiene opciones para imprimir imágenes
 type PrintImageOptions struct {
 	Density    types.Density
-	DitherMode image2.DitherMode
+	DitherMode imaging.DitherMode
 	Threshold  uint8
 	Width      int
 }
@@ -243,7 +246,7 @@ type PrintImageOptions struct {
 func DefaultPrintImageOptions() PrintImageOptions {
 	return PrintImageOptions{
 		Density:    types.DensitySingle,
-		DitherMode: image2.DitherNone,
+		DitherMode: imaging.DitherNone,
 		Threshold:  128,
 		Width:      256,
 	}
@@ -258,17 +261,17 @@ func (p *GenericPrinter) PrintImage(img image.Image) error {
 // PrintImageWithOptions imprime una imagen con opciones específicas
 func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageOptions) error {
 	// Verificar soporte de imágenes
-	if !p.Protocol.HasNativeImageSupport() {
+	if !p.Profile.HasImageSupport() {
 		return fmt.Errorf("protocol %s does not support images", p.Protocol.Name())
 	}
 
 	// Crear PrintImage
-	resizedImg := image2.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
-	printImg := image2.NewPrintImage(resizedImg, opts.DitherMode)
+	resizedImg := imaging.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
+	printImg := imaging.NewPrintImage(resizedImg, opts.DitherMode)
 	printImg.Threshold = opts.Threshold
 
 	// Aplicar dithering si se especificó
-	if opts.DitherMode != image2.DitherNone {
+	if opts.DitherMode != imaging.DitherNone {
 		if err := printImg.ApplyDithering(opts.DitherMode); err != nil {
 			return fmt.Errorf("failed to apply dithering: %w", err)
 		}
@@ -277,7 +280,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	// Generar comandos
 	cmd, err := p.Protocol.PrintImage(printImg, opts.Density)
 	if err != nil {
-		return fmt.Errorf("failed to generate image commands: %w", err)
+		return fmt.Errorf("failed to generate imaging commands: %w", err)
 	}
 
 	// Enviar a la impresora
@@ -285,11 +288,12 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	return err
 }
 
-// Implementar PrintImageFromFile en GenericPrinter
+// TODO: Implementar PrintImageFromFile en GenericPrinter
+
 func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 	file, err := utils.SafeOpen(filename)
 	if err != nil {
-		return fmt.Errorf("failed to open image file: %w", err)
+		return fmt.Errorf("failed to open imaging file: %w", err)
 	}
 	defer func() {
 		if cerr := file.Close(); cerr != nil {
@@ -299,7 +303,7 @@ func (p *GenericPrinter) PrintImageFromFile(filename string) error {
 
 	img, _, err := image.Decode(file)
 	if err != nil {
-		return fmt.Errorf("failed to decode image: %w", err)
+		return fmt.Errorf("failed to decode imaging: %w", err)
 	}
 	return p.PrintImage(img)
 }
@@ -328,7 +332,7 @@ func (p *GenericPrinter) PrintQR(
 	size int,
 ) error {
 	// Verificar soporte
-	if !p.Profile.SupportsQR && p.Protocol.HasNativeImageSupport() {
+	if !p.Profile.SupportsQR && p.Profile.HasImageSupport() {
 		log.Printf("El perfil no soporta QR nativo, usando imagen como fallback")
 		// Fallback a imagen
 		qrCode, err := qrcode.New(data, qrcode.RecoveryLevel(ecLevel))

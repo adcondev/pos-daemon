@@ -18,7 +18,7 @@ func SafeOpen(filename string) (*os.File, error) {
 		return nil, err
 	}
 	if !strings.HasPrefix(absPath, cwd+string(os.PathSeparator)) {
-		return nil, fmt.Errorf("invalid image path: %s", filename)
+		return nil, fmt.Errorf("invalid imaging path: %s", filename)
 	}
 	return os.Open(absPath) //nolint:gosec
 }

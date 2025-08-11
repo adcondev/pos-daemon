@@ -3,27 +3,27 @@ package escpos
 import (
 	"fmt"
 
-	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
 // ESCImage ahora es más simple, solo guarda referencia a PrintImage
 type ESCImage struct {
-	printImage *image.PrintImage
+	printImage *imaging.PrintImage
 
 	// Cache de datos procesados
 	rasterData []byte
 }
 
 // newESCImageFromPrintImage crea una ESCImage desde PrintImage
-func newESCImageFromPrintImage(img *image.PrintImage) (*ESCImage, error) {
+func newESCImageFromPrintImage(img *imaging.PrintImage) (*ESCImage, error) {
 	if img == nil {
-		return nil, fmt.Errorf("print image cannot be nil")
+		return nil, fmt.Errorf("print imaging cannot be nil")
 	}
 
 	if img.Width <= 0 || img.Height <= 0 {
-		return nil, fmt.Errorf("invalid image dimensions: %dx%d", img.Width, img.Height)
+		return nil, fmt.Errorf("invalid imaging dimensions: %dx%d", img.Width, img.Height)
 	}
 
 	return &ESCImage{
@@ -61,7 +61,7 @@ func (e *ESCImage) toRasterFormat() ([]byte, error) {
 }
 
 // PrintImage implementa el méthodo para el protocolo ESC/POS
-func (p *ESCPOSProtocol) PrintImage(img *image.PrintImage, density types.Density) ([]byte, error) {
+func (p *Commands) PrintImage(img *imaging.PrintImage, density types.Density) ([]byte, error) {
 	// Crear ESCImage
 	escImg, err := newESCImageFromPrintImage(img)
 	if err != nil {

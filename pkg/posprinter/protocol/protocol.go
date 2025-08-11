@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
@@ -50,11 +50,7 @@ type Protocol interface {
 	// === Imágenes ===
 
 	// PrintImage recibe una imagen genérica y la convierte a comandos del protocolo
-	PrintImage(img *image.PrintImage, density types.Density) ([]byte, error)
-
-	// HasNativeImageSupport indica si el protocolo soporta imágenes nativas
-	// (algunos protocolos solo soportan ciertos formatos)
-	HasNativeImageSupport() bool
+	PrintImage(img *imaging.PrintImage, density types.Density) ([]byte, error)
 
 	// GetMaxImageWidth devuelve el ancho máximo de imagen soportado
 	GetMaxImageWidth(paperWidth int, dpi int) int
@@ -67,6 +63,7 @@ type Protocol interface {
 	FeedForm() []byte
 
 	// === Hardware ===
+
 	Pulse(pin int, onMS int, offMS int) []byte
 	Release() []byte
 
@@ -81,5 +78,5 @@ type Protocol interface {
 	// etc.
 }
 
-// ProtocolFactory es una función que crea una instancia de un protocolo
-type ProtocolFactory func() Protocol
+// Factory es una función que crea una instancia de un protocolo
+type Factory func() Protocol

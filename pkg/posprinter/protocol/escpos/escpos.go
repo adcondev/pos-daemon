@@ -41,34 +41,34 @@ func (cp CodePage) IsValid() bool {
 	return cp <= Latvian || (cp >= WCP1252 && cp <= Latvian)
 }
 
-// ESCPOSProtocol implementa Protocol para ESC/POS
-type ESCPOSProtocol struct {
+// Commands implementa Protocol para ESC/POS
+type Commands struct {
 	// TODO: Mover aquí las propiedades que necesites del ESCPrinter actual
 }
 
 // NewESCPOSProtocol crea una nueva instancia del protocolo ESC/POS
 func NewESCPOSProtocol() protocol.Protocol {
-	p := &ESCPOSProtocol{}
+	p := &Commands{}
 	return p
 }
 
 // === Implementación de la interfaz Protocol ===
 
 // Initialize genera el comando de inicialización ESC/POS
-func (p *ESCPOSProtocol) Initialize() []byte {
+func (p *Commands) Initialize() []byte {
 	// ESC @ - Reset printer
 	return []byte{ESC, '@'}
 }
 
 // Close genera comandos de cierre (si los hay)
-func (p *ESCPOSProtocol) Close() []byte {
+func (p *Commands) Close() []byte {
 	// ESC/POS no tiene un comando específico de cierre
 	// pero podrías incluir un reset o feed final
 	return []byte{}
 }
 
 // SetJustification convierte el tipo genérico al específico de ESC/POS
-func (p *ESCPOSProtocol) SetJustification(justification types.Alignment) []byte {
+func (p *Commands) SetJustification(justification types.Alignment) []byte {
 	// Mapear el tipo genérico al valor ESC/POS
 	var escposValue byte
 	switch justification {
@@ -87,7 +87,7 @@ func (p *ESCPOSProtocol) SetJustification(justification types.Alignment) []byte 
 }
 
 // SetFont mapea fuentes genéricas a ESC/POS
-func (p *ESCPOSProtocol) SetFont(font types.Font) []byte {
+func (p *Commands) SetFont(font types.Font) []byte {
 	var fontValue byte
 	switch font {
 	case types.FontA:
@@ -105,7 +105,7 @@ func (p *ESCPOSProtocol) SetFont(font types.Font) []byte {
 }
 
 // SetEmphasis activa/desactiva negrita
-func (p *ESCPOSProtocol) SetEmphasis(on bool) []byte {
+func (p *Commands) SetEmphasis(on bool) []byte {
 	val := byte(0)
 	if on {
 		val = 1
@@ -115,7 +115,7 @@ func (p *ESCPOSProtocol) SetEmphasis(on bool) []byte {
 }
 
 // SetDoubleStrike activa/desactiva doble golpe
-func (p *ESCPOSProtocol) SetDoubleStrike(on bool) []byte {
+func (p *Commands) SetDoubleStrike(on bool) []byte {
 	val := byte(0)
 	if on {
 		val = 1
@@ -125,7 +125,7 @@ func (p *ESCPOSProtocol) SetDoubleStrike(on bool) []byte {
 }
 
 // SetUnderline configura el subrayado
-func (p *ESCPOSProtocol) SetUnderline(underline types.UnderlineMode) []byte {
+func (p *Commands) SetUnderline(underline types.UnderlineMode) []byte {
 	var val byte
 	switch underline {
 	case types.UnderlineNone:
@@ -142,31 +142,32 @@ func (p *ESCPOSProtocol) SetUnderline(underline types.UnderlineMode) []byte {
 }
 
 // Text convierte texto a bytes con encoding apropiado
-func (p *ESCPOSProtocol) Text(str string) []byte {
+func (p *Commands) Text(str string) []byte {
 	cmd := strings.ReplaceAll(str, "\n", string(LF))
 	return []byte(cmd)
 }
 
 // TextLn agrega un salto de línea al final
-func (p *ESCPOSProtocol) TextLn(str string) []byte {
+func (p *Commands) TextLn(str string) []byte {
 	text := p.Text(str)
 	// Agregar LF al final
 	return append(text, LF)
 }
 
 // TextRaw envía bytes sin procesar
-func (p *ESCPOSProtocol) TextRaw(str string) []byte {
+func (p *Commands) TextRaw(str string) []byte {
 	return []byte(str)
 }
 
 const (
 	// Modo de corte de papel
+
 	Cut     byte = 49 // 'A'
 	CutFeed byte = 66 // 'B'
 )
 
 // Cut genera comando de corte
-func (p *ESCPOSProtocol) Cut(mode types.CutMode, lines int) []byte {
+func (p *Commands) Cut(mode types.CutMode, lines int) []byte {
 	// TODO: Implementar validación de lines
 
 	cmd := []byte{GS, 'V'}
@@ -184,7 +185,7 @@ func (p *ESCPOSProtocol) Cut(mode types.CutMode, lines int) []byte {
 }
 
 // Feed genera comando de alimentación de papel
-func (p *ESCPOSProtocol) Feed(lines int) []byte {
+func (p *Commands) Feed(lines int) []byte {
 	// TODO: Validar que lines esté en rango válido
 	if lines <= 0 {
 		return []byte{}
@@ -197,29 +198,29 @@ func (p *ESCPOSProtocol) Feed(lines int) []byte {
 // TODO: Implementar el resto de métodos de la interfaz
 // Por ahora, implementaciones stub para compilar:
 
-func (p *ESCPOSProtocol) SetTextSize(widthMultiplier, heightMultiplier int) []byte {
+func (p *Commands) SetTextSize(widthMultiplier, heightMultiplier int) []byte {
 	// TODO: Implementar usando GS ! n
 	// Hint: n = (widthMultiplier-1)<<4 | (heightMultiplier-1)
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetLineSpacing(height *int) []byte {
+func (p *Commands) SetLineSpacing(height *int) []byte {
 	// TODO: Si height es nil, usar ESC 2 (default)
 	// Si no, usar ESC 3 n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetPrintLeftMargin(margin int) []byte {
+func (p *Commands) SetPrintLeftMargin(margin int) []byte {
 	// TODO: Implementar usando GS L nL nH
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetPrintWidth(width int) []byte {
+func (p *Commands) SetPrintWidth(width int) []byte {
 	// TODO: Implementar usando GS W nL nH
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SelectCharacterTable(table types.CharacterSet) []byte {
+func (p *Commands) SelectCharacterTable(table types.CharacterSet) []byte {
 	charTable := CodePage(encoding.Registry[table].EscPos)
 	// Validar que table esté en un rango válido
 	if !charTable.IsValid() {
@@ -233,22 +234,22 @@ func (p *ESCPOSProtocol) SelectCharacterTable(table types.CharacterSet) []byte {
 	return cmd
 }
 
-func (p *ESCPOSProtocol) SetBarcodeHeight(height int) []byte {
+func (p *Commands) SetBarcodeHeight(height int) []byte {
 	// TODO: Implementar GS h n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetBarcodeWidth(width int) []byte {
+func (p *Commands) SetBarcodeWidth(width int) []byte {
 	// TODO: Implementar GS w n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) SetBarcodeTextPosition(position types.BarcodeTextPosition) []byte {
+func (p *Commands) SetBarcodeTextPosition(position types.BarcodeTextPosition) []byte {
 	// TODO: Mapear position a valores ESC/POS y usar GS H n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) Barcode(content string, barType types.BarcodeType) ([]byte, error) {
+func (p *Commands) Barcode(content string, barType types.BarcodeType) ([]byte, error) {
 	// TODO: Esta es la más compleja, necesitas:
 	// 1. Mapear barType genérico a tipo ESC/POS
 	// 2. Validar content según el tipo
@@ -256,37 +257,32 @@ func (p *ESCPOSProtocol) Barcode(content string, barType types.BarcodeType) ([]b
 	return []byte{}, nil
 }
 
-func (p *ESCPOSProtocol) FeedReverse(lines int) []byte {
+func (p *Commands) FeedReverse(lines int) []byte {
 	// TODO: Implementar ESC e n
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) FeedForm() []byte {
+func (p *Commands) FeedForm() []byte {
 	// TODO: Implementar FF
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) Pulse(pin int, onMS int, offMS int) []byte {
+func (p *Commands) Pulse(pin int, onMS int, offMS int) []byte {
 	// TODO: Implementar ESC p m t1 t2
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) Release() []byte {
+func (p *Commands) Release() []byte {
 	// TODO: Implementar si es necesario
 	return []byte{}
 }
 
-func (p *ESCPOSProtocol) Name() string {
+func (p *Commands) Name() string {
 	return "ESC/POS"
 }
 
-// HasNativeImageSupport indica si este protocolo soporta imágenes nativas
-func (p *ESCPOSProtocol) HasNativeImageSupport() bool {
-	return true // ESC/POS soporta imágenes de forma nativa
-}
-
 // GetMaxImageWidth devuelve el ancho máximo de imagen que soporta la impresora
-func (p *ESCPOSProtocol) GetMaxImageWidth(paperWidth, dpi int) int {
+func (p *Commands) GetMaxImageWidth(paperWidth, dpi int) int {
 	// Cálculo basado en el ancho del papel y resolución
 	// Formula: (ancho_papel_mm / 25.4) * dpi
 	if paperWidth > 0 && dpi > 0 {
@@ -316,16 +312,16 @@ func (p *ESCPOSProtocol) GetMaxImageWidth(paperWidth, dpi int) int {
 // Referencia:
 //
 //	FS &, FS C
-func (p *ESCPOSProtocol) CancelKanjiMode() []byte {
+func (p *Commands) CancelKanjiMode() []byte {
 	return []byte{FS, '.'}
 }
 
-func (p *ESCPOSProtocol) SelectKanjiMode() []byte {
+func (p *Commands) SelectKanjiMode() []byte {
 	return []byte{FS, '&'}
 }
 
 // PrintQR implementa el comando ESC Z para imprimir códigos QR
-func (p *ESCPOSProtocol) PrintQR(
+func (p *Commands) PrintQR(
 	data string,
 	model types.QRModel,
 	moduleSize types.QRModuleSize,
@@ -379,7 +375,7 @@ var modelMap = map[types.QRModel]byte{
 	types.Model2: '2', // Modelo 2
 }
 
-func (p *ESCPOSProtocol) SelectQRModel(model types.QRModel) ([]byte, error) {
+func (p *Commands) SelectQRModel(model types.QRModel) ([]byte, error) {
 	// Validación de modelo
 	if model < types.Model1 || model > types.Model2 {
 		return nil, fmt.Errorf("modelo de QR inválida(0-1): %d", model)
@@ -400,7 +396,7 @@ func (p *ESCPOSProtocol) SelectQRModel(model types.QRModel) ([]byte, error) {
 	return cmd, nil
 }
 
-func (p *ESCPOSProtocol) SelectQRSize(moduleSize types.QRModuleSize) ([]byte, error) {
+func (p *Commands) SelectQRSize(moduleSize types.QRModuleSize) ([]byte, error) {
 	// Validar tamaño del módulo
 	if moduleSize < types.MinType || moduleSize > types.MaxType {
 		return nil, fmt.Errorf("tamaño de módulo QR inválido(1-16): %d", moduleSize)
@@ -428,7 +424,7 @@ var ecMap = map[types.QRErrorCorrection]byte{
 	types.ECHighest: '3', // 30% de corrección
 }
 
-func (p *ESCPOSProtocol) SelectQRErrorCorrection(level types.QRErrorCorrection) ([]byte, error) {
+func (p *Commands) SelectQRErrorCorrection(level types.QRErrorCorrection) ([]byte, error) {
 	// Validar nivel de corrección
 	ec, ok := ecMap[level]
 	if !ok {
@@ -448,7 +444,7 @@ func (p *ESCPOSProtocol) SelectQRErrorCorrection(level types.QRErrorCorrection) 
 	return cmd, nil
 }
 
-func (p *ESCPOSProtocol) SetQRData(data string) ([]byte, error) {
+func (p *Commands) SetQRData(data string) ([]byte, error) {
 	// Validar longitud de datos
 	if len(data) == 0 || len(data) > 7089 {
 		return nil, fmt.Errorf("longitud de datos de QR inválida (1-7089): %d", len(data))
@@ -469,7 +465,7 @@ func (p *ESCPOSProtocol) SetQRData(data string) ([]byte, error) {
 	return cmd, nil
 }
 
-func (p *ESCPOSProtocol) PrintQRData() ([]byte, error) {
+func (p *Commands) PrintQRData() ([]byte, error) {
 	// Comando para imprimir QR
 	pL, pH, err := utils.LengthLowHigh(3)
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 func main() {
 	// === Configuración ===
 	// printerName := "80mm EC-PM-80250"
-	printerName := "58mm GP-58N" // Cambia esto al nombre de tu impresora
+	printerName := "58mm PT-210" // Cambia esto al nombre de tu impresora
 
 	// === Crear conector ===
 	log.Printf("Intentando conectar a la impresora: %s", printerName)

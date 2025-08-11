@@ -62,25 +62,25 @@ var Registry = map[types.CharacterSet]*CharacterSetData{
 		Desc:     "Europa Central y del Este",
 		Encoding: charmap.ISO8859_1,
 	},
-	16: {
+	types.WCP1252: {
 		EscPos:   16,
 		Name:     "WPC1252",
 		Desc:     "Windows Europa Occidental",
 		Encoding: charmap.Windows1252,
 	},
-	17: {
+	types.CP866: {
 		EscPos:   17,
 		Name:     "CP866",
 		Desc:     "Cirílico (Ruso MS-DOS)",
 		Encoding: charmap.CodePage866,
 	},
-	18: {
+	types.CP852: {
 		EscPos:   18,
 		Name:     "CP852",
 		Desc:     "Europa Central (Latin-2)",
 		Encoding: charmap.CodePage852,
 	},
-	19: {
+	types.CP858: {
 		EscPos:   19,
 		Name:     "CP858",
 		Encoding: charmap.CodePage858,

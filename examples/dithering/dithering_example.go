@@ -5,7 +5,7 @@ import (
 
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/profile"
 	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
@@ -55,7 +55,7 @@ func main() {
 	}
 
 	// === Cargar imagen ===
-	img, err := image.LoadImage("./img/perro.jpeg")
+	img, err := imaging.LoadImage("./img/perro.jpeg")
 	if err != nil {
 		log.Fatalf("Error al cargar imagen: %v", err)
 	}
@@ -90,7 +90,7 @@ func main() {
 
 	opts := posprinter.PrintImageOptions{
 		Density:    types.DensitySingle,
-		DitherMode: image.DitherFloydSteinberg,
+		DitherMode: imaging.DitherFloydSteinberg,
 		Threshold:  128,
 		Width:      256, // 0 = usar ancho original de imagen. La imagen podría salir más ancha que el papel
 	}
@@ -113,7 +113,7 @@ func main() {
 	if err := printer.TextLn("Imagen con Atkinson:"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	opts.DitherMode = image.DitherAtkinson
+	opts.DitherMode = imaging.DitherAtkinson
 	if err := printer.PrintImageWithOptions(img, opts); err != nil {
 		log.Printf("Error: %v", err)
 	}

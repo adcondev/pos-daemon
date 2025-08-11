@@ -1,4 +1,4 @@
-package image
+package imaging
 
 import (
 	"fmt"
@@ -185,7 +185,7 @@ func GetDitherProcessor(mode DitherMode) (DitherProcessor, error) {
 // Esta es la función principal que usarán los protocolos
 func ProcessImageWithDithering(img image.Image, mode DitherMode, threshold uint8) (image.Image, error) {
 	if img == nil {
-		return nil, fmt.Errorf("image cannot be nil")
+		return nil, fmt.Errorf("imaging cannot be nil")
 	}
 
 	processor, err := GetDitherProcessor(mode)

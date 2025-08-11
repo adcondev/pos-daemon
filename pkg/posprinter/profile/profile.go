@@ -68,16 +68,10 @@ func CreatePt210() *Profile {
 		types.CP863,
 		types.CP865,
 		types.WestEurope,
-		types.Greek,
-		types.Hebrew,
-		// types.CP755, // No soportado directamente
-		types.Iran,
 		types.WCP1252,
 		types.CP866,
 		types.CP852,
 		types.CP858,
-		types.IranII,
-		types.Latvian,
 	}
 
 	p.DefaultCharSet = 0 // CP858 para español
@@ -235,4 +229,8 @@ func CreateProfile80mm() *Profile {
 
 		ExtendedFeatures: make(map[string]interface{}),
 	}
+}
+
+func (p *Profile) HasImageSupport() bool {
+	return p.SupportsGraphics
 }

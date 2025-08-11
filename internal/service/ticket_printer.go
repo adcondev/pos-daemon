@@ -11,7 +11,7 @@ import (
 	"github.com/skip2/go-qrcode"
 	tckt "pos-daemon.adcon.dev/internal/models"
 	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/image"
+	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
@@ -134,7 +134,7 @@ func (tc *TicketConstructor) printHeader() {
 	// Print logo placeholder if configured
 	if tmpl.VerLogotipo {
 		logoPath := "./img/perro.jpeg"
-		img, err := image.LoadImage(logoPath)
+		img, err := imaging.LoadImage(logoPath)
 		if err != nil {
 			log.Printf("ticket_printer: error cargando imagen del logo: %v", err)
 		} else {
@@ -145,7 +145,7 @@ func (tc *TicketConstructor) printHeader() {
 			// Imprimir la imagen con dithering usando las nuevas opciones
 			opts := posprinter.PrintImageOptions{
 				Density:    types.DensitySingle,
-				DitherMode: image.DitherFloydSteinberg,
+				DitherMode: imaging.DitherFloydSteinberg,
 				Threshold:  128,
 				Width:      tmpl.LogoWidth * 2,
 			}

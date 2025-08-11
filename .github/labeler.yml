@@ -29,7 +29,7 @@ printer:
 
 image:
   - changed-files:
-      - any-glob-to-any-file: '**/image/**'
+      - any-glob-to-any-file: '**/imaging/**'
 
 profile:
   - changed-files:
