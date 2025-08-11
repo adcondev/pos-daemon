@@ -45,6 +45,8 @@ jobs:
             chore
             deps
             revert
+            style
+            build
           # No validar scopes para simplicidad
           requireScope: false
           # Permitir ! para breaking changes

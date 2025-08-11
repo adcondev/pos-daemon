@@ -28,6 +28,7 @@ and follow the specification below.
 - `ci`: Changes to CI configuration files and scripts
 - `chore`: Other changes that don't modify src or test files
 - `revert`: Reverts a previous commit
+- `deps`: Changes to dependencies (updating, adding, removing)
 
 ## Scope
 

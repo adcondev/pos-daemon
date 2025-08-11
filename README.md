@@ -1,3 +1,5 @@
+![CI Status](https://github.com/AdConDev/pos-daemon/actions/workflows/ci.yml/badge.svg)
+
 # Instalación de drivers para impresora [EC-PM-80250](https://eclinepos.com/Producto.php?categoria=Impresoras&&buscar=EC-PM-80250) en Windows 10/11
 
 Este documento describe de forma clara y estructurada los pasos necesarios para instalar y configurar los drivers de la impresora térmica **EC‑PM‑80250** en Windows 10 y Windows 11.
@@ -53,4 +55,14 @@ Este documento describe de forma clara y estructurada los pasos necesarios para 
 - Si trabajas en Windows 10 y necesitas instalar un driver sin certificado, consulta estos tutoriales:
     - [Video 1](https://www.youtube.com/watch?v=dEx-A-1ti_8&&ab_channel=SolucionesPOS)
     - [Video 2](https://www.youtube.com/watch?v=DtAIu2Is1nE&&t=320s&&ab_channel=INTSTORE)
+
+## 🛠️ Contribuir
+
+¿Interesado en contribuir? Por favor lee:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Flujo de trabajo y convenciones
+- [SETUP.md](SETUP.md) - Configuración de entorno
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Reglas de participación
+
+El proyecto utiliza Conventional Commits y SemVer para versionado automático.
 
