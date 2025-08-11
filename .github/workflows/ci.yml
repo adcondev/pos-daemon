@@ -76,8 +76,6 @@ jobs:
           args: --timeout=3m  # 3 min es suficiente para proyectos pequeños
           only-new-issues: true  # Solo muestra issues nuevos en PRs
           skip-cache: false  # La action maneja su propio cache eficientemente
-          skip-build-cache: false
-          skip-pkg-cache: false
 
       # Build final para validar
       - name: Build
