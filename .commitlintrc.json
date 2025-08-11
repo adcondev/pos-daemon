@@ -10,11 +10,9 @@
         "feat",
         "fix",
         "docs",
-        "style",
         "refactor",
         "perf",
         "test",
-        "build",
         "ci",
         "chore",
         "deps",
@@ -33,6 +31,11 @@
     "type-empty": [
       2,
       "never"
+    ],
+    "header-max-length": [
+      2,
+      "always",
+      72
     ]
   }
 }

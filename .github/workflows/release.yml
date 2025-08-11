@@ -10,17 +10,15 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    # Skip si el commit ya es de release o tiene [skip ci]
+    # Skip si ya es un commit de release
     if: |
       !contains(github.event.head_commit.message, 'chore(release)') &&
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip release]')
+      !contains(github.event.head_commit.message, '[skip ci]')
 
     steps:
       - name: Checkout
@@ -29,90 +27,65 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Configurar git para commits
       - name: Setup Git
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # Setup Node para las herramientas de versionado
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # Instalar standard-version globalmente
-      - name: Install release tools
+      - name: Install standard-version
         run: npm install -g standard-version
 
-      # Detectar el tipo de cambio basado en commits
-      - name: Analyze commits and determine release type
-        id: analyze
+      # Análisis simple de commits
+      - name: Check if release needed
+        id: check
         run: |
-          # Obtener el último tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
           
-          # Analizar commits desde el último tag
-          FEAT_COUNT=$(git log $LAST_TAG..HEAD --pretty=format:"%s" | grep -c "^feat" || true)
-          FIX_COUNT=$(git log $LAST_TAG..HEAD --pretty=format:"%s" | grep -c "^fix" || true)
-          BREAKING_COUNT=$(git log $LAST_TAG..HEAD --pretty=format:"%B" | grep -c "BREAKING CHANGE" || true)
+          # Contar tipos de commits
+          COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"%s")
           
-          # Determinar si necesitamos release
-          if [ "$BREAKING_COUNT" -gt 0 ]; then
-            echo "release_type=major" >> $GITHUB_OUTPUT
+          if echo "$COMMITS" | grep -q "^feat\|^fix\|^perf\|BREAKING CHANGE"; then
             echo "should_release=true" >> $GITHUB_OUTPUT
-          elif [ "$FEAT_COUNT" -gt 0 ]; then
-            echo "release_type=minor" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-          elif [ "$FIX_COUNT" -gt 0 ]; then
-            echo "release_type=patch" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
+          
+            # Determinar tipo de release
+            if echo "$COMMITS" | grep -q "BREAKING CHANGE\|^[a-z]*!:"; then
+              echo "release_type=major" >> $GITHUB_OUTPUT
+            elif echo "$COMMITS" | grep -q "^feat"; then
+              echo "release_type=minor" >> $GITHUB_OUTPUT
+            else
+              echo "release_type=patch" >> $GITHUB_OUTPUT
+            fi
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No hay cambios que requieran release" >> $GITHUB_STEP_SUMMARY
+            echo "📝 No changes requiring release" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          # Resumen para el PR
-          echo "## 📊 Análisis de Commits" >> $GITHUB_STEP_SUMMARY
-          echo "- 🚀 Features: $FEAT_COUNT" >> $GITHUB_STEP_SUMMARY
-          echo "- 🐛 Fixes: $FIX_COUNT" >> $GITHUB_STEP_SUMMARY
-          echo "- 💥 Breaking: $BREAKING_COUNT" >> $GITHUB_STEP_SUMMARY
 
-      # Generar release si es necesario
-      - name: Generate release
-        if: steps.analyze.outputs.should_release == 'true'
-        id: version
+      # Generar release
+      - name: Create Release
+        if: steps.check.outputs.should_release == 'true'
+        id: release
         run: |
-          # Ejecutar standard-version con el tipo detectado
-          standard-version --release-as ${{ steps.analyze.outputs.release_type }} --skip.tag
+          # Generar version y changelog
+          standard-version --release-as ${{ steps.check.outputs.release_type }}
           
-          # Obtener la nueva versión
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          # Obtener nueva versión
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-          # Crear el tag
-          git tag -a "v$NEW_VERSION" -m "chore(release): v$NEW_VERSION"
-          
-          # Push cambios y tags
+          # Push con tags
           git push --follow-tags origin main
 
       # Crear GitHub Release
-      - name: Create GitHub Release
-        if: steps.analyze.outputs.should_release == 'true'
+      - name: GitHub Release
+        if: steps.check.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.new_version }}
-          name: Release v${{ steps.version.outputs.new_version }}
+          tag_name: v${{ steps.release.outputs.version }}
+          name: v${{ steps.release.outputs.version }}
           body_path: CHANGELOG.md
-          generate_release_notes: false  # Usamos nuestro CHANGELOG
-          make_latest: true
-
-      # Notificar en el summary
-      - name: Release summary
-        if: steps.analyze.outputs.should_release == 'true'
-        run: |
-          echo "## ✅ Release Creado" >> $GITHUB_STEP_SUMMARY
-          echo "**Versión:** v${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Tipo:** ${{ steps.analyze.outputs.release_type }}" >> $GITHUB_STEP_SUMMARY
-          echo "[Ver Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.new_version }})" >> $GITHUB_STEP_SUMMARY
+          generate_release_notes: false

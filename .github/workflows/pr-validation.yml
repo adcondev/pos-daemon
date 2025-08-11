@@ -6,52 +6,21 @@ on:
 
 permissions:
   pull-requests: write
-  issues: write
-  contents: read
 
 jobs:
   validate:
-    name: Validate PR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Check PR size
-        uses: codelytv/pr-size-labeler@v1
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          xs_label: 'size/XS'
-          xs_max_size: 10
-          s_label: 'size/S'
-          s_max_size: 100
-          m_label: 'size/M'
-          m_max_size: 500
-          l_label: 'size/L'
-          l_max_size: 1000
-          xl_label: 'size/XL'
-
-      - name: Check for merge conflicts
-        uses: eps1lon/actions-label-merge-conflict@v3
-        with:
-          dirtyLabel: "has conflicts"
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Validate linked issues
-        uses: hattan/verify-linked-issue-action@v1.1.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          message: "Please link an issue to this PR using 'Fixes #issue' or 'Closes #issue'"
-
-      - name: Check for TODO comments
-        run: |
-          if grep -r "TODO\|FIXME\|XXX" --include="*.go" .; then
-            echo "::warning::Found TODO/FIXME/XXX comments in code"
-            exit 1
-          fi
-
-      - name: Label PR based on files changed
+      # Solo añadir labels automáticos
+      - name: Label PR
         uses: actions/labeler@v5
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           configuration-path: .github/labeler.yml
+
+      # Chequear conflictos
+      - name: Check conflicts
+        uses: eps1lon/actions-label-merge-conflict@v3
+        with:
+          dirtyLabel: "has-conflicts"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"

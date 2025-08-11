@@ -93,5 +93,3 @@ Breaking changes MUST be indicated in one of two ways:
 
 When presented with code changes, first identify the primary purpose of the change to select the appropriate type and
 scope, then follow this format to generate a conventional commit message.
-
-```

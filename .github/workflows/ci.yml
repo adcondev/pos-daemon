@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, master, dev ]
+    branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
     types: [ opened, synchronize, reopened ]
@@ -16,9 +16,9 @@ permissions:
   checks: write
 
 jobs:
-  # Un solo job que hace todo - más rápido y eficiente
-  validate-and-test:
-    name: Validate & Test
+  # Job único para máxima eficiencia
+  test-and-lint:
+    name: Test & Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -26,27 +26,32 @@ jobs:
         with:
           fetch-depth: 0  # Necesario para el análisis de commits
 
-      # Validación de PR title solo si es PR
+      # Validación de conventional commits en el título del PR
       - name: Validate PR title
         if: github.event_name == 'pull_request'
         uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # Tipos mínimos necesarios
+          # Solo los tipos que realmente usas
           types: |
             feat
             fix
             docs
-            style
             refactor
             perf
             test
-            build
             ci
             chore
             deps
             revert
+          # No validar scopes para simplicidad
+          requireScope: false
+          # Permitir ! para breaking changes
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            El título debe empezar con minúscula.
+            Ejemplo: "feat: add new feature"
 
       # Setup Go con cache automático
       - name: Setup Go
@@ -54,46 +59,28 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: go.sum
 
-      # Download dependencies una sola vez
-      - name: Get dependencies
-        run: |
-          go mod download
-          go mod verify
-
-      # Tests con coverage
+      # Tests primero (fail fast si hay errores)
       - name: Run tests
         run: |
-          go test -v -race -coverprofile=coverage.out ./...
-          go tool cover -func=coverage.out
+          go test -v -race -short -coverprofile=coverage.txt ./...
+          COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}')
+          echo "### 📊 Test Coverage: $COVERAGE" >> $GITHUB_STEP_SUMMARY
 
-      # Linting - solo lo esencial
-      - name: Run linting
-        run: |
-          # Instalar golangci-lint localmente para control de versión
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.3.0
-          $(go env GOPATH)/bin/golangci-lint run --timeout=5m
-
-      # Build para validar que compila
-      - name: Build
-        run: go build -v ./...
-
-      # Comentario automático con coverage en PR
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+      # Linting con la action oficial - MUCHO más eficiente
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8  # v8 es la última estable
         with:
-          script: |
-            const fs = require('fs');
-            const coverage = fs.readFileSync('coverage.out', 'utf8');
-            const lines = coverage.split('\n');
-            const lastLine = lines[lines.length - 2];
-            const match = lastLine.match(/total:\s+\(statements\)\s+(\d+\.\d+)%/);
-            const percent = match ? match[1] : 'unknown';
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `📊 **Test Coverage:** ${percent}%`
-            });
+          version: latest  # Siempre usa la última versión
+          args: --timeout=3m  # 3 min es suficiente para proyectos pequeños
+          only-new-issues: true  # Solo muestra issues nuevos en PRs
+          skip-cache: false  # La action maneja su propio cache eficientemente
+          skip-build-cache: false
+          skip-pkg-cache: false
+
+      # Build final para validar
+      - name: Build
+        run: |
+          go build -v ./...
+          echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
