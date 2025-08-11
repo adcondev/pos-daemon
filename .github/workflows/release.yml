@@ -78,7 +78,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
           # Push con tags
-          git push --follow-tags origin main
+          git push --follow-tags origin $GITHUB_REF_NAME
 
       # Crear GitHub Release
       - name: GitHub Release
