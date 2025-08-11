@@ -8,9 +8,9 @@ and follow the specification below.
 ## Format
 
 ```
-<type>[(optional scope)][!]: <description>
+<type>[(scope)][!]: <description>
 
-[optional body]
+[body]
 
 [optional footer(s)]
 ```
@@ -29,7 +29,7 @@ and follow the specification below.
 - `chore`: Other changes that don't modify src or test files
 - `revert`: Reverts a previous commit
 
-## Optional Scope
+## Scope
 
 Scope MUST be a noun describing a section of the codebase surrounded by parentheses. Common scopes include:
 
@@ -81,41 +81,6 @@ Breaking changes MUST be indicated in one of two ways:
     - `Refs: #456`
     - `BREAKING CHANGE: description of breaking change`
 
-## Examples
-
-### Simple feature
-
-```
-feat(auth): add OAuth2 authentication support
-```
-
-### Bug fix with scope
-
-```
-fix(printer): correct paper feed calculation
-```
-
-### Feature with breaking change
-
-```
-feat(api)!: remove deprecated endpoints
-
-All v1 API endpoints have been removed as previously announced.
-Users should migrate to v2 API endpoints.
-
-BREAKING CHANGE: v1 API is no longer available
-```
-
-### Documentation update with body
-
-```
-docs(readme): update installation instructions
-
-- Add Docker setup
-- Update minimum requirements
-- Fix typos in configuration section
-```
-
 ## Instructions for AI
 
 1. Analyze the code changes to determine the correct type and scope
@@ -128,5 +93,3 @@ docs(readme): update installation instructions
 
 When presented with code changes, first identify the primary purpose of the change to select the appropriate type and
 scope, then follow this format to generate a conventional commit message.
-
-```

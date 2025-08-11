@@ -1,37 +1,25 @@
 module.exports = {
+    // Solo mostrar lo importante en el changelog
     types: [
         {type: "feat", section: "✨ Features"},
         {type: "fix", section: "🐛 Bug Fixes"},
-        {type: "docs", section: "📚 Documentation"},
-        {type: "chore", section: "🔧 Maintenance"},
-        {type: "style", section: "💄 Style Changes"},
-        {type: "refactor", section: "♻️ Code Refactoring"},
-        {type: "perf", section: "⚡ Performance Improvements"},
-        {type: "test", section: "✅ Testing"}
+        {type: "perf", section: "⚡ Performance"},
+        {type: "deps", section: "📦 Dependencies"},
+        {type: "revert", section: "⏪ Reverts"},
+        // El resto se oculta
+        {type: "docs", hidden: true},
+        {type: "style", hidden: true},
+        {type: "refactor", hidden: true},
+        {type: "test", hidden: true},
+        {type: "chore", hidden: true},
+        {type: "ci", hidden: true},
+        {type: "build", hidden: true}
     ],
-    commitUrlFormat: "https://github.com/AdConDev/yalemi-api/commit/{{hash}}",
-    compareUrlFormat: "https://github.com/AdConDev/yalemi-api/compare/{{previousTag}}...{{currentTag}}",
-    releaseCommitMessageFormat: "chore(release): {{currentTag}} [skip ci]",
-    scopes: [
-        "encoding",
-        "connector",
-        "printer",
-        "imaging",
-        "profiles",
-        "protocol",
-        "escpos",
-        "errors",
-        "logs",
-        "config",
-        "api",
-        "models",
-        "service",
-        "utils",
-        "github"
-    ],
-    noteKeywords: [
-        "BREAKING CHANGE",
-        "BREAKING CHANGES",
-        "BREAKING"
-    ]
+
+    // Configuración de GitHub
+    commitUrlFormat: "https://github.com/AdConDev/pos-daemon/commit/{{hash}}",
+    compareUrlFormat: "https://github.com/AdConDev/pos-daemon/compare/{{previousTag}}...{{currentTag}}",
+
+    // Skip CI en commits de release
+    releaseCommitMessageFormat: "chore(release): v{{currentTag}} [skip ci]"
 };

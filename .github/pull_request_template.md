@@ -1,29 +1,30 @@
-## Description
+## Descripción
 
-<!-- Describe your changes in detail -->
+<!-- ¿Qué cambia este PR? -->
 
-## Type of change
+## Tipo de cambio
 
-<!-- Please delete options that are not relevant. -->
+- [ ] 🐛 Bug fix
+- [ ] ✨ Nueva funcionalidad
+- [ ] 📚 Solo documentación
+- [ ] 🔧 Configuración
+- [ ] ♻️ Refactoring
+- [ ] 📦 Dependencias
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] Refactor (non-breaking change which improves the codebase without changing functionality)
-- [ ] Github Configuration and Scripts (non-breaking change which improves the CI/CD configuration or scripts)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update (non-breaking change which improves the documentation)
-- [ ] Other (please describe):
+## ¿Cómo se ha probado?
 
-## How Has This Been Tested?
+<!-- Marca lo que aplique -->
 
-<!-- Please describe the tests that you ran to verify your changes. -->
+- [ ] Tests automáticos pasan
+- [ ] Probado manualmente
+- [ ] N/A (solo docs/config)
 
-## Checklist:
+## Checklist
 
-<!-- Put an `x` in all the boxes that apply. -->
+- [ ] El código sigue las convenciones del proyecto
+- [ ] Los tests pasan localmente
+- [ ] He actualizado la documentación si era necesario
 
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
+## Notas adicionales
+
+<!-- Algo más que debamos saber? -->
