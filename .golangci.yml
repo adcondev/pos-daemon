@@ -5,10 +5,6 @@ run:
   tests: true
   build-tags:
     - integration
-  skip-dirs:
-    - vendor
-    - .git
-    - .github
 
 linters:
   # Solo habilitar los esenciales
@@ -19,48 +15,12 @@ linters:
     - staticcheck  # El mejor linter general
     - ineffassign  # Variables no usadas
     - gosec        # Seguridad básica
-    - unused
-
-  # Deshabilitamos todo lo demás para rapidez
-  disable-all: true
-
-
-errcheck:
-  check-type-assertions: true
-  check-blank: true
-
-gosec:
-  severity: medium
-  confidence: medium
-  excludes:
-    - G104  # Unhandled errors (ya lo cubre errcheck)
-
-govet:
-  enable-all: false  # Solo checks esenciales
-  enable:
-    - shadow
-    - structtag
+    - unused      # Código no usado
 
 issues:
-  # Excluir ruido común
-  exclude-rules:
-    # Ignorar en tests
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    
-    # Ignorar en main.go (manejo de errores del programa principal)
-    - path: cmd/.*\.go
-      linters:
-        - errcheck
-
   # Límites razonables
   max-issues-per-linter: 50
   max-same-issues: 10
-  
-  # Excluir issues comunes que no son problemas reales
-  exclude-use-default: true
   
   # Para PRs, solo mostrar issues nuevos
   new: true
