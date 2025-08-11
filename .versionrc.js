@@ -6,13 +6,13 @@ module.exports = {
         {type: "perf", section: "⚡ Performance"},
         {type: "deps", section: "📦 Dependencies"},
         {type: "revert", section: "⏪ Reverts"},
-        {type: "docs", section: "📝 Documentation"},
-        {type: "style", section: "🎨 Styles"},
-        {type: "refactor", section: "🔨 Refactoring"},
         {type: "test", section: "✅ Tests"},
-        {type: "chore", hidden: true},
         {type: "ci", section: "🤖 Continuous Integration"},
-        {type: "build", section: "🏗️ Build System"}
+        {type: "build", section: "🏗️ Build System"},
+        {type: "style", hidden: true},
+        {type: "refactor", hidden: true},
+        {type: "chore", hidden: true},
+        {type: "docs", hidden: true},
     ],
 
     // Configuración de GitHub

@@ -43,6 +43,8 @@ go.work.sum
 !go.mod
 
 !README.md
+!CONTRIBUTING.md
+!SETUP.md
 !LICENSE
 
 !*.php
