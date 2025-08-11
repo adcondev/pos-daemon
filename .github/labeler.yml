@@ -5,6 +5,7 @@ documentation:
       - any-glob-to-any-file:
           - '**/*.md'
           - 'docs/**'
+          - '**/doc.go'
 
 github:
   - changed-files:
@@ -24,7 +25,27 @@ connector:
 
 printer:
   - changed-files:
-      - any-glob-to-any-file: '**/printer/**'
+      - any-glob-to-any-file: '**/posprinter/**'
+
+image:
+  - changed-files:
+      - any-glob-to-any-file: '**/image/**'
+
+profile:
+  - changed-files:
+      - any-glob-to-any-file: '**/profile/**'
+
+protocol:
+  - changed-files:
+      - any-glob-to-any-file: '**/protocol/**'
+
+types:
+  - changed-files:
+      - any-glob-to-any-file: '**/types/**'
+
+utils:
+  - changed-files:
+      - any-glob-to-any-file: '**/utils/**'
 
 dependencies:
   - changed-files:
