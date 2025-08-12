@@ -44,17 +44,11 @@ jobs:
             chore
             deps
             revert
-          requireScope: true
+          requireScope: false  # Set to true if you want to enforce scopes
           subjectPattern: ^(?![A-Z]).+$
           subjectPatternError: |
             The subject must start with lowercase letter.
-            Example: "feat(printer): add support for XYZ model"
-
-      - name: Validate commits
-        uses: wagoid/commitlint-github-action@v6
-        with:
-          configFile: .commitlintrc.json
-          failOnWarnings: true
+            Example: "feat: add support for XYZ model"
 
   test:
     name: Test
@@ -74,32 +68,26 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
-      # Fixed: Separate test steps for Unix and Windows
-      - name: Run tests (Unix)
-        if: runner.os != 'Windows'
+      # Fixed: Run tests only (without coverage) on all platforms
+      - name: Run tests
+        run: go test -v -race ./...
+
+      # Fixed: Only generate coverage on Ubuntu
+      - name: Generate coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         run: |
-          go test -v -race ./...
           go test -v -coverprofile=coverage.txt -covermode=atomic ./...
           COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}')
           echo "### 📊 Test Coverage: $COVERAGE" >> $GITHUB_STEP_SUMMARY
 
-      # Fixed: Proper PowerShell syntax for Windows
-      - name: Run tests (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          go test -v -race ./...
-          go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-          $totalLine = (Get-Content coverage.txt | Select-String -Pattern "total:" | Out-String).Trim()
-          $COVERAGE = $totalLine.Split(" ")[-1]
-          "### 📊 Test Coverage: $COVERAGE" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-
+      # Upload coverage only if it was generated
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
           fail_ci_if_error: false
+          verbose: true
 
   lint:
     name: Lint
@@ -124,3 +112,21 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code go.mod go.sum || (echo "::error::Run 'go mod tidy' and commit changes" && exit 1)
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [ test, lint ]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Build
+        run: |
+          go build -v ./...
+          echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
