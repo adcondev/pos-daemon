@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/AdConDev/pos-daemon/compare/v0.1.3...v0.2.0) (2025-08-12)
+
+
+### 🐛 Bug Fixes
+
+* repaired powershell commands in action ([e8bfd14](https://github.com/AdConDev/pos-daemon/commit/e8bfd14cd82f582bbe6a22a4b6d82eda3caee8b8))
+* repaired powershell commands in action ([67fd2cf](https://github.com/AdConDev/pos-daemon/commit/67fd2cffaecce2596c48b76353180478c6e71f5e))
+
+
+### 🤖 Continuous Integration
+
+* bump actions/checkout from 4 to 5 ([9982a05](https://github.com/AdConDev/pos-daemon/commit/9982a05930e35e2e27ad9badda0a4967db0d7434))
+* bump actions/checkout from 4 to 5 ([77bcf3b](https://github.com/AdConDev/pos-daemon/commit/77bcf3b695143aeffd1cefdfcb34f4cc90042d4e))
+* **github:** enhance ci configuration with validation and security checks ([0eb8d1d](https://github.com/AdConDev/pos-daemon/commit/0eb8d1d8ceaa610879c1c758677f69c9245b14bf))
+* **github:** enhance CI configuration with validation and security checks ([101cbe9](https://github.com/AdConDev/pos-daemon/commit/101cbe927651d8888dd6de722a102a2999c578c3))
+* **github:** update commitlint configuration for improved validation ([458a5b5](https://github.com/AdConDev/pos-daemon/commit/458a5b507230e6bb445917f362b5c5cf5fa85380))
+* **release:** enhance release workflow and analysis ([650c91e](https://github.com/AdConDev/pos-daemon/commit/650c91e5237e59e1c805dc75a98cf53eea6d70ef))
+* update ci configuration for improved validation ([0d27193](https://github.com/AdConDev/pos-daemon/commit/0d27193c9a3df587265a2aa3117363e0007010cf))
+
+
+### ✨ Features
+
+* **github:** add new issue and PR templates ([8107765](https://github.com/AdConDev/pos-daemon/commit/8107765c9cc34c7374fbaa498441d0b975a34b99))
+
 ### [0.1.3](https://github.com/AdConDev/pos-daemon/compare/v0.1.2...v0.1.3) (2025-08-12)
 
 
