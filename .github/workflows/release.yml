@@ -1,4 +1,4 @@
-name: Auto Release
+name: Release
 
 on:
   push:
@@ -10,22 +10,32 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  issues: write
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    # Skip si ya es un commit de release
     if: |
       !contains(github.event.head_commit.message, 'chore(release)') &&
-      !contains(github.event.head_commit.message, '[skip ci]')
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip release]')
 
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+        continue-on-error: true
+
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
 
       - name: Setup Git
         run: |
@@ -36,56 +46,93 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install standard-version
-        run: npm install -g standard-version
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
-      # Análisis simple de commits
-      - name: Check if release needed
-        id: check
+      - name: Install dependencies
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          npm install -g standard-version@latest
+          npm install -g @commitlint/cli@latest @commitlint/config-conventional@latest
+
+      - name: Analyze commits
+        id: analyze
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           
-          # Contar tipos de commits
-          COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"%s")
+          # Get commit count since last tag
+          COMMIT_COUNT=$(git rev-list $LATEST_TAG..HEAD --count)
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
           
-          if echo "$COMMITS" | grep -q "^feat\|^fix\|^perf\|BREAKING CHANGE"; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
-          
-            # Determinar tipo de release
-            if echo "$COMMITS" | grep -q "BREAKING CHANGE\|^[a-z]*!:"; then
-              echo "release_type=major" >> $GITHUB_OUTPUT
-            elif echo "$COMMITS" | grep -q "^feat"; then
-              echo "release_type=minor" >> $GITHUB_OUTPUT
-            else
-              echo "release_type=patch" >> $GITHUB_OUTPUT
-            fi
-          else
+          if [ "$COMMIT_COUNT" -eq 0 ]; then
+            echo "No new commits since $LATEST_TAG"
             echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "📝 No changes requiring release" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          
+          # Analyze commit types
+          COMMITS=$(git log $LATEST_TAG..HEAD --pretty=format:"%s")
+          
+          # Check for breaking changes
+          if echo "$COMMITS" | grep -qE "(BREAKING CHANGE|^[a-z]+(\(.+\))?!:)"; then
+            echo "release_type=major" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          # Check for features
+          elif echo "$COMMITS" | grep -q "^feat"; then
+            echo "release_type=minor" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          # Check for fixes or dependency updates
+          elif echo "$COMMITS" | grep -qE "^(fix|perf|deps)"; then
+            echo "release_type=patch" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "No releasable changes found"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Generate summary
+          echo "## 📊 Commit Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- Latest tag: $LATEST_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- Commits since last release: $COMMIT_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- Release needed: ${{ steps.analyze.outputs.should_release }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.analyze.outputs.should_release }}" = "true" ]; then
+            echo "- Release type: ${{ steps.analyze.outputs.release_type }}" >> $GITHUB_STEP_SUMMARY
           fi
 
-      # Generar release
       - name: Create Release
-        if: steps.check.outputs.should_release == 'true'
+        if: steps.analyze.outputs.should_release == 'true'
         id: release
         run: |
-          # Generar version y changelog
-          standard-version --release-as ${{ steps.check.outputs.release_type }}
+          # Run standard-version
+          standard-version --release-as ${{ steps.analyze.outputs.release_type }}
           
-          # Obtener nueva versión
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Get the new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           
-          # Push con tags
-          git push --follow-tags origin $GITHUB_REF_NAME
+          # Commit and push
+          git push --follow-tags origin ${{ github.ref_name }}
 
-      # Crear GitHub Release
-      - name: GitHub Release
-        if: steps.check.outputs.should_release == 'true'
+      - name: Create GitHub Release
+        if: steps.analyze.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.release.outputs.version }}
-          name: v${{ steps.release.outputs.version }}
+          tag_name: v${{ steps.release.outputs.new_version }}
+          name: Release v${{ steps.release.outputs.new_version }}
           body_path: CHANGELOG.md
           generate_release_notes: false
+          make_latest: true
+
+      - name: Update Go Module Proxy
+        if: steps.analyze.outputs.should_release == 'true'
+        run: |
+          curl -X POST "https://proxy.golang.org/pos-daemon.adcon.dev/@v/v${{ steps.release.outputs.new_version }}.info"
+        continue-on-error: true
