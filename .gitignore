@@ -46,8 +46,6 @@ go.work.sum
 !CONTRIBUTING.md
 !CHANGELOG.md
 !CODE_OF_CONDUCT.md
-!DEVELOPMENT.md
-!SETUP.md
 !LICENSE
 
 !*.php

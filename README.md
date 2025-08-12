@@ -61,7 +61,6 @@ Este documento describe de forma clara y estructurada los pasos necesarios para 
 ¿Interesado en contribuir? Por favor lee:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Flujo de trabajo y convenciones
-- [SETUP.md](SETUP.md) - Configuración de entorno
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Reglas de participación
 
 El proyecto utiliza Conventional Commits y SemVer para versionado automático.

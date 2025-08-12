@@ -1,210 +1,269 @@
-# Guía de Contribución y Desarrollo
+# Development Workflow Guide
 
-## 📚 Introducción
+## Overview
 
-Este repositorio utiliza un sistema automatizado de CI/CD basado en GitHub Actions. El flujo de trabajo está diseñado
-para ser simple pero efectivo, permitiendo releases automáticos basados en conventional commits sin intervención manual.
-Esta guía explica cómo funciona todo y cómo trabajar con el sistema.
+This document describes the development workflow for the pos-daemon project. We follow a pull request-based workflow
+with automated CI/CD, conventional commits, and semantic versioning.
 
-## 🚀 Flujo de Trabajo
+## Workflow Principles
 
-### Desarrollo Individual
+1. **All changes go through pull requests** - Direct pushes to main/master are disabled
+2. **Conventional commits are mandatory** - Ensures automatic versioning and changelog generation
+3. **CI must pass** - All tests, linting, and security checks must pass before merging
+4. **Code review is required** - At least one approval needed (except for dependabot patches)
+
+## Development Process
+
+### 1. Setting Up Your Environment
 
 ```bash
-# 1. Clonar el repositorio
+# Clone the repository
 git clone https://github.com/AdConDev/pos-daemon.git
 cd pos-daemon
 
-# 2. Instalar dependencias
-go mod download
+# Install Go (1.23 or later)
+# See: https://golang.org/doc/install
 
-# 3. Hacer cambios y commits siguiendo conventional commits
-git add .
-git commit -m "feat: add new printer driver for Brand X"
-# o para fixes
-git commit -m "fix: resolve connection timeout issue"
-
-# 4. Push directo a main (solo si trabajas solo)
-git push origin master
-```
-
-Al hacer push a `master`, el sistema:
-
-1. Ejecutará pruebas y linting
-2. Detectará el tipo de cambio (feat, fix, etc.)
-3. Actualizará automáticamente la versión y el changelog
-4. Creará una nueva release en GitHub
-
-### Desarrollo en Equipo
-
-```bash
-# 1. Crear una rama para tu característica/fix
-git checkout -b feat/new-feature
-
-# 2. Hacer cambios y commits siguiendo conventional commits
-git add .
-git commit -m "feat: add new feature"
-
-# 3. Push a tu rama
-git push origin feat/new-feature
-
-# 4. Crear Pull Request a través de GitHub UI
-# El título del PR debe seguir conventional commits
-```
-
-## 📝 Conventional Commits
-
-El proyecto utiliza [Conventional Commits](https://www.conventionalcommits.org/) para automatizar la generación de
-versiones y changelog.
-
-### Tipos de Commit Principales
-
-| Tipo       | Descripción                       | ¿Genera Release? |
-|------------|-----------------------------------|------------------|
-| `feat`     | Nuevas características            | Minor (0.X.0)    |
-| `fix`      | Correcciones de bugs              | Patch (0.0.X)    |
-| `feat!`    | Cambios que rompen compatibilidad | Major (X.0.0)    |
-| `docs`     | Solo documentación                | No               |
-| `refactor` | Refactorización de código         | No               |
-| `test`     | Añadir/modificar tests            | No               |
-| `chore`    | Tareas de mantenimiento           | No               |
-| `deps`     | Actualizaciones de dependencias   | Patch (0.0.X)    |
-
-### Ejemplos
-
-```
-feat: add support for Epson TM-T88VI printer
-fix: prevent connection timeout on slow networks
-feat!: change printer configuration API format
-docs: update installation instructions
-deps: update golang.org/x/text to v0.14.0
-```
-
-## 🔍 Linters y Calidad de Código
-
-El proyecto usa [golangci-lint](https://golangci-lint.run/) con una configuración simplificada para mantener la calidad
-del código.
-
-### Linters Habilitados
-
-- **errcheck**: Detecta errores no manejados
-- **govet**: Encuentra bugs potenciales
-- **staticcheck**: Analizador estático general
-- **ineffassign**: Variables asignadas pero no usadas
-- **gosec**: Detección de problemas de seguridad
-- **unused**: Detecta código no utilizado
-
-### Cómo Ejecutar el Linter Localmente
-
-```bash
-# Instalar golangci-lint
+# Install development tools
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+npm install -g @commitlint/cli @commitlint/config-conventional
 
-# Ejecutar linting
-golangci-lint run
+# Verify setup
+go version
+golangci-lint version
+commitlint --version
 ```
 
-### Notas Importantes sobre Linting
+### 2. Creating a Feature Branch
 
-- La configuración está en `.golangci.yml` y es deliberadamente minimalista
-- Solo fallarán issues importantes, no cuestiones de estilo subjetivas
-- Si necesitas ignorar una regla específica en una línea, usa: `//nolint:lintername`
+```bash
+# Always branch from the latest main/master
+git checkout main
+git pull origin main
 
-## 🏷️ Versionado y Releases
+# Create a feature branch
+# Use prefixes: feat/, fix/, docs/, refactor/, test/, ci/
+git checkout -b feat/add-new-printer-support
 
-El proyecto utiliza [SemVer](https://semver.org/) con releases automáticos:
+# For bugs
+git checkout -b fix/connection-timeout-issue
+```
 
-- **Major (1.0.0)**: Cambios incompatibles - commits con `!` o `BREAKING CHANGE`
-- **Minor (0.1.0)**: Nuevas características - commits con `feat:`
-- **Patch (0.0.1)**: Correcciones y mejoras - commits con `fix:` o `deps:`
+### 3. Making Changes
 
-### Generación Automática de Changelog
+Follow these guidelines:
 
-El changelog se genera automáticamente basado en los mensajes de commit. Solo aparecerán en el changelog los tipos:
+1. **Write tests first** (TDD approach)
+2. **Keep commits atomic** - One logical change per commit
+3. **Run tests locally** before pushing:
+   ```bash
+   go test -race -cover ./...
+   golangci-lint run
+   ```
 
-- ✨ Features
-- 🐛 Bug Fixes
-- ⚡ Performance
-- 📦 Dependencies
-- ⏪ Reverts
-- ✅ Tests
-- 🤖 Continuous Integration
-- 🏗️ Build System
+### 4. Committing Changes
 
-Los otros tipos (docs, refactor, etc.) se ocultan para mantener el changelog enfocado en cambios relevantes para
-usuarios.
+We use [Conventional Commits](https://www.conventionalcommits.org/):
 
-## ⚠️ Qué Evitar
+```bash
+# Feature
+git commit -m "feat(printer): add support for Epson TM-T88VII"
 
-1. **No hacer bypass de las protecciones de rama**: Las reglas están ahí por una razón
-2. **No incluir contraseñas o tokens en el código**: Usa variables de entorno
-3. **No hacer push directo a `main` si hay más colaboradores**: Siempre usa PR
-4. **No ignorar los errores del linter**: Arregla los problemas reales
-5. **No crear releases manualmente**: Deja que el sistema las genere automáticamente
+# Bug fix
+git commit -m "fix(connector): resolve timeout on slow networks"
 
-## ✅ Mejores Prácticas
+# Breaking change (triggers major version)
+git commit -m "feat(api)!: redesign printer configuration interface"
 
-1. **Usar branches por característica**: `feat/nombre`, `fix/problema`
-2. **Commits atómicos**: Un commit por cambio lógico
-3. **PR pequeños**: Más fáciles de revisar, menos propensos a errores
-4. **Tests para todo**: Mantén el coverage alto
-5. **Documentar APIs**: Comenta funciones exportadas siguiendo las convenciones de Go
+# With scope
+git commit -m "docs(readme): update installation instructions"
 
-## 🔄 Dependabot
+# With body and footer
+git commit -m "fix(encoding): handle UTF-8 characters properly
 
-El proyecto tiene Dependabot configurado para:
+This fixes an issue where special characters were not being
+encoded correctly for certain printer models.
 
-- Actualizar dependencias Go semanalmente (lunes)
-- Actualizar GitHub Actions mensualmente
-- Auto-merge de actualizaciones patch seguras
-- Agrupar actualizaciones de golang.org/x/* para minimizar PRs
+Fixes #123"
+```
 
-Si una actualización falla los tests, **no la mergees manualmente** sin resolver los problemas.
+### 5. Creating a Pull Request
 
-## 🧰 Estructura de Workflows
+1. Push your branch:
+   ```bash
+   git push origin feat/your-feature
+   ```
 
-| Workflow                   | Propósito                                      |
-|----------------------------|------------------------------------------------|
-| `ci.yml`                   | Ejecuta tests y linting en push/PRs            |
-| `release.yml`              | Genera releases automáticas basadas en commits |
-| `dependabot-automerge.yml` | Auto-merge para actualizaciones seguras        |
-| `pr-validation.yml`        | Valida y etiqueta PRs automáticamente          |
+2. Go to GitHub and create a PR
 
-## 📄 Branch Protection
+3. **PR Title MUST follow conventional commits format**:
+    - ✅ `feat: add support for new printer model`
+    - ✅ `fix: resolve connection timeout issue`
+    - ❌ `Added new feature` (wrong format)
+    - ❌ `Fix bug` (too vague)
 
-La rama `main` está protegida con:
+4. Fill out the PR template completely
 
-- Revisión obligatoria de PRs
-- Tests y linting pasando
-- Firma de commits requerida
-- No push directo (excepto bots)
+5. Wait for CI checks to pass
 
-## 🤝 Notas para Equipos
+### 6. Code Review Process
 
-Esta configuración es independiente del código Go del proyecto, pudiéndose aplicar a cualquier proyecto Go con mínimos
-ajustes. Las ventajas de esta aproximación son:
+- **Authors**: Respond to feedback promptly
+- **Reviewers**:
+    - Check for bugs, performance issues, and maintainability
+    - Ensure tests are adequate
+    - Verify conventional commit format
+    - Be constructive and specific
 
-1. **Consistencia**: Mismo flujo de trabajo en todos los proyectos
-2. **Automatización**: Menos trabajo manual, menos errores
-3. **Trazabilidad**: Historial claro de cambios
-4. **Bajo mantenimiento**: Una vez configurado, funciona sin intervención
+### 7. Merging
 
-## 🔍 Resolución de Problemas Comunes
+Once approved and CI passes:
 
-### El Release No Se Genera
+- The PR will be automatically merged using squash merge
+- The squash commit message will use the PR title (must be conventional format)
+- A release will be automatically created if the commit type triggers one
 
-- Verifica que tus commits sigan el formato correcto
-- Asegúrate de que hay al menos un commit `feat:` o `fix:` desde el último release
-- Revisa los logs del workflow `release.yml`
+## Commit Types and Versioning
 
-### Linting Falla
+| Type       | Description             | Version Bump  | Changelog |
+|------------|-------------------------|---------------|-----------|
+| `feat`     | New feature             | Minor (0.X.0) | ✅         |
+| `fix`      | Bug fix                 | Patch (0.0.X) | ✅         |
+| `docs`     | Documentation only      | None          | ❌         |
+| `style`    | Code style (formatting) | None          | ❌         |
+| `refactor` | Code refactoring        | None          | ❌         |
+| `perf`     | Performance improvement | Patch (0.0.X) | ✅         |
+| `test`     | Add/update tests        | None          | ✅         |
+| `build`    | Build system changes    | None          | ✅         |
+| `ci`       | CI/CD changes           | None          | ✅         |
+| `chore`    | Other changes           | None          | ❌         |
+| `revert`   | Revert previous commit  | Varies        | ✅         |
+| `deps`     | Dependency updates      | Patch (0.0.X) | ✅         |
 
-- Ejecuta `golangci-lint run` localmente para reproducir
-- Revisa los errores específicos en el log de CI
-- Recuerda que errores de linting son problemas reales, no solo estéticos
+**Breaking Changes**: Add `!` after type or include `BREAKING CHANGE:` in commit body → Major (X.0.0)
 
-### Tests Fallan en CI pero Pasan Localmente
+## CI/CD Pipeline
 
-- Revisa si hay dependencias en entornos o configuración local
-- Asegúrate de que no hay race conditions (`go test -race`)
-- Verifica la versión de Go (CI usa Go 1.24)
+Our CI pipeline runs on every PR and includes:
+
+1. **Validation**
+    - PR title format
+    - Commit message format
+
+2. **Testing**
+    - Unit tests on multiple OS/Go versions
+    - Race condition detection
+    - Coverage reporting
+
+3. **Code Quality**
+    - golangci-lint checks
+    - go mod tidy verification
+
+4. **Security**
+    - Gosec security scanning
+    - Trivy vulnerability scanning
+    - Dependency review
+
+5. **Automation**
+    - Auto-labeling based on files changed
+    - PR size labeling
+    - Conflict detection
+
+## Release Process
+
+Releases are **fully automated**:
+
+1. When a PR is merged to main/master
+2. The system analyzes commits since last release
+3. If releasable changes exist (feat, fix, perf):
+    - Version is bumped according to commit types
+    - CHANGELOG.md is updated
+    - Git tag is created
+    - GitHub Release is published
+    - Go module proxy is notified
+
+## Working Alone vs Team
+
+### Solo Development
+
+- You can work directly on main/master (if branch protection allows)
+- Still use conventional commits for automatic releases
+- Consider using PRs anyway for CI validation
+
+### Team Development (2+ people)
+
+- **Always use pull requests**
+- Require code reviews
+- Use branch protection rules
+- Communicate in PR comments
+- Assign PRs to reviewers
+
+## Common Scenarios
+
+### Hotfix Process
+
+```bash
+# Branch from main
+git checkout -b fix/critical-bug main
+
+# Make fix with proper commit
+git commit -m "fix: prevent data corruption on disconnect"
+
+# Push and create PR marked as urgent
+git push origin fix/critical-bug
+```
+
+### Feature Development
+
+```bash
+# Long-running feature branch
+git checkout -b feat/major-feature
+
+# Regular commits as you work
+git commit -m "feat(parser): add basic parsing logic"
+git commit -m "test(parser): add unit tests"
+git commit -m "docs(parser): add API documentation"
+
+# Keep branch updated
+git fetch origin
+git rebase origin/main
+```
+
+### Dependency Updates
+
+- Dependabot creates PRs automatically
+- Patches are auto-merged if tests pass
+- Minor/major updates require manual review
+
+## Best Practices
+
+1. **Write meaningful commit messages** - They become the changelog
+2. **Keep PRs small** - Easier to review, less risk
+3. **Update tests** - Maintain or increase coverage
+4. **Document public APIs** - Use godoc conventions
+5. **Respond to CI failures quickly** - Don't leave PRs in failed state
+6. **Use draft PRs** - For work in progress
+7. **Link issues** - Use "Fixes #123" in PR description
+
+## Troubleshooting
+
+### CI Failures
+
+1. **Linting errors**: Run `golangci-lint run` locally
+2. **Test failures**: Check OS-specific issues, race conditions
+3. **Commit validation**: Ensure conventional format
+4. **Security issues**: Review Gosec/Trivy reports
+
+### Release Issues
+
+- Check workflow logs in Actions tab
+- Ensure commits follow conventional format
+- Verify no `[skip release]` in commit messages
+- Check branch protection settings
+
+## Questions?
+
+- Check existing issues/discussions
+- Read the codebase and tests
+- Ask in PR comments
+- Create a discussion for broader topics
