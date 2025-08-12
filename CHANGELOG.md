@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/AdConDev/pos-daemon/compare/v0.1.2...v0.1.3) (2025-08-12)
+
+
+### 🐛 Bug Fixes
+
+* rename package and update references ([2f6e81e](https://github.com/AdConDev/pos-daemon/commit/2f6e81ea152b3685cecbac8d117b08e22c34f56f))
+
 ### [0.1.2](https://github.com/AdConDev/pos-daemon/compare/v0.1.1...v0.1.2) (2025-08-11)
 
 
