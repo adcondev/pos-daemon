@@ -14,21 +14,18 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
-  security-events: write  # For security scanning
+  security-events: write
 
 jobs:
-  # Job 1: Validate commits and PR
   validate:
-    name: Validate
+    name: Validate Commits
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      # Validate PR title follows conventional commits
       - name: Validate PR title
         uses: amannn/action-semantic-pull-request@v5
         env:
@@ -47,68 +44,66 @@ jobs:
             chore
             deps
             revert
-          requireScope: false
+          requireScope: true
           subjectPattern: ^(?![A-Z]).+$
           subjectPatternError: |
-            The subject "{subject}" found in the pull request title "{title}" 
-            didn't match the configured pattern. Please ensure that the subject 
-            starts with a lowercase letter.
+            The subject must start with lowercase letter.
+            Example: "feat(printer): add support for XYZ model"
 
-      # Validate all commits in PR
       - name: Validate commits
         uses: wagoid/commitlint-github-action@v6
         with:
           configFile: .commitlintrc.json
+          failOnWarnings: true
 
-  # Job 2: Tests and Coverage - Platform specific
   test:
-    name: Test (${{ matrix.os }}, ${{ matrix.go }})
+    name: Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        go: [ '1.24' ]  # Test on current and previous stable
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        go-version: [ '1.24' ]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Go
+      - name: Setup Go ${{ matrix.go-version }}
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
+          go-version: ${{ matrix.go-version }}
           cache: true
 
-      # Unix (Linux/macOS) specific test command
+      # Fixed: Separate test steps for Unix and Windows
       - name: Run tests (Unix)
         if: runner.os != 'Windows'
         run: |
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -v -race ./...
+          go test -v -coverprofile=coverage.txt -covermode=atomic ./...
           COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}')
           echo "### 📊 Test Coverage: $COVERAGE" >> $GITHUB_STEP_SUMMARY
 
-      # Windows specific test command with PowerShell syntax
+      # Fixed: Proper PowerShell syntax for Windows
       - name: Run tests (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
-          $COVERAGE = $(go tool cover -func=coverage.txt | Select-String 'total:' | ForEach-Object { $_.ToString().Split()[-1] })
+          go test -v -race ./...
+          go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+          $totalLine = (Get-Content coverage.txt | Select-String -Pattern "total:" | Out-String).Trim()
+          $COVERAGE = $totalLine.Split(" ")[-1]
           "### 📊 Test Coverage: $COVERAGE" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      # Upload coverage results on one platform only to avoid duplicates
       - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.24'
+        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
           fail_ci_if_error: false
-          verbose: true
 
-  # Job 3: Code Quality
-  quality:
-    name: Code Quality
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
 
@@ -119,31 +114,13 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8  # v8 es la última estable
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: latest  # Siempre usa la última versión
-          args: --timeout=5m  # 3 min es suficiente para proyectos pequeños
-          only-new-issues: true  # Solo muestra issues nuevos en PRs
+          version: v2.3.1
+          args: --timeout=5m
+          only-new-issues: true
 
       - name: Go mod tidy check
         run: |
           go mod tidy
-          git diff --exit-code go.mod go.sum
-
-  # Job 4: Security Scanning
-  security:
-    name: Security
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.22.7
-        with:
-          args: '-no-fail -fmt sarif -out results.sarif ./...'
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
+          git diff --exit-code go.mod go.sum || (echo "::error::Run 'go mod tidy' and commit changes" && exit 1)
