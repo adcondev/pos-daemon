@@ -26,11 +26,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Label para minor/major
+      # Crear etiqueta si no existe y luego añadir al PR
       - name: Label non-patch updates
         if: steps.metadata.outputs.update-type != 'version-update:semver-patch'
         run: |
-          gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --add-label "needs-review"
+          # Verificar si la etiqueta existe, si no, crearla
+          if ! gh label list | grep -q "needs-review"; then
+            echo "Creando etiqueta 'needs-review'"
+            gh label create "needs-review" --color "ededed" --description "Requiere revisión manual"
+          fi
+          
+          # Añadir la etiqueta al PR
+          gh pr edit "${{ github.event.pull_request.html_url }}" --add-label "needs-review"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
