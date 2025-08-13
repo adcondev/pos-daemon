@@ -8,6 +8,13 @@ import (
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
+// TODO: Comandos para impresión de gráficos e imágenes
+// - Impresión de bitmap
+// - Impresión de imagen rasterizada
+// - Densidad de impresión
+// - Modos de imagen
+// - Compresión de imagen
+
 // ESCImage ahora es más simple, solo guarda referencia a PrintImage
 type ESCImage struct {
 	printImage *imaging.PrintImage
@@ -103,4 +110,20 @@ func (p *Commands) PrintImage(img *imaging.PrintImage, density types.Density) ([
 	cmd = append(cmd, rasterData...)
 
 	return cmd, nil
+}
+
+// GetMaxImageWidth devuelve el ancho máximo de imagen que soporta la impresora
+func (p *Commands) GetMaxImageWidth(paperWidth, dpi int) int {
+	// Cálculo basado en el ancho del papel y resolución
+	// Formula: (ancho_papel_mm / 25.4) * dpi
+	if paperWidth > 0 && dpi > 0 {
+		return int((float64(paperWidth) / 25.4) * float64(dpi))
+	}
+
+	// Valores predeterminados si no hay configuración
+	if paperWidth >= 80 {
+		return 576 // Para papel de 80mm a 203dpi
+	} else {
+		return 384 // Para papel de 58mm a 203dpi
+	}
 }
