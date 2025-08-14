@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/AdConDev/pos-daemon/compare/v0.2.0...v0.3.0) (2025-08-14)
+
+
+### ✨ Features
+
+* **escpos:** add initial ESC/POS command implementations ([f5a021e](https://github.com/AdConDev/pos-daemon/commit/f5a021e33cbf4669eb68338a34a1b5d1181d5dd8))
+* **escpos:** update printer commands and types ([2eac502](https://github.com/AdConDev/pos-daemon/commit/2eac50251957da24d4fb64751f391c9024fc02a0))
+* **escpos:** update printer commands and types ([e86a993](https://github.com/AdConDev/pos-daemon/commit/e86a99314ce5a58985b552a2a6fa9540d97fca2a))
+
 ## [0.2.0](https://github.com/AdConDev/pos-daemon/compare/v0.1.3...v0.2.0) (2025-08-12)
 
 
