@@ -7,12 +7,13 @@ import (
 	"pos-daemon.adcon.dev/pkg/posprinter/utils"
 )
 
+// modelMap mapea los modelos de QR a sus valores ESC/POS
 var modelMap = map[types.QRModel]byte{
 	types.Model1: '1', // Modelo 1
 	types.Model2: '2', // Modelo 2
 }
 
-// Mapear los niveles de corrección de errores en QR a sus valores ESCPOS
+// ecMap mapea los niveles de corrección de errores a sus valores ESC/POS
 var ecMap = map[types.QRErrorCorrection]byte{
 	types.ECLow:     '0', // 7% de corrección
 	types.ECMedium:  '1', // 15% de corrección
@@ -70,6 +71,7 @@ func (p *Commands) PrintQR(
 	return cmdLines, nil
 }
 
+// SelectQRModel selecciona el modelo de código QR a utilizar
 func (p *Commands) SelectQRModel(model types.QRModel) ([]byte, error) {
 	// Validación de modelo
 	if model < types.Model1 || model > types.Model2 {
@@ -91,6 +93,7 @@ func (p *Commands) SelectQRModel(model types.QRModel) ([]byte, error) {
 	return cmd, nil
 }
 
+// SelectQRSize selecciona el tamaño del módulo del código QR
 func (p *Commands) SelectQRSize(moduleSize types.QRModuleSize) ([]byte, error) {
 	// Validar tamaño del módulo
 	if moduleSize < types.MinType || moduleSize > types.MaxType {
@@ -111,6 +114,7 @@ func (p *Commands) SelectQRSize(moduleSize types.QRModuleSize) ([]byte, error) {
 	return cmd, nil
 }
 
+// SelectQRErrorCorrection selecciona el nivel de corrección de errores del código QR
 func (p *Commands) SelectQRErrorCorrection(level types.QRErrorCorrection) ([]byte, error) {
 	// Validar nivel de corrección
 	ec, ok := ecMap[level]
@@ -131,6 +135,7 @@ func (p *Commands) SelectQRErrorCorrection(level types.QRErrorCorrection) ([]byt
 	return cmd, nil
 }
 
+// SetQRData prepara los datos para el código QR
 func (p *Commands) SetQRData(data string) ([]byte, error) {
 	// Validar longitud de datos
 	if len(data) == 0 || len(data) > 7089 {
@@ -152,6 +157,7 @@ func (p *Commands) SetQRData(data string) ([]byte, error) {
 	return cmd, nil
 }
 
+// PrintQRData genera el comando para imprimir el código QR
 func (p *Commands) PrintQRData() ([]byte, error) {
 	// Comando para imprimir QR
 	pL, pH, err := utils.LengthLowHigh(3)

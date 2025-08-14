@@ -10,18 +10,18 @@ import (
 type Protocol interface {
 	// === Comandos básicos ===
 
-	Initialize() []byte
+	InitializePrinter() []byte
 	Close() []byte
 
 	// === Manipulación de texto ===
 
 	SetJustification(justification types.Alignment) []byte
-	SetFont(font types.Font) []byte
-	SetEmphasis(on bool) []byte
+	SelectCharacterFont(n types.Font) ([]byte, error)
+	TurnEmphasizedMode(n types.EmphasizedMode) ([]byte, error)
 	SetDoubleStrike(on bool) []byte
-	SetUnderline(underline types.UnderlineMode) []byte
+	TurnUnderlineMode(n types.UnderlineMode) ([]byte, error)
 	SetTextSize(widthMultiplier int, heightMultiplier int) []byte
-	SetLineSpacing(height *int) []byte
+	SetLineSpacing(n types.LineSpace) []byte
 	SetPrintLeftMargin(margin int) []byte
 	SetPrintWidth(width int) []byte
 
@@ -49,8 +49,8 @@ type Protocol interface {
 
 	// === Imágenes ===
 
-	// PrintImage recibe una imagen genérica y la convierte a comandos del protocolo
-	PrintImage(img *imaging.PrintImage, density types.Density) ([]byte, error)
+	// PrintRasterBitImage recibe una imagen genérica y la convierte a comandos del protocolo
+	PrintRasterBitImage(img *imaging.PrintImage, density types.Density) ([]byte, error)
 
 	// GetMaxImageWidth devuelve el ancho máximo de imagen soportado
 	GetMaxImageWidth(paperWidth int, dpi int) int
