@@ -52,37 +52,37 @@ func main() {
 	log.Println("Enviando comandos de prueba...")
 
 	// Inicializar
-	if err := printer.Initialize(); err != nil {
+	if err = printer.Initialize(); err != nil {
 		log.Printf("Error al inicializar: %v", err)
 	}
 
 	// Texto centrado (usando tipos del paquete types)
-	if err := printer.SetJustification(types.AlignCenter); err != nil {
+	if err = printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error al centrar: %v", err)
 	}
 
 	// Texto en negrita
-	if err := printer.SetEmphasis(true); err != nil {
+	if err = printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al activar negrita: %v", err)
 	}
 
 	// Imprimir título
-	if err := printer.TextLn("PRUEBA RAPIDA DE IMPRESION"); err != nil {
+	if err = printer.TextLn("PRUEBA RAPIDA DE IMPRESION"); err != nil {
 		log.Printf("Error al imprimir título: %v", err)
 	}
 
 	// Desactivar negrita
-	if err := printer.SetEmphasis(false); err != nil {
+	if err = printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al desactivar negrita: %v", err)
 	}
 
 	// Línea separadora
-	if err := printer.TextLn("================================"); err != nil {
+	if err = printer.TextLn("================================"); err != nil {
 		log.Printf("Error al imprimir línea: %v", err)
 	}
 
 	// Alinear a la izquierda
-	if err := printer.SetJustification(types.AlignLeft); err != nil {
+	if err = printer.SetJustification(types.AlignLeft); err != nil {
 		log.Printf("Error al alinear izquierda: %v", err)
 	}
 
@@ -95,13 +95,13 @@ func main() {
 	if err := printer.TextLn(""); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.SetEmphasis(true); err != nil {
+	if err := printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err := printer.TextLn("Ventajas de la nueva arquitectura:"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.SetEmphasis(false); err != nil {
+	if err := printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error: %v", err)
 	}
 

@@ -11,21 +11,20 @@ const (
 )
 
 // Font define los tipos de fuente estándar
-type Font int
+type Font byte
 
 const (
 	FontA Font = iota
 	FontB
-	FontC
 )
 
 // UnderlineMode define los modos de subrayado estándar
-type UnderlineMode int
+type UnderlineMode byte
 
 const (
-	UnderlineNone UnderlineMode = iota
-	UnderlineSingle
-	UnderlineDouble
+	UnderNone UnderlineMode = iota
+	UnderSingle
+	UnderDouble
 )
 
 // BarcodeType define los tipos de código de barras estándar
@@ -71,6 +70,7 @@ const (
 	DensityQuadruple
 )
 
+// QRModel define los modelos de código QR estándar
 type QRModel byte
 
 const (
@@ -78,6 +78,7 @@ const (
 	Model2                // Modelo 2 (recomendado y estándar)
 )
 
+// QRErrorCorrection define los niveles de corrección de errores estándar para códigos QR
 type QRErrorCorrection byte
 
 const (
@@ -87,6 +88,9 @@ const (
 	ECHighest                          // 30% de corrección
 )
 
+// FIXME: Corregir los types con Min y Max, dejarlo en ESCPOS
+
+// QRModuleSize define los tamaños de módulo estándar para códigos QR
 type QRModuleSize byte
 
 const (
@@ -94,6 +98,7 @@ const (
 	MaxType QRModuleSize = 16
 )
 
+// CharacterSet define los conjuntos de caracteres estándar
 type CharacterSet int
 
 const (
@@ -115,6 +120,73 @@ const (
 	IranII                         // IranII (CP864)
 	Latvian                        // Latvian (Windows-1257)
 )
+
+// RealTimeStatus define los estados de tiempo real de la impresora
+type RealTimeStatus byte
+
+const (
+	PrinterStatus RealTimeStatus = iota
+	OfflineStatus
+	ErrorStatus
+	PaperSensorStatus
+)
+
+// CashDrawerPin define los pines del cajón de dinero
+type CashDrawerPin byte
+
+const (
+	Pin2 CashDrawerPin = iota // Pin 1
+	Pin5                      // Pin 2
+)
+
+// CashDrawerTime define los tiempos de pulso del cajón de dinero
+type CashDrawerTimePulse byte
+
+const (
+	Pulse100ms CashDrawerTimePulse = iota // 1x (100 ms)
+	Pulse200ms                            // 2x (200 ms)
+	Pulse300ms                            // 3x (300 ms)
+	Pulse400ms                            // 4x (400 ms)
+	Pulse500ms                            // 5x (500 ms)
+	Pulse600ms                            // 6x (600 ms)
+	Pulse700ms                            // 7x (700 ms)
+	Pulse800ms                            // 8x (800 ms)
+)
+
+// EmphasizedMode define los modos de énfasis de texto
+type EmphasizedMode byte
+
+const (
+	EmphOff EmphasizedMode = iota // Modo normal (sin én
+	EmphOn                        // Modo enfatizado (negrita)
+)
+
+type TabColumnNumber []byte
+
+type TabTotalPosition byte
+
+type UserDefinedChar byte
+
+type PrinterEnabled byte
+
+const (
+	EnaOff PrinterEnabled = iota
+	EnaOn
+)
+
+type LineSpace byte
+
+type BitImageMode byte
+
+const (
+	Mode8DotSingleDen  BitImageMode = iota // Modo de 8 puntos, densidad simple
+	Mode8DotDoubleDen                      // Modo de 8 puntos, doble densidad
+	Mode24DotSingleDen                     // Modo de 24 puntos, densidad simple
+	Mode24DotDoubleDen                     // Modo de 24 puntos, doble densidad
+)
+
+// TODO: Tener en cuenta que es un modo y que son cantidades, cantidades se validad en ESCPOS en el rango definido.
+// Los modos tendrían su respectivo map en ESCPOS. Definir Min y Max vuelve rígido el uso de los tipos. Solo crear Types.
 
 // TODO: Agregar más tipos genéricos según necesites
 // Por ejemplo:

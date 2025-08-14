@@ -122,7 +122,7 @@ func useESCPOS(conn connector.Connector) {
 
 	// ZPL procesará la imagen de manera diferente internamente,
 	// pero la API es la misma
-	if err := printer.PrintImage(img, types.DensitySingle); err != nil {
+	if err := printer.PrintRasterBitImage(img, types.DensitySingle); err != nil {
 		log.Printf("Error: %v", err)
 	}
 */

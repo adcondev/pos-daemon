@@ -56,13 +56,13 @@ func main() {
 	if err := printer.SetJustification(types.AlignCenter); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.SetEmphasis(true); err != nil {
+	if err := printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err := printer.TextLn("PRUEBA DE QR á é í ó ú ñ"); err != nil {
 		log.Printf("Error: %v", err)
 	}
-	if err := printer.SetEmphasis(false); err != nil {
+	if err := printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error: %v", err)
 	}
 	if err := printer.Feed(1); err != nil {

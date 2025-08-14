@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/skip2/go-qrcode"
-	tckt "pos-daemon.adcon.dev/internal/models"
+	"pos-daemon.adcon.dev/internal/models"
 	"pos-daemon.adcon.dev/pkg/posprinter"
 	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
 	"pos-daemon.adcon.dev/pkg/posprinter/types"
@@ -27,8 +27,8 @@ const (
 
 // TicketConstructor handles the construction and printing of tickets
 type TicketConstructor struct {
-	template tckt.NewTicketTemplate
-	ticket   tckt.NewTicket
+	template models.NewTicketTemplate
+	ticket   models.NewTicket
 	writer   io.Writer
 	printer  *posprinter.GenericPrinter
 }
@@ -116,17 +116,17 @@ func (tc *TicketConstructor) PrintTicket() error {
 // printHeader prints the store information in the header
 func (tc *TicketConstructor) printHeader() {
 	tmpl := tc.template.Data
-	datosTckt := tc.ticket.Data
+	datosmodels := tc.ticket.Data
 
 	// Print custom header if available
 	if tmpl.CambiarCabecera != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(tmpl.CambiarCabecera); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
@@ -160,14 +160,14 @@ func (tc *TicketConstructor) printHeader() {
 	}
 
 	// Print store name
-	if tmpl.VerNombre && datosTckt.SucursalNombre != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerNombre && datosmodels.SucursalNombre != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn("Matriz\n" + datosTckt.SucursalNombre); err != nil {
+		if err := tc.printer.TextLn("Matriz\n" + datosmodels.SucursalNombre); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Feed(1); err != nil {
@@ -176,8 +176,8 @@ func (tc *TicketConstructor) printHeader() {
 	}
 
 	// Print commercial name
-	if tmpl.VerNombreC && datosTckt.SucursalNombreComercial != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerNombreC && datosmodels.SucursalNombreComercial != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Nombre Comercial: "); err != nil {
@@ -194,7 +194,7 @@ func (tc *TicketConstructor) printHeader() {
 			// esa funcionalidad a través del protocolo
 		}
 
-		if err := tc.printer.TextLn(datosTckt.SucursalNombreComercial); err != nil {
+		if err := tc.printer.TextLn(datosmodels.SucursalNombreComercial); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 
@@ -205,75 +205,75 @@ func (tc *TicketConstructor) printHeader() {
 			}
 		}
 
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
 
 	// Print RFC
-	if tmpl.VerRFC && datosTckt.SucursalRFC != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerRFC && datosmodels.SucursalRFC != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("RFC: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(datosTckt.SucursalRFC); err != nil {
+		if err := tc.printer.TextLn(datosmodels.SucursalRFC); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
 	// Print tax regime
-	if tmpl.VerRegimen && datosTckt.SucursalRegimen != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerRegimen && datosmodels.SucursalRegimen != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Régimen Fiscal: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(datosTckt.SucursalRegimen); err != nil {
+		if err := tc.printer.TextLn(datosmodels.SucursalRegimen); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
 	// Print email
-	if tmpl.VerEmail && datosTckt.SucursalEmails != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerEmail && datosmodels.SucursalEmails != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Email: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(datosTckt.SucursalEmails); err != nil {
+		if err := tc.printer.TextLn(datosmodels.SucursalEmails); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
 	// Print address
-	if dom := ""; tmpl.VerDom && datosTckt.SucursalCalle != "" && datosTckt.SucursalNumero != "" && datosTckt.SucursalColonia != "" {
-		dom = fmt.Sprintf("%s %s,", datosTckt.SucursalCalle, datosTckt.SucursalNumero)
-		if datosTckt.SucursalNumeroInt != "" {
-			dom = dom + fmt.Sprintf(" Int. %s,", datosTckt.SucursalNumeroInt)
+	if dom := ""; tmpl.VerDom && datosmodels.SucursalCalle != "" && datosmodels.SucursalNumero != "" && datosmodels.SucursalColonia != "" {
+		dom = fmt.Sprintf("%s %s,", datosmodels.SucursalCalle, datosmodels.SucursalNumero)
+		if datosmodels.SucursalNumeroInt != "" {
+			dom = dom + fmt.Sprintf(" Int. %s,", datosmodels.SucursalNumeroInt)
 		}
-		dom = dom + fmt.Sprintf(" Col. %s,", datosTckt.SucursalColonia)
-		dom = dom + fmt.Sprintf(" %s, %s, %s, ", datosTckt.SucursalLocalidad, datosTckt.SucursalEstado, datosTckt.SucursalPais)
-		dom = dom + fmt.Sprintf(" C.P. %s", datosTckt.SucursalCP)
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		dom = dom + fmt.Sprintf(" Col. %s,", datosmodels.SucursalColonia)
+		dom = dom + fmt.Sprintf(" %s, %s, %s, ", datosmodels.SucursalLocalidad, datosmodels.SucursalEstado, datosmodels.SucursalPais)
+		dom = dom + fmt.Sprintf(" C.P. %s", datosmodels.SucursalCP)
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Domicilio: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(dom); err != nil {
@@ -285,13 +285,13 @@ func (tc *TicketConstructor) printHeader() {
 // printCustomerInfo prints the customer information
 func (tc *TicketConstructor) printCustomerInfo() {
 	if tc.template.Data.VerNombreCliente && tc.ticket.Data.ClienteNombre != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Cliente: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(tc.ticket.Data.ClienteNombre); err != nil {
@@ -303,49 +303,49 @@ func (tc *TicketConstructor) printCustomerInfo() {
 // printTicketInfo prints folio, date, and store info
 func (tc *TicketConstructor) printTicketInfo() {
 	tmpl := tc.template.Data
-	tcktData := tc.ticket.Data
+	modelsData := tc.ticket.Data
 
-	if tmpl.VerFolio && tcktData.Folio != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerFolio && modelsData.Folio != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Folio: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tcktData.Folio); err != nil {
+		if err := tc.printer.TextLn(modelsData.Folio); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	if tmpl.VerFecha && tcktData.FechaSistema != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerFecha && modelsData.FechaSistema != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Fecha: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tcktData.FechaSistema); err != nil {
+		if err := tc.printer.TextLn(modelsData.FechaSistema); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
 
-	if tmpl.VerTienda && tcktData.SucursalTienda != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+	if tmpl.VerTienda && modelsData.SucursalTienda != "" {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.Text("Tienda: "); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
-		if err := tc.printer.TextLn(tcktData.SucursalTienda); err != nil {
+		if err := tc.printer.TextLn(modelsData.SucursalTienda); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
 	}
@@ -383,14 +383,14 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	if err := tc.printer.SetJustification(types.AlignRight); err != nil {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 	columnas := cantCol + productoCol + precioCol + subtotalCol
 	if err := tc.printer.TextLn(columnas); err != nil {
 		log.Printf("Error al imprimir artículo 1: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 	if len(columnas) != MaxRowChars {
@@ -467,13 +467,13 @@ func (tc *TicketConstructor) printItems() map[string]float64 {
 	if err := tc.printer.Text("Subtotal: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 	if err := tc.printer.TextLn(FormatFloat(subtotalSum, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
@@ -491,52 +491,52 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 		if err := tc.printer.Text("IVA Trasladado: $"); err != nil {
 			log.Printf("Error al imprimir: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(FormatFloat(taxes["ivaTrasladado"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 
 		if err := tc.printer.Text("IVA Retenido: $"); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(FormatFloat(taxes["ivaRetenido"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 
 		if err := tc.printer.Text("IEPS Trasladado: $"); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(FormatFloat(taxes["iepsTrasladado"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 
 		if err := tc.printer.Text("ISR Retenido: $"); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn(FormatFloat(taxes["isrRetenido"], LenDecimales)); err != nil {
 			log.Printf("Error al imprimir suma: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
@@ -544,44 +544,44 @@ func (tc *TicketConstructor) printTaxes(taxes map[string]float64) {
 
 // printPaymentInfo prints payment details
 func (tc *TicketConstructor) printPaymentInfo() {
-	tcktData := tc.ticket.Data.DocumentosPago[0]
+	modelsData := tc.ticket.Data.DocumentosPago[0]
 
 	if err := tc.printer.Text("Total: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.Total, LenDecimales)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(modelsData.Total, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
 	if err := tc.printer.Text("Efectivo: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.FormasPago[0].Cantidad, LenDecimales)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(modelsData.FormasPago[0].Cantidad, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
 	if err := tc.printer.Text("Cambio: $"); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
-	if err := tc.printer.TextLn(FormatFloat(tcktData.Cambio, LenDecimales)); err != nil {
+	if err := tc.printer.TextLn(FormatFloat(modelsData.Cambio, LenDecimales)); err != nil {
 		log.Printf("Error al imprimir suma: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 }
@@ -594,7 +594,7 @@ func (tc *TicketConstructor) printFooter() {
 		log.Printf("Error al establecer justificación: %v", err)
 	}
 
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
@@ -610,7 +610,7 @@ func (tc *TicketConstructor) printFooter() {
 		log.Printf("Error al establecer fuente: %v", err)
 	}
 
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 
@@ -634,24 +634,24 @@ func (tc *TicketConstructor) printFooter() {
 
 	// Print phone if configured
 	if tmpl.VerTelefono && tc.ticket.Data.SucursalTelefono != "" {
-		if err := tc.printer.SetEmphasis(true); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 		if err := tc.printer.TextLn("Teléfono: " + tc.ticket.Data.SucursalTelefono); err != nil {
 			log.Printf("ticket_printer: error al imprimir texto: %v", err)
 		}
-		if err := tc.printer.SetEmphasis(false); err != nil {
+		if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error al establecer énfasis: %v", err)
 		}
 	}
 	// Print footer message
-	if err := tc.printer.SetEmphasis(true); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOn); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 	if err := tc.printer.TextLn(tmpl.CambiarPie); err != nil {
 		log.Printf("Error al imprimir: %v", err)
 	}
-	if err := tc.printer.SetEmphasis(false); err != nil {
+	if err := tc.printer.SetEmphasis(types.EmphOff); err != nil {
 		log.Printf("Error al establecer énfasis: %v", err)
 	}
 }

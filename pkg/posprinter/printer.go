@@ -100,7 +100,7 @@ func (p *GenericPrinter) SetProfile(newProfile *profile.Profile) {
 
 // Initialize inicializa la impresora
 func (p *GenericPrinter) Initialize() error {
-	cmd := p.Protocol.Initialize()
+	cmd := p.Protocol.InitializePrinter()
 	_, err := p.Connector.Write(cmd)
 	return err
 }
@@ -126,15 +126,21 @@ func (p *GenericPrinter) SetJustification(alignment types.Alignment) error {
 
 // SetFont establece la fuente
 func (p *GenericPrinter) SetFont(font types.Font) error {
-	cmd := p.Protocol.SetFont(font)
-	_, err := p.Connector.Write(cmd)
+	cmd, err := p.Protocol.SelectCharacterFont(font)
+	if err != nil {
+		return fmt.Errorf("character selection error: %w", err)
+	}
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
 // SetEmphasis activa/desactiva negrita
-func (p *GenericPrinter) SetEmphasis(on bool) error {
-	cmd := p.Protocol.SetEmphasis(on)
-	_, err := p.Connector.Write(cmd)
+func (p *GenericPrinter) SetEmphasis(on types.EmphasizedMode) error {
+	cmd, err := p.Protocol.TurnEmphasizedMode(on)
+	if err != nil {
+		return err
+	}
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
@@ -147,8 +153,11 @@ func (p *GenericPrinter) SetDoubleStrike(on bool) error {
 
 // SetUnderline configura el subrayado
 func (p *GenericPrinter) SetUnderline(underline types.UnderlineMode) error {
-	cmd := p.Protocol.SetUnderline(underline)
-	_, err := p.Connector.Write(cmd)
+	cmd, err := p.Protocol.TurnUnderlineMode(underline)
+	if err != nil {
+		return fmt.Errorf("underline mode error: %w", err)
+	}
+	_, err = p.Connector.Write(cmd)
 	return err
 }
 
@@ -265,7 +274,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 		return fmt.Errorf("protocol %s does not support images", p.Protocol.Name())
 	}
 
-	// Crear PrintImage
+	// Crear PrintRasterBitImage
 	resizedImg := imaging.ResizeToWidth(img, opts.Width, p.Profile.DotsPerLine)
 	printImg := imaging.NewPrintImage(resizedImg, opts.DitherMode)
 	printImg.Threshold = opts.Threshold
@@ -278,7 +287,7 @@ func (p *GenericPrinter) PrintImageWithOptions(img image.Image, opts PrintImageO
 	}
 
 	// Generar comandos
-	cmd, err := p.Protocol.PrintImage(printImg, opts.Density)
+	cmd, err := p.Protocol.PrintRasterBitImage(printImg, opts.Density)
 	if err != nil {
 		return fmt.Errorf("failed to generate imaging commands: %w", err)
 	}
