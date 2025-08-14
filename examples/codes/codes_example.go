@@ -102,7 +102,7 @@ func main() {
 			continue
 		}
 
-		if err := p.SetEmphasis(true); err != nil {
+		if err := p.SetEmphasis(types.EmphOn); err != nil {
 			log.Printf("Error activando negrita: %v", err)
 			continue
 		}
@@ -113,7 +113,7 @@ func main() {
 			continue
 		}
 
-		if err := p.SetEmphasis(false); err != nil {
+		if err := p.SetEmphasis(types.EmphOff); err != nil {
 			log.Printf("Error desactivando negrita: %v", err)
 			continue
 		}
@@ -136,7 +136,7 @@ func main() {
 				continue
 			}
 
-			if err := p.SetEmphasis(true); err != nil {
+			if err := p.SetEmphasis(types.EmphOn); err != nil {
 				log.Printf("Error activando negrita: %v", err)
 				continue
 			}
@@ -146,7 +146,7 @@ func main() {
 				log.Printf("Error imprimiendo encabezado de charset: %v", err)
 				continue
 			}
-			if err := p.SetEmphasis(false); err != nil {
+			if err := p.SetEmphasis(types.EmphOff); err != nil {
 				log.Printf("Error desactivando negrita: %v", err)
 				continue
 			}

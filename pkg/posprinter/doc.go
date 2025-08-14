@@ -2,7 +2,7 @@
 // térmicas de puntos de venta (POS), utilizando una arquitectura modular que separa
 // protocolos, conectores y perfiles de impresoras.
 //
-// Arquitectura
+// # Arquitectura
 //
 // El paquete está diseñado con tres componentes principales:
 //
@@ -24,7 +24,7 @@
 //	printer.TextLn("Hola Mundo")
 //
 //	// Formateo
-//	printer.SetEmphasis(true)
+//	printer.TurnEmphasizedMode(true)
 //	printer.TextLn("Texto en negrita")
 //
 //	// Imprimir imagen
