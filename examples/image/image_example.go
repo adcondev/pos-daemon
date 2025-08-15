@@ -3,13 +3,13 @@ package main
 import (
 	"log"
 
-	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
-	"pos-daemon.adcon.dev/pkg/posprinter/profile"
-	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
-	"pos-daemon.adcon.dev/pkg/posprinter/types"
-	// En el futuro: "pos-daemon.adcon.dev/pkg/posprinter/protocol/zpl"
+	posprinter "github.com/AdConDev/pos-printer"
+	"github.com/AdConDev/pos-printer/connector"
+	"github.com/AdConDev/pos-printer/imaging"
+	"github.com/AdConDev/pos-printer/profile"
+	"github.com/AdConDev/pos-printer/protocol/escpos"
+	"github.com/AdConDev/pos-printer/types"
+	// En el futuro: "github.com/AdConDev/pos-printer/protocol/zpl"
 )
 
 func main() {
