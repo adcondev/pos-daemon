@@ -1,12 +1,20 @@
 {
-  "name": "pos-daemon",
+  "name": "@adcondev/pos-daemon",
   "version": "0.3.0",
   "private": false,
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "standard-version": "^9.5.0"
+  },
   "description": "Protocol-agnostic POS printer daemon",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AdConDev/pos-daemon.git"
   },
   "author": "AdConDev",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "release": "standard-version"
+  }
 }

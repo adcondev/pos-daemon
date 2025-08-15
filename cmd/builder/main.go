@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/AdConDev/pos-printer"
+	"github.com/AdConDev/pos-printer/connector"
+	"github.com/AdConDev/pos-printer/profile"
+	"github.com/AdConDev/pos-printer/protocol/escpos"
 	"pos-daemon.adcon.dev/internal/models"
 	"pos-daemon.adcon.dev/internal/service"
-	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/profile"
-	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
 )
 
 // TODO: Modificar padding de líneas para que sea configurable
