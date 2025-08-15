@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/AdConDev/pos-daemon/compare/v0.3.0...v1.0.0) (2025-08-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **daemon:** update pos-printer module import paths (#24)
+
+### ✨ Features
+
+* **daemon:** update pos-printer module import paths ([#24](https://github.com/AdConDev/pos-daemon/issues/24)) ([5d0d90b](https://github.com/AdConDev/pos-daemon/commit/5d0d90b61c226c239d2f3aa1e7b081ba8095fb9c))
+
 ## [0.3.0](https://github.com/AdConDev/pos-daemon/compare/v0.2.0...v0.3.0) (2025-08-14)
 
 

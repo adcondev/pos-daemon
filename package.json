@@ -1,6 +1,6 @@
 {
   "name": "@adcondev/pos-daemon",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "private": false,
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
