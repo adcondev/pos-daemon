@@ -1,3 +1,5 @@
+github.com/AdConDev/pos-printer v0.2.0 h1:Q3uPJRV9+ASs8Nzrrdj6cqxZj0GVEK8cjhV5AOmplY0=
+github.com/AdConDev/pos-printer v0.2.0/go.mod h1:yTTIYBwCDU4xgv+pQ1eQDAvcEVJ1lf9lG4hYlKMOYAU=
 github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e h1:MRM5ITcdelLK2j1vwZ3Je0FKVCfqOLp5zO6trqMLYs0=
 github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e/go.mod h1:XV66xRDqSt+GTGFMVlhk3ULuV0y9ZmzeVGR4mloJI3M=
 golang.org/x/image v0.30.0 h1:jD5RhkmVAnjqaCUXfbGBrn3lpxbknfN9w2UhHHU+5B4=

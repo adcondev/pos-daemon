@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/connector"
-	"pos-daemon.adcon.dev/pkg/posprinter/encoding"
-	"pos-daemon.adcon.dev/pkg/posprinter/profile"
-	"pos-daemon.adcon.dev/pkg/posprinter/protocol/escpos"
-	"pos-daemon.adcon.dev/pkg/posprinter/types"
+	"github.com/AdConDev/pos-printer"
+	"github.com/AdConDev/pos-printer/connector"
+	"github.com/AdConDev/pos-printer/encoding"
+	"github.com/AdConDev/pos-printer/profile"
+	"github.com/AdConDev/pos-printer/protocol/escpos"
+	"github.com/AdConDev/pos-printer/types"
 )
 
 func main() {

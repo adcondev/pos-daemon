@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	posprinter "github.com/AdConDev/pos-printer"
+	"github.com/AdConDev/pos-printer/imaging"
+	"github.com/AdConDev/pos-printer/types"
 	"github.com/skip2/go-qrcode"
 	"pos-daemon.adcon.dev/internal/models"
-	"pos-daemon.adcon.dev/pkg/posprinter"
-	"pos-daemon.adcon.dev/pkg/posprinter/imaging"
-	"pos-daemon.adcon.dev/pkg/posprinter/types"
 )
 
 // TODO: Hacer reconfigurable los tamaños de acuerdo al ticket
