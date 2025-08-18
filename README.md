@@ -1,4 +1,10 @@
 ![CI Status](https://github.com/AdConDev/pos-daemon/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/github/license/AdConDev/pos-daemon)
+
+# POS Daemon
+
+A daemon service for thermal printer management using the [pos-printer](https://github.com/AdConDev/pos-printer)
+library.
 
 # Instalación de drivers para impresora [EC-PM-80250](https://eclinepos.com/Producto.php?categoria=Impresoras&&buscar=EC-PM-80250) en Windows 10/11
 
