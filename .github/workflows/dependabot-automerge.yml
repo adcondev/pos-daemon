@@ -13,6 +13,9 @@ jobs:
     if: github.actor == 'dependabot[bot]'
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Fetch metadata
         id: metadata
         uses: dependabot/fetch-metadata@v2
@@ -31,9 +34,9 @@ jobs:
         if: steps.metadata.outputs.update-type != 'version-update:semver-patch'
         run: |
           # Verificar si la etiqueta existe, si no, crearla
-          if ! gh label list | grep -q "needs-review"; then
+          if ! gh label list --repo ${{ github.repository }} | grep -q "needs-review"; then
             echo "Creando etiqueta 'needs-review'"
-            gh label create "needs-review" --color "ededed" --description "Requiere revisión manual"
+            gh label create "needs-review" --color "ededed" --description "Requiere revisión manual" --repo ${{ github.repository }}
           fi
           
           # Añadir la etiqueta al PR
