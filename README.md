@@ -1,10 +1,18 @@
 ![CI Status](https://github.com/AdConDev/pos-daemon/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/AdConDev/pos-daemon)
 
-# POS Daemon
+# POS Daemon 🖨️
 
-A daemon service for thermal printer management using the [pos-printer](https://github.com/AdConDev/pos-printer)
-library.
+A high-performance, protocol-agnostic Point of Sale printing daemon designed for modern retail environments. Built with Go for reliability and efficiency.
+
+## Potential Features
+
+- **Multi-Protocol Support**: ESC/POS, StarPRN, and custom protocols
+- **Queue Management**: Intelligent print job queuing and prioritization
+- **Network Printing**: Support for network, USB, and serial connections
+- **REST API**: Simple HTTP endpoints for integration
+- **Hot Reload**: Configuration changes without service restart
+- **Error Recovery**: Automatic retry logic and graceful degradation
 
 # Instalación de drivers para impresora [EC-PM-80250](https://eclinepos.com/Producto.php?categoria=Impresoras&&buscar=EC-PM-80250) en Windows 10/11
 
